@@ -1,0 +1,2602 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מנוע הנסיעות שלי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0d1330;--night-2:#141b3d;--panel:#1a2350;--panel-2:#212c63;--line:#2c3873;
+    --ink:#eceefb;--mut:#9aa2d4;--mut-2:#6f78ad;
+    --amber:#f7b45a;--amber-soft:rgba(247,180,90,.14);--amber-line:rgba(247,180,90,.5);
+    --clear:#63d4b2;--clear-soft:rgba(99,212,178,.14);--clear-line:rgba(99,212,178,.4);
+    --gold:#e9c873;--gold-soft:rgba(233,200,115,.16);
+    --vac:#b59cf2;--vac-soft:rgba(181,156,242,.16);
+    --dim:#e07a7a;--dim-soft:rgba(224,122,122,.12);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;color:var(--ink);font-family:'Assistant',system-ui,sans-serif;
+    background:radial-gradient(1100px 650px at 85% -10%,#1b2456 0,transparent 60%),radial-gradient(800px 560px at 0 0,#16204a 0,transparent 55%),var(--night)}
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 22px 70px}
+  /* ===== horizontal search bar (Skyscanner-style) ===== */
+  .sbar{position:relative;margin:14px 0 10px}
+  .sbar-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:7px;background:var(--panel-2);border:1px solid var(--clear-line);border-radius:16px;padding:8px}
+  .sfield{position:relative;flex:1 1 0;min-width:118px;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:border-color .12s}
+  .sfield:hover{border-color:var(--clear-line)}
+  .sfield.active{border-color:var(--clear);box-shadow:0 0 0 2px var(--clear-soft)}
+  .sfield.grow{flex:1 1 0}
+  .sfield>label{font-size:10px;letter-spacing:.05em;color:var(--mut-2);text-transform:uppercase}
+  .sfield .sval{font-size:14.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sfield .sval.ph{color:var(--mut-2);font-weight:500}
+  .ttfield{flex:0 1 120px;min-width:108px;max-width:140px}
+  .swapbtn{flex:0 0 auto;align-self:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--clear-line);background:var(--panel);color:var(--clear);cursor:pointer;font-size:14px;margin:0 -1px;z-index:2}
+  .swapbtn:hover{background:var(--clear-soft)}
+  .sgo{flex:0 0 auto;align-self:stretch;padding:0 24px;border:none;border-radius:12px;background:linear-gradient(180deg,var(--amber),#e0942f);color:#241500;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .sgo.ghost{background:transparent;border:1px solid var(--clear-line);color:var(--mut);font-weight:600;font-size:13px;padding:0 14px}
+  .sgo.ghost:hover{color:var(--ink);border-color:var(--amber)}
+  #stalebar{position:sticky;top:6px;z-index:6}
+  .stalebanner{background:linear-gradient(180deg,rgba(247,180,90,.2),rgba(247,180,90,.1));border:1px solid var(--amber);color:var(--amber);padding:9px 14px;border-radius:11px;margin:0 0 10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer}
+  .stalebanner:hover{background:rgba(247,180,90,.28)}
+  #out.stale-dim{opacity:.4;filter:grayscale(.65);transition:opacity .2s,filter .2s;pointer-events:none}
+  .sgo:hover{filter:brightness(1.06)}
+  .spop{position:absolute;top:calc(100% + 8px);inset-inline-start:0;z-index:40;background:var(--panel);border:1px solid var(--clear-line);border-radius:14px;padding:14px;box-shadow:0 16px 40px rgba(0,0,0,.45);min-width:280px}
+  .spop.wide{min-width:330px}
+  .spop-cities{margin-top:8px}
+  .popcities{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:4px 2px 0}
+  .popcities .plabel{font-size:12px;color:var(--mut-2);margin-inline-end:4px}
+  .ttmenu{position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:45;background:var(--panel);border:1px solid var(--clear-line);border-radius:12px;padding:6px;min-width:190px;box-shadow:0 14px 34px rgba(0,0,0,.4)}
+  /* ===== results + side tuning column ===== */
+  .resultsgrid{display:flex;gap:18px;align-items:flex-start;margin-top:16px}
+  .sidecol{flex:0 0 232px;position:sticky;top:14px}
+  .rescol{flex:1 1 auto;min-width:0}
+  .sidecard{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px 13px}
+  .sidettl{font-weight:800;font-size:14px;margin-bottom:6px;color:var(--ink)}
+  .sgrp{padding:9px 0;border-top:1px solid var(--line)}
+  .sgrp .st{font-size:12.5px;color:var(--clear);font-weight:700;margin-bottom:6px}
+  .sgrp .sl{font-size:10.5px;color:var(--mut-2);margin:7px 0 3px}
+  .sidecol .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .sidecol .c{font-size:11.5px;padding:5px 9px}
+  .prow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px}
+  .prow .plabel2{font-size:12px;color:var(--ink)}
+  .pmodes{display:flex;gap:3px}
+  .pmodes .pmode{padding:3px 7px;font-size:12px}
+  .pmodes .pmode.on{background:var(--gold-soft);border-color:var(--gold)}
+  .pscope{display:flex;gap:4px;margin:3px 0 2px}
+  .pscope .c{font-size:10.5px;padding:3px 7px}
+  .pall{display:inline-flex;gap:3px;margin-inline-start:6px;vertical-align:middle}
+  .pallc{font-size:9.5px;padding:2px 6px;opacity:.85}
+  .pallc:hover{opacity:1;border-color:var(--gold)}
+  @media(max-width:760px){ .resultsgrid{flex-direction:column} .sidecol{position:static;flex:none;width:100%} }
+  .ttopt{padding:9px 12px;border-radius:9px;cursor:pointer;font-size:14px}
+  .ttopt:hover{background:var(--panel-2)}
+  .ttopt.on{background:var(--clear-soft);color:var(--clear);font-weight:700}
+  .origin-edit{display:flex;gap:6px;align-items:center;margin-top:8px}
+  .kick{font-size:12px;letter-spacing:.2em;color:var(--mut-2);text-transform:uppercase}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 8px;flex-wrap:wrap}
+  .brandl{display:flex;align-items:center;gap:13px}
+  .logo{flex:none;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+  .brandtxt h1{margin:0}
+  .hebdate{font-family:'Frank Ruhl Libre',serif;font-size:15px;color:var(--amber);margin-top:2px}
+  .box.collapsed textarea{min-height:0;height:46px;resize:none;overflow:hidden}
+  .box.collapsed .go,.box.collapsed .exs{display:none}
+  .box.collapsed{padding:10px 12px;margin:10px 0}
+  h1{font-family:'Rubik',system-ui,sans-serif;font-weight:800;font-size:clamp(24px,5vw,34px);margin:6px 0 4px;letter-spacing:-.01em}
+  h1 .em{color:var(--clear)}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--clear);margin-inline-start:8px;vertical-align:middle}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--clear);box-shadow:0 0 8px var(--clear);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+  .sub{color:var(--mut);font-size:14px;max-width:62ch}
+
+  /* free text */
+  .box{background:linear-gradient(180deg,var(--panel),var(--night-2) 130%);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin:18px 0 10px}
+  textarea{width:100%;background:var(--night);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:12px 14px;font:inherit;font-size:15.5px;outline:none;resize:vertical;min-height:54px;line-height:1.5}
+  textarea:focus{border-color:var(--clear)}
+  .go{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .go button{background:linear-gradient(180deg,var(--clear),#4fc4a4);border:0;color:#06251c;font:inherit;font-weight:700;font-size:15px;padding:10px 20px;border-radius:11px;cursor:pointer;transition:.15s}
+  .go button:hover{filter:brightness(1.08)} .go button:disabled{opacity:.5;cursor:default}
+  .exs{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+  .ex{font-size:12px;color:var(--mut);background:var(--night);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;transition:.15s}
+  .ex:hover{border-color:var(--clear);color:var(--clear)}
+
+  /* panel */
+  .panel{background:linear-gradient(180deg,var(--panel-2),var(--night-2) 150%);border:1px solid var(--line);border-radius:var(--r);padding:12px 15px;margin:12px 0}
+  .barhead{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+  .savedstrip{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+  .savedchip{display:inline-flex;align-items:center;background:var(--night);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12px}
+  .savedchip .ld{padding:5px 10px;cursor:pointer;color:var(--clear)}
+  .savedchip .ld:hover{background:rgba(79,196,164,.12)}
+  .savedchip .del{padding:5px 8px;cursor:pointer;color:var(--mut-2);border-inline-start:1px solid var(--line)}
+  .savedchip .del:hover{color:var(--dim);background:rgba(224,122,122,.12)}
+  .barsum{font-size:13.5px;color:var(--mut);flex:1;min-width:200px;line-height:1.5}
+  .barsum b{color:var(--ink);font-weight:700}
+  .baract{display:flex;gap:8px;align-items:center}
+  .adjust{background:var(--night);border:1px solid var(--line);color:var(--mut);font:inherit;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .adjust:hover{border-color:var(--clear);color:var(--clear)}
+  .searchbtn.sm{padding:8px 20px;font-size:14px}
+  .detail{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .detailfoot{margin-top:14px;display:flex;justify-content:flex-end}
+  .advtoggle{margin:14px 0 4px;padding:9px 14px;text-align:center;font-size:13px;color:var(--mut);background:var(--night);border:1px dashed var(--line);border-radius:10px;cursor:pointer}
+  .advtoggle:hover{color:var(--clear);border-color:var(--clear-line)}
+  .dateflexrow{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start;margin-top:4px}
+  .daterange{display:inline-flex;align-items:center;gap:8px;background:var(--night);border:1px solid var(--line);border-radius:11px;padding:9px 13px;cursor:pointer;font-size:14px}
+  .daterange:hover{border-color:var(--clear-line)}
+  .daterange .drlab{font-size:11px;color:var(--mut-2)}
+  .daterange b{color:var(--ink);font-weight:700}
+  .daterange .arr{color:var(--mut)}
+  .daterange .caledit{margin-inline-start:6px;font-size:12px;color:var(--clear);border-inline-start:1px solid var(--line);padding-inline-start:8px}
+  .calwrap{margin-top:8px;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px;width:300px;max-width:100%}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .caltitle{font-weight:700;font-size:14.5px}
+  .calnav{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:17px;line-height:1}
+  .calnav:disabled{opacity:.3;cursor:default}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .caldow{font-size:11px;color:var(--mut-2);text-align:center;padding:2px 0}
+  .calday{text-align:center;padding:7px 0;border-radius:7px;font-size:13px;cursor:pointer;background:var(--panel);border:1px solid transparent}
+  .calday:hover:not(.past):not(.empty){border-color:var(--clear-line)}
+  .calday.empty{background:transparent;cursor:default}
+  .calday.past{color:var(--mut-2);opacity:.35;cursor:default;background:transparent}
+  .calday.inrange{background:var(--clear-soft);color:var(--ink)}
+  .calday.selstart,.calday.selend{background:linear-gradient(180deg,var(--clear),#4fc4a4);color:#06251c;font-weight:800;border-color:transparent}
+  .calhint{margin-top:9px;font-size:12px;color:var(--clear);text-align:center}
+  .flexinline{display:inline-flex;flex-wrap:wrap;gap:6px}
+  .ojrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .searchgrp{background:var(--panel-2);border:1px solid var(--clear-line)}
+  .searchrow{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+  .fld{display:flex;flex-direction:column;gap:6px;min-width:140px}
+  .fld.grow{flex:1;min-width:240px}
+  .fld>label{font-size:11px;letter-spacing:.04em;color:var(--mut-2);text-transform:uppercase}
+  .fldstatic{background:var(--night);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--ink);font-weight:600;min-height:42px;display:flex;align-items:center}
+  .destchips{margin:0}
+  .paxfld{position:relative;min-width:160px}
+  .paxsel{background:var(--night);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:14px;cursor:pointer;min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .paxsel:hover{border-color:var(--clear-line)}
+  .paxsel .cv{color:var(--mut)}
+  .paxpop{position:absolute;top:100%;inset-inline-start:0;margin-top:6px;z-index:30;background:var(--panel);border:1px solid var(--clear-line);border-radius:12px;padding:8px;min-width:240px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+  .paxr{display:flex;align-items:center;justify-content:space-between;padding:9px 8px;border-bottom:1px solid var(--line)}
+  .paxr:last-of-type{border-bottom:none}
+  .paxlbl b{display:block;font-size:14px}
+  .paxlbl span{font-size:11px;color:var(--mut-2)}
+  .paxctrl{display:flex;align-items:center;gap:10px}
+  .paxbtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font-size:19px;line-height:1;cursor:pointer}
+  .paxbtn:hover:not(:disabled){border-color:var(--clear);color:var(--clear)}
+  .paxbtn:disabled{opacity:.3;cursor:default}
+  .paxn{min-width:22px;text-align:center;font-weight:700}
+  .paxdone{margin-top:6px;text-align:center;padding:8px;background:var(--clear-soft);color:var(--clear);border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
+  .panel .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .panel .head .lead{font-size:12px;color:var(--clear);font-weight:700}
+  .panel .summary{font-size:14px;color:var(--mut);margin-bottom:12px}
+  .grp{margin:11px 0}
+  .grp .t{font-size:11px;color:var(--mut-2);margin-bottom:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .acwrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .aclist{display:flex;flex-direction:column;gap:1px;margin-top:8px;border:1px solid var(--line);border-radius:10px;overflow:hidden;max-width:420px}
+  .acitem{padding:9px 13px;font-size:13px;color:var(--ink);cursor:pointer;background:var(--night)}
+  .acitem:hover{background:rgba(79,196,164,.12);color:var(--clear)}
+  .c{font-size:12.5px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--night);color:var(--mut);cursor:pointer;transition:.12s;user-select:none;white-space:nowrap}
+  .c:hover{border-color:var(--mut)}
+  .c.on{background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
+  .c.moremonths{color:var(--clear);border-style:dashed}
+  .c.anchor.on{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .c.hard.on{border-color:var(--amber-line);color:var(--amber);background:var(--amber-soft)}
+  .c.soft.on{border-color:var(--clear-line);color:var(--clear);background:var(--clear-soft)}
+  .sc{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .sc .lbl{font-size:12.5px;padding:6px 11px;cursor:pointer;color:var(--mut);user-select:none}
+  .sc.on .lbl{color:var(--clear);background:var(--clear-soft)}
+  .sc .w{display:none}
+  .sc.on .w{display:inline-flex;align-items:center;border-inline-start:1px solid var(--line)}
+  .sc .w b{font-size:12px;color:var(--clear);min-width:16px;text-align:center}
+  .sc .w button{background:transparent;border:0;color:var(--mut);font:inherit;font-size:14px;cursor:pointer;padding:5px 8px;line-height:1}
+  .sc .w button:hover{color:var(--ink)}
+  .unsupp{margin-top:11px;background:var(--dim-soft);border:1px dashed rgba(224,122,122,.45);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--mut)} .unsupp b{color:var(--dim)}
+  .save{background:var(--night);border:1px solid var(--line);color:var(--mut);font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .save:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* results */
+  .meta{font-size:12px;color:var(--mut-2);margin:14px 2px 9px}
+  .res{background:linear-gradient(180deg,var(--panel),var(--night-2) 140%);border:1px solid var(--line);border-radius:var(--r);padding:12px 15px;margin-bottom:8px;display:flex;gap:13px;align-items:flex-start;flex-wrap:wrap}
+  .res.win{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-soft),0 10px 30px -18px rgba(247,180,90,.5)}
+  .rank{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:18px;color:var(--mut-2);min-width:22px;text-align:center;padding-top:2px} .res.win .rank{color:var(--amber)}
+  .rbody{flex:1;min-width:150px}
+  .rttl{font-size:15px;font-weight:600;color:var(--ink)} .rttl .sm{font-size:12px;color:var(--mut);font-weight:400}
+  .rtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .rcrit{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .rcrit .rtg{background:transparent;border-style:dashed;color:var(--mut)}
+  .rcrit .rtg.crit.away{border-color:rgba(79,196,164,.4);color:#9fdcc8}
+  .rcrit .rtg.crit.close{border-color:var(--amber-line);color:var(--amber)}
+  .rcrit .rtg.crit.poi{border-color:rgba(168,140,228,.4);color:#bfa9ea}
+  .rcrit .rtg.crit.fly{border-color:rgba(224,82,79,.6);color:#f0918e;border-style:solid;background:rgba(224,82,79,.1)}
+  .rcrit .rtg.shabv-good{border-color:rgba(79,196,164,.6);color:#7fd9c0;border-style:solid;background:rgba(79,196,164,.1)}
+  .rcrit .rtg.shabv-soft{border-color:rgba(120,140,180,.45);color:#aebfd6;border-style:dashed;background:rgba(120,140,180,.08)}
+  .rcrit .rtg.shabv-tight{border-color:rgba(232,146,60,.7);color:#f0b070;border-style:solid;background:rgba(232,146,60,.12)}
+  .rcrit .rtg.shabv-note{border-color:rgba(143,120,201,.5);color:#bfa9ea;border-style:dashed}
+  .rcrit .rtg.shabv-bad{border-color:rgba(224,82,79,.7);color:#f0918e;border-style:solid;background:rgba(224,82,79,.14)}
+  .rcrit .rtg.destv{border-style:solid}
+  .rcrit .rtg.destv.destv-good{border-color:rgba(143,120,201,.55);color:#cdbcf0;background:rgba(143,120,201,.12)}
+  .rcrit .rtg.destv.destv-tight{border-color:rgba(232,146,60,.7);color:#f0b070;background:rgba(232,146,60,.12)}
+  .rcrit .rtg.destv.destv-note{border-color:rgba(143,120,201,.45);color:#bfa9ea;border-style:dashed}
+  .rcrit .rtg.destv.destv-bad{border-color:rgba(224,82,79,.7);color:#f0918e;background:rgba(224,82,79,.14)}
+  .band{display:flex;gap:2px;margin-top:9px;height:11px;border-radius:5px;overflow:visible}
+  .bcell{flex:1;min-width:3px;border-radius:2px;position:relative;overflow:hidden}
+  .bc-normal{background:rgba(255,255,255,.13)}
+  .bc-three{background:#e8c873}
+  .bc-nine{background:#e07b2c}
+  .bc-tisha{background:#d83f3f}
+  .bc-fast{background:#d56fce}
+  .bc-prep{background:#b9912f}
+  .bc-chm{background:#54a6ea}
+  .bc-good{background:#3fbf86}
+  .bc-maybe{background:#3fbf86}
+  .bc-bein{background:#6f6fd6}
+  .bc-elul{background:#aa55c8}
+  .bc-block{background:#9e2f2c}
+  .bc-fasthalf{position:absolute;left:0;right:0;bottom:0;height:50%;background:#d56fce}
+  .bc-shab{outline:2px solid #fff;outline-offset:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+  .bandleg{font-size:11px;color:var(--mut-2);margin-top:7px}
+  .bandkey{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px;font-size:11.5px;color:var(--mut)}
+  .morewrap{display:flex;justify-content:center;margin:14px 0 4px}
+  .morebtn{background:rgba(143,120,201,.12);border:1px solid rgba(143,120,201,.45);color:#cdbcf0;border-radius:10px;padding:10px 22px;font-size:13.5px;cursor:pointer;font-family:inherit}
+  .morebtn:hover{background:rgba(143,120,201,.2)}
+  .ki{display:inline-flex;align-items:center;gap:5px}
+  .ks{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .rtimes{font-size:12.5px;color:var(--mut);margin-top:5px} .rtimes b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .rtg{font-size:11px;padding:3px 9px;border-radius:7px;background:var(--night);border:1px solid var(--line);color:var(--mut)}
+  .rtg.fresh{background:var(--vac-soft);border-color:var(--vac);color:var(--vac)}
+  .rtg.shab.during,.rtg.shab.airborne{background:var(--dim-soft);border-color:rgba(224,122,122,.5);color:var(--dim)}
+  .rtg.trip.fly{background:var(--dim-soft);border-color:rgba(224,122,122,.5);color:var(--dim)}
+  .rtg.trip.away{background:var(--gold-soft);border-color:rgba(233,200,115,.5);color:var(--gold)}
+  .rtg.trip.clean{background:var(--clear-soft);border-color:var(--clear-line);color:var(--clear)}
+  .rtg.busy.peak{background:var(--dim-soft);border-color:rgba(224,122,122,.5);color:var(--dim)}
+  .rtg.busy.busy{background:var(--gold-soft);border-color:rgba(233,200,115,.5);color:var(--gold)}
+  .rtg.jewish{background:var(--vac-soft);border-color:var(--vac);color:var(--vac)}
+  .rtg.j-caution{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber)}
+  .rtg.j-neutral{background:rgba(168,140,228,.14);border-color:rgba(168,140,228,.5);color:#c3aef0}
+  .rtg.j-good{background:rgba(79,196,164,.14);border-color:rgba(79,196,164,.55);color:var(--clear)}
+  .note{font-size:11px;color:var(--mut-2);align-self:center;margin-inline-start:6px}
+  .cmpbtn{display:inline-block;margin-top:7px;font-size:12px;color:var(--clear);border:1px solid rgba(79,196,164,.45);border-radius:8px;padding:4px 10px;cursor:pointer}
+  .cmpbtn:hover{background:rgba(79,196,164,.12)}
+  .excmp{background:linear-gradient(180deg,rgba(79,196,164,.07),transparent);border:1px solid rgba(79,196,164,.35);border-radius:var(--r);padding:13px 16px;margin:0 0 10px}
+  .exwrap{margin:-4px 0 12px;padding-inline-start:34px}
+  .exload{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:13px}
+  .exhead{font-weight:700;color:var(--clear);font-size:13.5px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .exclose{cursor:pointer;color:var(--mut-2);font-size:13px;padding:2px 6px;border-radius:6px}
+  .exclose:hover{color:var(--dim);background:rgba(224,122,122,.12)}
+  .exrow{font-size:13px;color:var(--ink);padding:6px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .exrow:first-of-type{border-top:0}
+  .exinfo{flex:1;min-width:200px}
+  .exbook{font-size:12px;color:var(--clear);border:1px solid rgba(79,196,164,.45);border-radius:7px;padding:3px 11px;text-decoration:none;white-space:nowrap}
+  .exbook:hover{background:rgba(79,196,164,.12)}
+  .exbest{background:rgba(79,196,164,.18);color:var(--clear);font-size:10.5px;padding:1px 7px;border-radius:6px}
+  .exnote{font-size:11px;color:var(--mut-2);margin-top:9px}
+  .rtg.shab.close{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber)}
+  .rtg.shab.motzaei{background:var(--vac-soft);border-color:var(--vac);color:var(--vac)}
+  .rprice{text-align:end;min-width:82px}
+  .rprice .v{font-family:'Frank Ruhl Libre',serif;font-size:19px;font-weight:700}
+  .rprice .k{font-size:10px;color:var(--clear)}
+  .book{display:inline-block;margin-top:6px;font-size:11.5px;color:#06251c;background:linear-gradient(180deg,var(--clear),#4fc4a4);text-decoration:none;border:0;border-radius:8px;padding:6px 11px;font-weight:700}
+  .book:hover{filter:brightness(1.08)}
+  .book2{display:inline-block;margin-top:6px;margin-inline-start:6px;font-size:11px;color:var(--mut-2);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+  .book2:hover{border-color:var(--mut);color:var(--mut)}
+  .searchrow{margin-top:14px;text-align:center}
+  .searchbtn{background:linear-gradient(180deg,var(--amber),#e09b3f);border:0;color:#3a2406;font:inherit;font-weight:700;font-size:16px;padding:12px 40px;border-radius:12px;cursor:pointer;box-shadow:0 8px 22px -8px rgba(247,180,90,.5)}
+  .searchbtn:hover{filter:brightness(1.06)}
+  .rflight{font-size:12px;color:var(--clear);margin-top:3px}
+  .ralt{font-size:11px;color:var(--amber);margin-top:2px}
+  .rmore{margin-top:6px;padding-inline-start:9px;border-inline-start:2px solid var(--line)}
+  .rmore-h{font-size:10px;color:var(--mut-2);margin-bottom:3px}
+  .rhidden{font-size:11px;color:var(--amber);margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .sortbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0 4px;font-size:11px;color:var(--mut-2)}
+  .sortbar .c{font-size:11.5px;padding:4px 11px}
+  .wgroup{border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;margin-bottom:12px;background:linear-gradient(180deg,var(--panel),var(--night-2) 140%)}
+  .wgroup.win{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber-soft),0 10px 30px -18px rgba(247,180,90,.5)}
+  .wgroup.motzei{border-color:rgba(143,120,201,.55);background:linear-gradient(180deg,rgba(143,120,201,.1),var(--night-2) 150%)}
+  .rcrit .rtg.crit.motzei{border-color:rgba(143,120,201,.65);color:#cdbcf0;border-style:solid;background:rgba(143,120,201,.14)}
+  .wghead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .wgrank{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:18px;color:var(--mut-2);min-width:20px;text-align:center}
+  .wgroup.win .wgrank{color:var(--amber)}
+  .wgttl{font-size:14.5px;color:var(--ink);font-weight:600} .wgttl .sm{font-size:12px;color:var(--mut);font-weight:400}
+  .wghtags{margin:0}
+  .wgflights{display:flex;flex-direction:column;gap:8px;margin-top:11px}
+  .wgmore{text-align:center;margin-top:2px}
+  .wgfoot{margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .allflights{margin-inline-start:auto;font-size:12px;color:var(--mut);text-decoration:none;border-bottom:1px dashed var(--clear-line);padding-bottom:1px}
+  .allflights:hover{color:var(--amber);border-color:var(--amber)}
+  .fcard{display:flex;justify-content:space-between;align-items:center;gap:13px;background:var(--night);border:1px solid var(--line);border-radius:11px;padding:10px 13px}
+  .fcard.win{border-color:var(--clear-line);background:var(--clear-soft)}
+  .fcard.forb{opacity:.72;border-style:dashed}
+  .fc-main{flex:1 1 auto;min-width:0}
+  .fc-carrier{font-size:13px;color:var(--ink);font-weight:600}
+  .fc-stop{color:var(--mut);font-weight:400;font-size:11px}
+  .fc-dur{color:var(--mut-2);font-weight:400;font-size:11px;opacity:.9}
+  .fc-times{font-size:12px;color:var(--clear);margin-top:2px}
+  .fc-main .rcrit{margin-top:6px}
+  .fc-price{flex:0 0 auto;text-align:end;min-width:88px}
+  .ropt{font-size:11.5px;color:var(--mut);margin-top:3px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .optv{font-size:10px;padding:1px 7px;border-radius:6px;border:1px solid var(--line)}
+  .optv-good{color:var(--clear);border-color:var(--clear)}
+  .optv-tight,.optv-note{color:var(--amber);border-color:var(--amber)}
+  .optv-bad{color:#ff8da1;border-color:#ff8da1}
+  .daterow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .daterow .sep{color:var(--mut)}
+  .din{background:var(--night);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 10px;font:inherit;font-size:14px;color-scheme:dark}
+  .selrow{display:flex;gap:8px;flex-wrap:wrap}
+  .sel{background:var(--night);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+  .sel:focus,.din:focus{border-color:var(--clear);outline:none}
+  .state{padding:20px;text-align:center;color:var(--mut)}
+  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--clear);border-radius:50%;animation:rot 1s linear infinite;margin:0 auto 11px} @keyframes rot{to{transform:rotate(360deg)}}
+  .pbar{position:relative;width:min(440px,82%);height:8px;background:var(--line);border-radius:99px;margin:0 auto 12px;overflow:hidden}
+  .pbar::before{content:'';position:absolute;top:0;height:100%;width:42%;border-radius:99px;background:linear-gradient(90deg,transparent,var(--clear),var(--gold),transparent);animation:sweep 1.25s ease-in-out infinite}
+  @keyframes sweep{0%{left:-42%}100%{left:100%}}
+  .pbar-txt{font-size:12.5px;color:var(--mut)}
+  .err{background:var(--dim-soft);border:1px solid rgba(224,122,122,.4);border-radius:10px;padding:12px 15px;color:var(--mut);font-size:13px;line-height:1.5} .err code{background:var(--night);padding:1px 5px;border-radius:4px}
+  .saved{background:var(--gold-soft);border:1px solid rgba(233,200,115,.4);border-radius:10px;padding:11px 14px;margin-top:8px;font-size:12.5px;color:var(--mut)} .saved b{color:var(--gold)} .saved pre{margin:7px 0 0;white-space:pre-wrap;word-break:break-word;color:var(--mut-2);font-size:11px;direction:ltr;text-align:start}
+  footer{margin-top:22px;color:var(--mut-2);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:14px} footer b{color:var(--mut)} footer code{background:var(--night);padding:1px 6px;border-radius:5px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <div class="brandl">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lgbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2547"/><stop offset="1" stop-color="#11183a"/></linearGradient>
+          <linearGradient id="lgpl" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#46b9e8"/><stop offset="1" stop-color="#5fe0bf"/></linearGradient>
+        </defs>
+        <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="url(#lgbg)" stroke="#2f3d73" stroke-width="1.5"/>
+        <path d="M11 33 C18 31 22 24 31 13" fill="none" stroke="#f2b257" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.5 4.5"/>
+        <path d="M36.5 12 L20.5 34.5 L18.7 26.2 Z" fill="url(#lgpl)"/>
+        <path d="M36.5 12 L26.5 22.8 L18.7 26.2 Z" fill="#bfeede"/>
+        <path d="M36.5 12 L20.5 34.5 L25.3 25.4 Z" fill="#2f8fc9"/>
+        <circle cx="36.5" cy="12" r="2.4" fill="#f2b257"/>
+      </svg></span>
+      <div class="brandtxt">
+        <h1>מנוע הנסיעות <span class="em">שלי</span><span class="live"><span class="dot"></span>מחירי אמת</span></h1>
+        <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
+      </div>
+    </div>
+    <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." style="margin-inline-start:auto;align-self:center;border:none;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;color:#fff;background:#3a3f55;cursor:pointer;white-space:nowrap">מקור: Skyscanner (ישן)</button>
+  </header>
+
+  <div class="box collapsed" id="qbox">
+    <textarea id="q" rows="1" placeholder="חיפוש חופשי: לאן זול לטוס מתל אביב באוגוסט, בלי טיסה בשבת…"></textarea>
+    <div class="go"><button id="run">תרגם והרץ ←</button><span class="exhint" style="font-size:12px;color:var(--mut-2)">או לחץ דוגמה:</span></div>
+    <div class="exs" id="exs"></div>
+  </div>
+
+  <div id="panel"></div>
+  <div id="stalebar"></div>
+  <div id="out"></div>
+
+  <footer>
+    <p><b>איך זה עובד —</b> טקסט חופשי → מודל שפה מתרגם לאינטנט → צ׳יפים לחיצים לכוונון → המנוע מדרג (אילוצים, ניקוד, עדשת שבת על כל מעטפת הטיסה) → מחירים אמיתיים מ-<code>flights-search</code> שלך → deep link להזמנה.</p>
+    <p style="margin-top:6px"><b>שמירה —</b> כפתור "שמור חיפוש" מראה את אובייקט האינטנט שיישמר. החיבור לטבלאות Supabase (כדי שחיפוש יחזור ואפשר יהיה לנטר אותו) — להמשך, יחד.</p>
+  </footer>
+</div>
+
+<script>
+const FUNC_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/flights-search";
+const RAPID_OLD_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/flights-rapid";
+const RAPID_GF_URL ="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/Flights-gflights";
+// ספק נתוני הטיסות הפעיל — נשמר ב-localStorage. 'gf'=Google Flights (חדש) · 'old'=Skyscanner (ישן). ברירת מחדל: ישן (ללא שינוי התנהגות עד החלפה ידנית).
+let FLIGHT_PROVIDER=(localStorage.getItem('tf_provider')||'old');
+let RAPID_URL=(FLIGHT_PROVIDER==='gf')?RAPID_GF_URL:RAPID_OLD_URL;
+function tfSyncProviderBtn(){const b=document.getElementById('provBtn');if(!b)return;const gf=(FLIGHT_PROVIDER==='gf');b.textContent=gf?'מקור: Google Flights ✈️':'מקור: Skyscanner (ישן)';b.style.background=gf?'#1f6f5c':'#3a3f55';}
+function tfToggleProvider(){FLIGHT_PROVIDER=(FLIGHT_PROVIDER==='gf')?'old':'gf';RAPID_URL=(FLIGHT_PROVIDER==='gf')?RAPID_GF_URL:RAPID_OLD_URL;localStorage.setItem('tf_provider',FLIGHT_PROVIDER);tfSyncProviderBtn();}
+window.addEventListener('DOMContentLoaded',tfSyncProviderBtn);
+const JCAL_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/jcal";
+let RAPID_DIAG="";
+let RANK_DIAG=null;
+let RATES={USD:1.08, ILS:3.9}; // sensible fallback so a conversion always shows; refreshed live below
+let RATES_LIVE=false;
+let LAST=null;
+const _expandedWins=new Set(); // windows the user expanded to show all flights
+function bandLegend(){
+  const items=[['normal','רגיל'],['three','שלושת השבועות'],['nine','תשעת הימים'],['tisha','תשעה באב'],['fast','צום'],['good','חופשה/חג'],['bein','בין הזמנים'],['chm','חוה״מ'],['elul','אלול']];
+  return '<div class="bandkey">'+items.map(it=>`<span class="ki"><span class="ks bc-${it[0]}"></span>${it[1]}</span>`).join('')+'<span class="ki"><span class="ks bc-normal bc-shab"></span>שבת</span></div>';
+}
+function periodsTuneHtml(){
+  const row=(p)=>{
+    const pr=(STATE.periodPrefs&&STATE.periodPrefs[p.key])||{mode:'normal',scope:'travel'};
+    const modes=[['hide','🚫'],['normal','⚪'],['prefer','⭐']].map(m=>`<span class="c pmode ${pr.mode===m[0]?'on':''}" data-act="periodmode" data-v="${p.key}|${m[0]}">${m[1]}</span>`).join('');
+    const scope = pr.mode!=='normal' ? `<div class="chips pscope">${[['travel','ביום טיסה'],['trip','גם בחופשה']].map(s=>`<span class="c ${pr.scope===s[0]?'on':''}" data-act="periodscope" data-v="${p.key}|${s[0]}">${s[1]}</span>`).join('')}</div>` : '';
+    return `<div class="prow"><span class="plabel2">${p.label}</span><span class="chips pmodes">${modes}</span></div>${scope}`;
+  };
+  const m=TUNE_PERIODS.filter(p=>p.grp==='m').map(row).join('');
+  const o=TUNE_PERIODS.filter(p=>p.grp==='o').map(row).join('');
+  const allBtns=(grp)=>`<span class="pall">${[['hide','הכל 🚫'],['normal','הכל ⚪'],['prefer','הכל ⭐']].map(b=>`<span class="c pallc" data-act="periodall" data-v="${grp}|${b[0]}">${b[1]}</span>`).join('')}</span>`;
+  return `<div class="sl">מיעוט / אבלות ${allBtns('m')}</div>${m}<div class="sl" style="margin-top:9px">הזדמנות / חיובי ${allBtns('o')}</div>${o}`;
+}
+function carriersInResults(){
+  const set=new Map();
+  if(LAST&&LAST.allWindows) for(const w of LAST.allWindows){ const opts=(w.info&&Array.isArray(w.info._options))?w.info._options:(w.info?[w.info]:[]); for(const o of opts){ if(!o||o.price==null)continue; for(const f of carrierFamilies(o.carrier)){ if(!f)continue; if(!set.has(f)) set.set(f,{n:0,lc:isLowCost(f),il:isIsraeliCarrier(f)}); set.get(f).n++; } } }
+  return [...set.entries()].sort((a,b)=>b[1].n-a[1].n).map(([name,m])=>({name,...m}));
+}
+function carrierFilterHtml(){
+  const cs=carriersInResults(); if(cs.length<2) return '';
+  const hid=STATE.hiddenCarriers||[];
+  const anyIl=cs.some(c=>c.il);
+  const chips=cs.map(c=>{ const esc=c.name.replace(/"/g,'&quot;'); return `<span class="c ${hid.includes(c.name)?'':'on'}" data-act="carrierfilt" data-v="${esc}">${c.il?'🇮🇱 ':''}${c.lc?'💸 ':''}${c.name}</span>`; }).join('');
+  const onlyIl = anyIl ? `<span class="c ${STATE.onlyIsraeli?'on':''}" data-act="onlyisraeli" title="הצג רק טיסות שכל הקטעים בהן בחברה ישראלית — בטוח יותר בתקופות מתוחות">🇮🇱 רק ישראליות</span>` : '';
+  return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד</span></div><div class="chips">${onlyIl}${chips}${(hid.length||STATE.onlyIsraeli)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
+}
+function sidePanelHtml(){
+  const ck=(act,opts,cur,attr)=>opts.map(o=>`<span class="c ${String(cur)===String(o[0])?'on':''}" data-act="${act}"${attr?` data-v="${o[0]}"`:''}>${o[1]}</span>`).join('');
+  return `<div class="sidecard">
+    <div class="sidettl">⚙ כיוונון אונליין</div>
+    <div class="sgrp"><div class="st">זמני שבת</div>
+      <div class="chips"><span class="c hard ${STATE.shabbatTime?'on':''}" data-act="shabtime">${STATE.shabbatTime?'בדיקת זמנים ✓':'בדיקת זמנים'}</span></div>
+      ${STATE.shabbatTime?`
+      <div class="sl">מרווח ערב שבת (שעות)</div><div class="chips">${[2,3,4].map(h=>`<span class="c ${(+STATE.marginBefore===h)?'on':''}" data-act="mbefore" data-v="${h}">${h}</span>`).join('')}</div>
+      <div class="sl">מרווח מוצ״ש (שעות)</div><div class="chips">${[2,3,4].map(h=>`<span class="c ${(+STATE.marginAfter===h)?'on':''}" data-act="mafter" data-v="${h}">${h}</span>`).join('')}</div>
+      <div class="sl">כניסת נרות (דק׳)</div><div class="chips">${[20,30,40].map(c=>`<span class="c ${(+STATE.candleMin===c)?'on':''}" data-act="candle" data-v="${c}">${c}</span>`).join('')}</div>
+      <div class="sl">צאת שבת</div><div class="chips"><span class="c ${STATE.havdalah==='deg85'?'on':''}" data-act="havd" data-v="deg85">8.5°</span><span class="c ${STATE.havdalah==='rt72'?'on':''}" data-act="havd" data-v="rt72">ר״ת</span></div>`:''}
+    </div>
+    <div class="sgrp"><div class="st">טיסה</div>
+      <div class="chips">${[[0,'ישיר'],[1,'עד 1 עצירה'],[2,'עד 2 עצירות']].map(o=>`<span class="c hard ${maxStopsVal()===o[0]?'on':''}" data-act="maxstops" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
+      <div class="sl">גמישות ±ימים</div><div class="chips">${[0,1,2,3].map(f=>`<span class="c ${STATE.flexDays==f?'on':''}" data-act="flexdays" data-v="${f}">${f===0?'מדויק':'±'+f}</span>`).join('')}</div>
+    </div>
+    ${carrierFilterHtml()}
+    <div class="sgrp"><div class="st">לוח עברי</div>
+      <div class="chips"><span class="c ${STATE.jewishMode!=='off'?'on':''}" data-act="jmode" data-v="${STATE.jewishMode!=='off'?'off':'mark'}">${STATE.jewishMode!=='off'?'מופעל ✓':'כבוי'}</span><span class="c hard ${STATE.allowShabbat?'on':''}" data-act="allowshab">${STATE.allowShabbat?'טיסות שבת מוצגות ✓':'בלי טיסות שבת'}</span></div>
+    </div>
+    <div class="sgrp"><div class="st">תקופות · 🚫 לא · ⚪ רגיל · ⭐ להעדיף</div>
+      ${periodsTuneHtml()}
+    </div>
+    <div class="sgrp"><div class="st">פרופיל · מטבע</div>
+      <div class="chips">${[['teacher','הוראה'],['yeshiva','ישיבה'],['general','כללי']].map(o=>`<span class="c ${STATE.profile===o[0]?'on':''}" data-act="prof" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
+      <div class="chips" style="margin-top:5px">${[['ILS','₪'],['USD','$'],['','€']].map(o=>`<span class="c ${STATE.altCurrency===o[0]?'on':''}" data-act="cur" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
+    </div>
+  </div>`;
+}
+function paintResults(){
+  if(!LAST) return;
+  const out=document.getElementById('out');
+  let body='';
+  if(LAST.specific){
+    body=LAST.ranked.map((w,i)=>{
+      const key=w.start+'|'+w.ret;
+      let extra='';
+      if(LAST.exitState && LAST.exitState[key]==='loading') extra='<div class="excmp exload"><div class="spin"></div> משווה שדות חזרה…</div>';
+      else if(LAST.exitCmp && LAST.exitCmp[key]) extra=LAST.exitCmp[key];
+      return windowCard(w,i+1,LAST.dest)+(extra?`<div class="exwrap">${extra}</div>`:'');
+    }).join('');
+  } else {
+    body=LAST.ranked.map((f,i)=>card(f,i+1)).join('');
+  }
+  const hasBand=LAST.specific && LAST.ranked.some(w=>w.band);
+  let moreBtn='';
+  if(LAST.specific && LAST.allWindows){
+    const remaining=LAST.allWindows.filter(w=>!w._priced).length;
+    if(LAST.loadingMore) moreBtn='<div class="morewrap"><div class="state"><div class="spin"></div>מתמחר עוד…</div></div>';
+    else if(remaining>0) moreBtn=`<div class="morewrap"><button class="morebtn" data-more="1">הצג עוד תוצאות · ${remaining} נותרו</button></div>`;
+  }
+  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?sortBarHtml():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
+}
+// cheapest overall price, and cheapest israeli / low-cost price, across all results
+function _catPrices(){
+  let cheapest=Infinity, il=Infinity, lc=Infinity;
+  if(LAST&&LAST.allWindows) for(const w of LAST.allWindows){
+    const opts=(w.info&&Array.isArray(w.info._options))?w.info._options:(w.info?[w.info]:[]);
+    for(const o of opts){ if(!o||o.price==null)continue;
+      if(o.price<cheapest)cheapest=o.price;
+      if(isIsraeliCarrier(o.carrier)&&o.price<il)il=o.price;
+      if(isLowCost(o.carrier)&&o.price<lc)lc=o.price;
+    }
+  }
+  return {cheapest,il,lc};
+}
+function sortBarHtml(){
+  const cp=_catPrices();
+  // an israeli / low-cost sort only makes sense when such a flight is competitively priced — not
+  // when (e.g. on New York) the only israeli option is El Al at 4× the cheapest fare.
+  const band=isFinite(cp.cheapest)?cp.cheapest*1.6:Infinity;
+  const hasIsraeli=isFinite(cp.il)&&cp.il<=band, hasLowCost=isFinite(cp.lc)&&cp.lc<=band;
+  const opts=[['price','מחיר'],['time','מוקדם']];
+  if(hasIsraeli) opts.push(['airline','חברה ישראלית']);
+  if(hasLowCost) opts.push(['lowcost','לואו-קוסט']);
+  let cur=STATE.sortBy||'price';
+  if(!opts.some(o=>o[0]===cur)){ cur='price'; STATE.sortBy='price'; } // current sort no longer applies -> reset
+  return `<div class="sortbar">מיון: ${opts.map(o=>`<span class="c ${cur===o[0]?'on':''}" data-act="sortby" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>`;
+}
+async function fetchRates(){
+  // try Frankfurter (ECB), then fawazahmed0 CDN as a backup
+  try{
+    const r=await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,ILS');
+    if(r.ok){ const j=await r.json(); if(j&&j.rates&&j.rates.ILS){ RATES=j.rates; RATES_LIVE=true; return; } }
+  }catch(e){}
+  try{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json');
+    if(r.ok){ const j=await r.json(); if(j&&j.eur){ RATES={USD:j.eur.usd, ILS:j.eur.ils}; RATES_LIVE=true; } }
+  }catch(e){}
+}
+function _sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+/* ===== calendar + sunset + envelope Shabbat lens (verified) ===== */
+function gregLeap(y){return (y%4===0&&y%100!==0)||y%400===0;}
+function ldm(m,y){return [31,(gregLeap(y)?29:28),31,30,31,30,31,31,30,31,30,31][m-1];}
+function gregToAbs(y,m,d){let n=d;for(let i=1;i<m;i++)n+=ldm(i,y);n+=365*(y-1)+Math.floor((y-1)/4)-Math.floor((y-1)/100)+Math.floor((y-1)/400);return n;}
+function dow(a){return ((a%7)+7)%7;}
+function lastSunAbs(y,m){let a=gregToAbs(y,m,ldm(m,y));return a-dow(a);}
+function isSummer(a,y){return a>=lastSunAbs(y,3)&&a<lastSunAbs(y,10);}
+function sunsetUTCmin(a,lat,lon){let yy=Math.floor(a/366);while(a>=gregToAbs(yy+1,1,1))yy++;let m=1;while(a>gregToAbs(yy,m,ldm(m,yy)))m++;let D=a-gregToAbs(yy,m,1)+1,Y=yy,M=m;let q=Math.floor((14-M)/12),y=Y+4800-q,mo=M+12*q-3;let JDN=D+Math.floor((153*mo+2)/5)+365*y+Math.floor(y/4)-Math.floor(y/100)+Math.floor(y/400)-32045;let n=JDN-2451545.0+0.0008,Js=n-lon/360.0;let Ms=(357.5291+0.98560028*Js)%360,Mr=Ms*Math.PI/180;let C=1.9148*Math.sin(Mr)+0.0200*Math.sin(2*Mr)+0.0003*Math.sin(3*Mr);let lam=(Ms+C+180+102.9372)%360,lr=lam*Math.PI/180;let Jt=2451545.0+Js+0.0053*Math.sin(Mr)-0.0069*Math.sin(2*lr);let dec=Math.asin(Math.sin(lr)*Math.sin(23.44*Math.PI/180)),la=lat*Math.PI/180;let cH=(Math.sin(-0.833*Math.PI/180)-Math.sin(la)*Math.sin(dec))/(Math.cos(la)*Math.cos(dec));if(cH>1||cH<-1)return null;let H=Math.acos(cH)*180/Math.PI;let mins=(((Jt+H/360.0)-(JDN-0.5))*1440);return ((mins%1440)+1440)%1440;}
+const LAT=32.0809,LON=34.7806;
+function sunsetLocalMin(a){const off=israelOffset(a);const ss=sunsetUTCmin(a,LAT,LON);return ss==null?null:ss+off;}
+function israelOffset(a){let yy=Math.floor(a/366);while(a>=gregToAbs(yy+1,1,1))yy++;return isSummer(a,yy)?180:120;}
+const RDUNIX=719163;
+function shabbatWindowUTC(absDay){
+  const sat=absDay+((6-dow(absDay)+7)%7), fri=sat-1;
+  const offFri=israelOffset(fri), offSat=israelOffset(sat);
+  const candleUTC=(fri*1440+(sunsetLocalMin(fri)-18)-offFri-RDUNIX*1440)*60000;
+  const havdalahUTC=(sat*1440+(sunsetLocalMin(sat)+50)-offSat-RDUNIX*1440)*60000;
+  return {candleUTC,havdalahUTC};
+}
+function shabbatLens(depUTCms,durToMin){
+  const arr=depUTCms+(durToMin||180)*60000;
+  const dd=new Date(depUTCms);
+  const localMs=depUTCms+israelOffset(gregToAbs(dd.getUTCFullYear(),dd.getUTCMonth()+1,dd.getUTCDate()))*60000;
+  const ld=new Date(localMs);
+  const absDay=gregToAbs(ld.getUTCFullYear(),ld.getUTCMonth()+1,ld.getUTCDate());
+  const {candleUTC,havdalahUTC}=shabbatWindowUTC(absDay);
+  if(depUTCms<havdalahUTC && arr>candleUTC){
+    if(depUTCms>=candleUTC) return {k:'during',t:'ממריא בשבת'};
+    if(depUTCms<candleUTC)  return {k:'airborne',t:'באוויר בכניסת שבת'};
+    return {k:'during',t:'חופף לשבת'};
+  }
+  if(arr<candleUTC && (candleUTC-arr)<=120*60000) return {k:'close',t:'נוחת קרוב לכניסת שבת'};
+  if(depUTCms>havdalahUTC && (depUTCms-havdalahUTC)<=240*60000) return {k:'motzaei',t:'מוצאי שבת ✓'};
+  return null;
+}
+/* full-trip classification: flies-on-Shabbat (forbidden) / Shabbat-abroad (needs arrangements) / clean */
+function ilAbs(ms){const g=new Date(ms);const off=israelOffset(gregToAbs(g.getUTCFullYear(),g.getUTCMonth()+1,g.getUTCDate()));const d=new Date(ms+off*60000);return gregToAbs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate());}
+function inShabbat(ms){const ab=ilAbs(ms);const w=shabbatWindowUTC(ab);return ms>=w.candleUTC&&ms<=w.havdalahUTC;}
+function legFlies(depMs,durMin){const arr=depMs+(durMin||180)*60000;const ab=ilAbs(depMs);const w=shabbatWindowUTC(ab);return (depMs<w.havdalahUTC&&arr>w.candleUTC);}
+function tripShabbat(depUTC,durTo,retUTC,durBack){
+  const outFly=legFlies(depUTC,durTo);
+  let retFly=false,landUTC=null;
+  if(retUTC){ landUTC=retUTC+(durBack||180)*60000; retFly=inShabbat(retUTC)||inShabbat(landUTC)||dow(ilAbs(retUTC))===6; }
+  if(outFly||retFly) return {k:'fly',t:'טס/באוויר בשבת'};
+  if(retUTC){ const d0=ilAbs(depUTC),d1=ilAbs(landUTC); let away=0; for(let a=d0+1;a<d1;a++) if(dow(a)===6) away++; if(away>0) return {k:'away',t:'שבת ביעד — צריך הסדרי שבת'}; }
+  return {k:'clean',t:'נקי משבת'};
+}
+
+/* ===== reference tables ===== */
+const DW=["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","שבת"];
+function fmtLocal(utcMs){
+  const g=new Date(utcMs);
+  const off=israelOffset(gregToAbs(g.getUTCFullYear(),g.getUTCMonth()+1,g.getUTCDate()));
+  const d=new Date(utcMs+off*60000);
+  const abs=gregToAbs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate());
+  return DW[dow(abs)]+" "+d.getUTCDate()+"."+(d.getUTCMonth()+1)+" "+String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0");
+}
+// Hebrew -> English city names, so autocomplete works in Hebrew (Skyscanner dropped he-IL locale)
+const HE_CITY={
+  'תל אביב':'Tel Aviv','אילת':'Eilat','חיפה':'Haifa',
+  'בוקרשט':'Bucharest','קלוז':'Cluj','יאשי':'Iasi','טימישוארה':'Timisoara','סוצאבה':'Suceava','סיביו':'Sibiu',
+  'אתונה':'Athens','סלוניקי':'Thessaloniki','סלוניקיה':'Thessaloniki','רודוס':'Rhodes','כרתים':'Heraklion','הרקליון':'Heraklion','קורפו':'Corfu','סנטוריני':'Santorini','מיקונוס':'Mykonos','קוס':'Kos','קרפתוס':'Karpathos',
+  'לרנקה':'Larnaca','פאפוס':'Paphos','קפריסין':'Larnaca',
+  'רומא':'Rome','מילאנו':'Milan','מילנו':'Milan','ונציה':'Venice','נאפולי':'Naples','פירנצה':'Florence','בולוניה':'Bologna','קטניה':'Catania','פלרמו':'Palermo','בארי':'Bari',
+  'ברצלונה':'Barcelona','מדריד':'Madrid','מלאגה':'Malaga','ולנסיה':'Valencia','אליקנטה':'Alicante','איביזה':'Ibiza','פלמה':'Palma','סביליה':'Seville',
+  'פריז':'Paris','פריס':'Paris','ניס':'Nice','מרסיי':'Marseille','ליון':'Lyon',
+  'לונדון':'London','מנצסטר':'Manchester',
+  'אמסטרדם':'Amsterdam','בריסל':'Brussels','בריסלס':'Brussels',
+  'ברלין':'Berlin','מינכן':'Munich','פרנקפורט':'Frankfurt','המבורג':'Hamburg','דיסלדורף':'Dusseldorf','קלן':'Cologne',
+  'וינה':'Vienna','ציריך':'Zurich','ז\u05f3נבה':'Geneva','גנבה':'Geneva',
+  'פראג':'Prague','בודפשט':'Budapest','ורשה':'Warsaw','קרקוב':'Krakow','סופיה':'Sofia','בלגרד':'Belgrade','זאגרב':'Zagreb','ליובליאנה':'Ljubljana','בוקובינה':'Suceava',
+  'קופנהגן':'Copenhagen','שטוקהולם':'Stockholm','אוסלו':'Oslo','הלסינקי':'Helsinki','ריקיאוויק':'Reykjavik','רייקיאוויק':'Reykjavik',
+  'ליסבון':'Lisbon','פורטו':'Porto','מדיירה':'Funchal','פונשל':'Funchal',
+  'דבלין':'Dublin','אדינבורו':'Edinburgh',
+  'מלטה':'Malta','ולטה':'Malta',
+  'איסטנבול':'Istanbul','אנטליה':'Antalya','טביליסי':'Tbilisi','באטומי':'Batumi','קוטאיסי':'Kutaisi','ירוואן':'Yerevan','באקו':'Baku',
+  'דובאי':'Dubai','אבו דאבי':'Abu Dhabi','דוחא':'Doha',
+  'ניו יורק':'New York','נ.יורק':'New York','לוס אנגלס':'Los Angeles','מיאמי':'Miami','בוסטון':'Boston','שיקגו':'Chicago','אורלנדו':'Orlando','לאס וגאס':'Las Vegas','וושינגטון':'Washington','סן פרנסיסקו':'San Francisco','אטלנטה':'Atlanta','טורונטו':'Toronto','מונטריאול':'Montreal',
+  'בנגקוק':'Bangkok','פוקט':'Phuket','טוקיו':'Tokyo','דלהי':'Delhi','מומבאי':'Mumbai','גואה':'Goa','קייפטאון':'Cape Town','זנזיבר':'Zanzibar','סיישל':'Seychelles','מלדיביים':'Male','קולומבו':'Colombo',
+  'מומבסה':'Mombasa','נאירובי':'Nairobi','קזבלנקה':'Casablanca','מרקש':'Marrakech'
+};
+function heToEn(q){
+  const t=q.trim();
+  if(HE_CITY[t]) return HE_CITY[t];
+  // partial: if a dictionary key starts with the typed Hebrew, translate to allow live typing
+  for(const k in HE_CITY){ if(k.indexOf(t)===0) return HE_CITY[k]; }
+  return null;
+}
+const CITY={
+  BUH:{he:'בוקרשט',cc:'רומניה',fresh:false}, SKG:{he:'סלוניקי',cc:'יוון',fresh:true},
+  TBS:{he:'טביליסי',cc:'גאורגיה',fresh:true}, EVN:{he:'ירוואן',cc:'ארמניה',fresh:true},
+  BUS:{he:'בטומי',cc:'גאורגיה',fresh:true}, TIA:{he:'טירנה',cc:'אלבניה',fresh:true},
+  LJU:{he:'ליובליאנה',cc:'סלובניה',fresh:true}, OPO:{he:'פורטו',cc:'פורטוגל',fresh:true},
+  KUT:{he:'קוטאיסי',cc:'גאורגיה',fresh:true}, SOF:{he:'סופיה',cc:'בולגריה',fresh:true},
+  LON:{he:'לונדון',cc:'בריטניה',fresh:false}, PAR:{he:'פריז',cc:'צרפת',fresh:false},
+  ROM:{he:'רומא',cc:'איטליה',fresh:false}, BCN:{he:'ברצלונה',cc:'ספרד',fresh:false},
+  ATH:{he:'אתונה',cc:'יוון',fresh:false}, LCA:{he:'לרנקה',cc:'קפריסין',fresh:false},
+  AMS:{he:'אמסטרדם',cc:'הולנד',fresh:false}, BUD:{he:'בודפשט',cc:'הונגריה',fresh:false},
+  PRG:{he:'פראג',cc:'צ׳כיה',fresh:false}, VIE:{he:'וינה',cc:'אוסטריה',fresh:false},
+  MIL:{he:'מילאנו',cc:'איטליה',fresh:false}, JFK:{he:'ניו יורק',cc:'ארה"ב',fresh:false},
+  BER:{he:'ברלין',cc:'גרמניה',fresh:false},
+};
+const AIRLN={W4:'ויזאייר',W6:'ויזאייר',LY:'אל על',IZ:'ארקיע','6H':'ישראייר',PC:'פגסוס',FR:'ריינאייר',A3:'אגאן',TK:'טורקיש',AZ:'ITA',RO:'טארום',U2:'איזיג׳ט'};
+
+/* ===== ski brick: destinations + season window ===== */
+/* fallback list — used until Supabase loads, or if it's unavailable */
+let SKI={
+  GVA:{he:'ז׳נבה — שאמוני/ורבייה',cc:'שוויץ/צרפת'},
+  INN:{he:'אינסברוק — טירול',cc:'אוסטריה'},
+  SZG:{he:'זלצבורג — סקי אמאדה',cc:'אוסטריה'},
+  TRN:{he:'טורינו — ויה לאטאה',cc:'איטליה'},
+  MXP:{he:'מילאנו — אלפים',cc:'איטליה'},
+  VRN:{he:'ורונה — דולומיטים',cc:'איטליה'},
+  LYS:{he:'ליון — אלפים צרפתיים',cc:'צרפת'},
+  ZRH:{he:'ציריך — אלפים שוויצריים',cc:'שוויץ'},
+  MUC:{he:'מינכן — אלפים בוואריים',cc:'גרמניה'},
+  SOF:{he:'סופיה — בנסקו/בורובץ',cc:'בולגריה'},
+};
+for(const k in SKI) CITY[k]={he:SKI[k].he,cc:SKI[k].cc,fresh:false,ski:true};
+let SKI_DESTS=Object.keys(SKI);
+let SKI_SOURCE='רשימה מקומית';
+const SKI_MONTHS=['2027-01','2027-02']; // עונת השלג
+
+/* ===== Supabase: load ski_area POIs from the base (public read) ===== */
+const SUPA_URL="https://cdgqodtbdhsqkvcgcdlm.supabase.co";
+const SUPA_ANON="sb_publishable_B4HOCQF3IxN_6Ojz1_ctnA_k6JEAR4g"; // מפתח ציבורי — RLS מגן
+function buildSkiFromRows(rows){
+  const byIata={};
+  for(const r of rows){
+    if(!r.nearest_iata) continue;
+    const k=r.nearest_iata;
+    if(!byIata[k]) byIata[k]={resorts:[],countries:new Set(),pl:[]};
+    byIata[k].resorts.push(r.name_he||r.name); if(r.country)byIata[k].countries.add(r.country);
+    if(r.price_level) byIata[k].pl.push(r.price_level);
+  }
+  const out={};
+  for(const k in byIata){ const b=byIata[k];
+    out[k]={he:b.resorts.join(' / '), cc:[...b.countries].join('/'),
+      price_level:b.pl.length?Math.min(...b.pl):null, resorts:b.resorts};
+  }
+  return out;
+}
+async function loadSki(){
+  if(!SUPA_ANON || SUPA_ANON.indexOf('PASTE_')>=0) return false; // לא הוגדר מפתח — נשאר עם הרשימה המקומית
+  try{
+    const url=`${SUPA_URL}/rest/v1/pois?select=name,name_he,country,nearest_iata,price_level,attributes&kind=eq.ski_area&active=eq.true`;
+    const r=await fetch(url,{headers:{apikey:SUPA_ANON}});
+    if(!r.ok) return false;
+    const rows=await r.json();
+    if(!rows || !rows.length) return false;
+    const built=buildSkiFromRows(rows);
+    if(!Object.keys(built).length) return false;
+    SKI=built; SKI_DESTS=Object.keys(built); SKI_SOURCE='Supabase ('+rows.length+' אתרים)';
+    for(const k in built) CITY[k]={he:built[k].he,cc:built[k].cc,fresh:false,ski:true};
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ===== Jewish POIs: load from base, index by country ===== */
+const JEWISH_KINDS={synagogue:'בית כנסת',chabad:'חב״ד',mikveh:'מקווה',shabbat_lodging:'לינה לשבת',shabbat_meals:'סעודות שבת',kosher_food:'אוכל כשר',tzadik:'קבר צדיק'};
+let POI_BY_COUNTRY={};
+async function loadJewish(){
+  if(!SUPA_ANON || SUPA_ANON.indexOf('PASTE_')>=0) return false;
+  try{
+    const kinds=Object.keys(JEWISH_KINDS).join(',');
+    const r=await fetch(`${SUPA_URL}/rest/v1/pois?select=kind,country,nearest_iata&kind=in.(${kinds})&active=eq.true`,{headers:{apikey:SUPA_ANON}});
+    if(!r.ok) return false;
+    const rows=await r.json();
+    const idx={};
+    for(const p of rows){ if(!p.country)continue; const c=p.country.toLowerCase(); (idx[c]=idx[c]||new Set()).add(p.kind); }
+    POI_BY_COUNTRY=idx; return true;
+  }catch(e){ return false; }
+}
+const COUNTRY_HE2EN={'רומניה':'romania','יוון':'greece','גאורגיה':'georgia','ארמניה':'armenia','אלבניה':'albania','סלובניה':'slovenia','פורטוגל':'portugal','מונטנגרו':'montenegro','בריטניה':'united kingdom','צרפת':'france','איטליה':'italy','ספרד':'spain','קפריסין':'cyprus','הולנד':'netherlands','הונגריה':'hungary','צ׳כיה':'czechia','אוסטריה':'austria','גרמניה':'germany','בולגריה':'bulgaria','שוויץ':'switzerland','סלובקיה':'slovakia','ארה"ב':'united states'};
+function normCountry(c){ c=(c||'').trim(); return (COUNTRY_HE2EN[c]||c).toLowerCase(); }
+function jewishTagFor(cc){
+  const countries=(cc||'').split('/').map(s=>normCountry(s)).filter(Boolean);
+  const kinds=new Set();
+  countries.forEach(c=>{ if(POI_BY_COUNTRY[c]) POI_BY_COUNTRY[c].forEach(k=>kinds.add(k)); });
+  if(!kinds.size) return null;
+  return [...kinds].map(k=>JEWISH_KINDS[k]).filter(Boolean);
+}
+function adapt(f){
+  const c=CITY[f.to]||{he:f.to,cc:'',fresh:false};
+  const durTo=f.durationToMin ?? (f.durationMin?Math.round(f.durationMin/2):180);
+  const durBack=f.durationBackMin ?? (f.durationMin?Math.round(f.durationMin/2):180);
+  return {to:f.to,cityHe:c.he,cc:c.cc,fresh:c.fresh,al:f.airline,alHe:AIRLN[f.airline]||f.airline,
+    price:f.price,stops:f.stops||0,depUTC:f.depUTC,retUTC:f.retUTC,durTo,durBack,deep_link:f.deep_link};
+}
+function passesHard(f,I){
+  for(const c of (I.constraints||[])){
+    if(c.type==='airline' && f.al!==c.value) return false;
+    if(c.type==='noShabbat'){const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack); if(TS&&TS.k==='fly') return false;}
+  }
+  return true;
+}
+const RAW={price:f=>f.price,novelty:f=>f.fresh?1:0,comfort:f=>f.stops===0?1:0.4};
+function rankLive(flights,I){
+  let c=flights.filter(f=>passesHard(f,I));
+  let scs=(I.scorers||[]).filter(s=>RAW[s.name]); if(!scs.length)scs=[{name:'price',w:3}];
+  const norm={};
+  for(const s of scs){const v=c.map(f=>RAW[s.name](f));const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1;norm[s.name]=x=>s.name==='price'?1-(x-mn)/rng:(mx===mn?0.5:(x-mn)/rng);}
+  for(const f of c){f._s=0;for(const s of scs)f._s+=norm[s.name](RAW[s.name](f))*(s.w||1);}
+  c.sort((a,b)=>b._s-a._s); return c;
+}
+
+/* ===== busy-weeks brick (researched, 2027 ski season) + ski selection ===== */
+const PEAK=[
+  {from:'2026-12-19',to:'2027-01-08',why:'חג המולד + ראש השנה + זנב חופשת החורף האיטלקית (עד ~8.1)'},
+  {from:'2027-02-13',to:'2027-02-22',why:'שיא: חצי-טרמסטר בריטניה+צרפת+אוסטריה+הולנד'},
+];
+const BUSY=[ {from:'2027-02-06',to:'2027-03-08',why:'חופשות סקי אירופיות (אזורי צרפת)'} ];
+function absISO(iso){const m=iso.match(/(\d{4})-(\d{2})-(\d{2})/);return gregToAbs(+m[1],+m[2],+m[3]);}
+function busyLevel(depAbs,retAbs){
+  for(const w of PEAK) if(depAbs<=absISO(w.to)&&retAbs>=absISO(w.from)) return {k:'peak',why:w.why};
+  for(const w of BUSY) if(depAbs<=absISO(w.to)&&retAbs>=absISO(w.from)) return {k:'busy',why:w.why};
+  return null;
+}
+function tierScore(tripK,busy){return (tripK==='away'?2:0)+(busy?(busy.k==='peak'?1.6:0.7):0);}
+// annotate a calendar flight with date/shabbat/busy, given the user's floor + allowed start days
+function annotate(f,fromAbs,allowedDows){
+  const depAbs=ilAbs(f.depUTC);
+  const landUTC=f.retUTC?f.retUTC+(f.durBack||180)*60000:f.depUTC;
+  const retAbs=ilAbs(landUTC);
+  const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
+  return {...f,depAbs,retAbs,TS,busy:busyLevel(depAbs,retAbs),
+    inRange:depAbs>=fromAbs, startOk:allowedDows.includes(dow(depAbs))};
+}
+// from many calendar flights across ski destinations -> best valid trip per destination, ranked
+function skiSelect(flights,fromAbs,allowedDows,noFly){
+  const ann=flights.map(f=>annotate(f,fromAbs,allowedDows))
+    .filter(x=>x.inRange && x.startOk && (!noFly || x.TS.k!=='fly'));
+  const best={};
+  for(const x of ann){
+    const key=x.to;
+    const sc=tierScore(x.TS.k,x.busy)*100000 + x.price; // tier first, then price
+    if(!best[key] || sc<best[key]._sc){ x._sc=sc; best[key]=x; }
+  }
+  return Object.values(best).sort((a,b)=>a._sc-b._sc);
+}
+/* ===== generic flexible date selector (any destination): nights + start day + Shabbat relation ===== */
+function nextMonth(ym){ const [y,m]=ym.split('-').map(Number); return new Date(Date.UTC(y,m,1)).toISOString().slice(0,7); }
+async function fetchFlex(origin,dest,months,nights){
+  const tasks=months.map(m=>fetchCalOne(origin,dest,m,nights).catch(()=>[]));
+  const res=await Promise.all(tasks); return res.flat();
+}
+// opts: { startDow: null|0..6, shabbat: 'any'|'none'|'away' }. Never allows flying on Shabbat.
+function flexSelect(flights,opts){
+  const out=[];
+  for(const f of flights){
+    if(!f.depUTC||!f.retUTC) continue;
+    if(opts.startDow!=null && dow(ilAbs(f.depUTC))!==opts.startDow) continue;
+    const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
+    if(TS && TS.k==='fly' && !(typeof STATE!=='undefined' && STATE.allowShabbat)) continue;   // travel on Shabbat (off by default)
+    if(opts.shabbat==='none' && TS && TS.k==='away') continue;        // want no Shabbat at all
+    if(opts.shabbat==='away' && (!TS || TS.k!=='away')) continue;     // want Shabbat at destination
+    out.push({...f,TS});
+  }
+  out.sort((a,b)=>a.price-b.price);
+  const seen=new Set(),res=[];
+  for(const x of out){ if(seen.has(x.depUTC))continue; seen.add(x.depUTC); res.push(x); }
+  return res;
+}
+/* ===== window generator: build valid date-windows from rules, attach cache prices, classify Shabbat by date ===== */
+const DOW_FULL=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+function* dateRange(fromISO,toISO){ let d=new Date(fromISO+'T00:00:00Z'); const end=new Date(toISO+'T00:00:00Z'); while(d<=end){ yield new Date(d); d=new Date(d.getTime()+864e5);} }
+function onewayShabbat(dep){
+  const dow=new Date(dep+'T12:00:00Z').getUTCDay();
+  if(dow===6) return {k:'fly',t:'יציאה בשבת'};
+  if(dow===5) return {k:'fri',t:'יציאה בשישי'};
+  return {k:'clean',t:'יציאה'};
+}
+function onewayWindows(){
+  const today=new Date().toISOString().slice(0,10);
+  let deps=[];
+  if(STATE.dateMode==='exact'){
+    const f=+STATE.flexDays||0;
+    for(let i=-f;i<=f;i++) deps.push(_jAddDays(STATE.fromDate,i));
+    deps=deps.filter(d=>d>=today).sort((a,b)=>Math.abs(_nightsBetween(STATE.fromDate,a))-Math.abs(_nightsBetween(STATE.fromDate,b)));
+  }else if(STATE.dateMode==='month'){
+    const ms=(STATE.months.length?STATE.months:[(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7)]).slice().sort();
+    for(const mm of ms){ const [y,m]=mm.split('-').map(Number); const dim=new Date(Date.UTC(y,m,0)).getUTCDate(); for(let d=1;d<=dim;d++) deps.push(`${mm}-${String(d).padStart(2,'0')}`); }
+    deps=deps.filter(d=>d>=today);
+  }else{
+    let d=STATE.fromDate<today?today:STATE.fromDate; while(d<=STATE.toDate){ deps.push(d); d=_jAddDays(d,1); }
+  }
+  const allowFly=STATE.allowShabbat||STATE.shabbatTime;
+  return deps.map(dep=>({start:dep, ret:null, nights:0, oneway:true, TS:onewayShabbat(dep), price:null}))
+             .filter(w=> w.TS.k!=='fly' || allowFly);
+}
+function genWindows(fromISO,toISO,rules){
+  const out=[];
+  for(const start of dateRange(fromISO,toISO)){
+    if(rules.startDows && !rules.startDows.includes(start.getUTCDay())) continue;
+    for(let n=rules.nightsMin;n<=rules.nightsMax;n++){
+      const ret=new Date(start.getTime()+n*864e5);
+      out.push({start:start.toISOString().slice(0,10),nights:n,ret:ret.toISOString().slice(0,10)});
+    }
+  }
+  return out;
+}
+function windowShabbat(startISO,retISO){
+  const s=new Date(startISO+'T12:00:00Z'), r=new Date(retISO+'T12:00:00Z');
+  const sd=s.getUTCDay(), rd=r.getUTCDay();
+  if(sd===6||rd===6) return {k:'fly',t:'טיסה בשבת'};
+  let away=false;
+  for(let d=new Date(s.getTime()+864e5); d<r; d=new Date(d.getTime()+864e5)) if(d.getUTCDay()===6){away=true;break;}
+  if(sd===5) return {k:'fri',t:'יציאה בשישי — לבדוק זמן'};
+  if(rd===5) return {k:'fri',t:'חזרה בשישי — לבדוק זמן'};
+  if(away) return {k:'away',t:'שבת ביעד'};
+  return {k:'clean',t:'נקי משבת'};
+}
+function keepByShabbat(k,pref){
+  if(k==='fly') return (typeof STATE!=='undefined' && (STATE.allowShabbat||STATE.shabbatTime));
+  if(pref==='none') return k==='clean'||k==='fri';
+  if(pref==='away') return k==='away';
+  return true;
+}
+// expand a center departure/return pair into all valid combinations within ±flex days
+function flexWindows(fromISO,toISO,flex){
+  const _add=(iso,n)=>new Date(Date.parse(iso+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+  const out=[];
+  for(let di=-flex; di<=flex; di++){
+    const dep=_add(fromISO,di);
+    for(let ri=-flex; ri<=flex; ri++){
+      const ret=_add(toISO,ri);
+      const nts=Math.round((Date.parse(ret)-Date.parse(dep))/864e5);
+      if(nts<1) continue;
+      const TS=windowShabbat(dep,ret);
+      if(TS.k==='fly' && !(typeof STATE!=='undefined' && (STATE.allowShabbat||STATE.shabbatTime))) continue; // travel on Shabbat (off by default)
+      out.push({start:dep,ret,nights:nts,TS,price:null,_prox:Math.abs(di)+Math.abs(ri)});
+    }
+  }
+  out.sort((a,b)=>a._prox-b._prox||a.start.localeCompare(b.start)); // closest to chosen dates first
+  return out;
+}
+async function fetchPriceMap(origin,dest,months,nMin,nMax){
+  const tasks=[];
+  for(const m of months) for(let n=nMin;n<=nMax;n++)
+    tasks.push(fetchCalOne(origin,dest,m,n).then(fs=>({n,fs})).catch(()=>({n,fs:[]})));
+  const res=await Promise.all(tasks); const map={};
+  for(const {n,fs} of res) for(const f of fs){
+    const dd=new Date(f.depUTC).toISOString().slice(0,10), key=dd+'|'+n;
+    if(map[key]==null||f.price<map[key]){ map[key]=f.price; map['link|'+key]=f.deep_link; }
+  }
+  return map;
+}
+function assembleWindows(fromISO,toISO,rules,priceMap,shabPref){
+  const res=[];
+  for(const w of genWindows(fromISO,toISO,rules)){
+    const TS=windowShabbat(w.start,w.ret);
+    if(!keepByShabbat(TS.k,shabPref)) continue;
+    const key=w.start+'|'+w.nights;
+    res.push({...w,TS,price:priceMap[key]??null,deep_link:priceMap['link|'+key]||null});
+  }
+  res.sort((a,b)=>{ if(a.price==null&&b.price==null) return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
+  return res;
+}
+/* valid windows without prices (for the RapidAPI flow) */
+function genValidWindows(fromISO,toISO,rules,shabPref){
+  const res=[];
+  for(const w of genWindows(fromISO,toISO,rules)){
+    const TS=windowShabbat(w.start,w.ret);
+    if(!keepByShabbat(TS.k,shabPref)) continue;
+    res.push({...w,TS,price:null,deep_link:null});
+  }
+  return res;
+}
+/* fetch REAL prices from the RapidAPI edge function for given date-pairs */
+let LAST_OJ_DIST=null;
+// alternative exit airports with real direct flights home (the in-airport itself is the baseline)
+const EXIT_AIRPORTS={ 'רומניה':['CLJ','IAS'] };
+const AIRPORT_HE={ OTP:'בוקרשט', BUH:'בוקרשט', CLJ:'קלוז׳', IAS:'יאשי' };
+function exitsFor(dest){ const c=(CITY[dest]||{}).cc; return EXIT_AIRPORTS[c]||null; }
+async function _oneway(from,to,date,adults,includeStops){
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({oneway:true,from,to,date,adults:adults||2,includeStops:!!includeStops})});
+    if(!r.ok) return null;
+    const j=await r.json(); return (j&&j.ok)?(j.leg||null):null;
+  }catch(e){ return null; }
+}
+async function _drivingDist(a,b){
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dist:true,a,b})});
+    if(r.ok){ const j=await r.json(); return j&&j.dist?j.dist:null; }
+  }catch(e){}
+  return null;
+}
+async function compareExits(origin,inAirport,exits,trip,adults,includeStops,baselinePrice,baselineDirect){
+  // baseline = the in-airport round-trip price (already known); other exits = open-jaw (outbound + their return)
+  const options=[];
+  const ojExits=exits.filter(ex=>ex.toUpperCase()!==inAirport.toUpperCase());
+  // baseline row first
+  if(baselinePrice!=null) options.push({exit:inAirport,price:baselinePrice,isDirect:!!baselineDirect,km:0,mins:0,baseline:true});
+  // price the shared outbound once
+  let outLeg=null;
+  if(ojExits.length){ outLeg=await _oneway(origin,inAirport,trip.departureDate,adults,includeStops); }
+  for(const ex of ojExits){
+    const back=await _oneway(ex,origin,trip.returnDate,adults,includeStops);
+    const dist=await _drivingDist(inAirport,ex);
+    const price=(outLeg&&back)?(outLeg.price+back.price):null;
+    options.push({exit:ex,price,isDirect:!!(outLeg&&back&&outLeg.isDirect&&back.isDirect),carrier:[outLeg&&outLeg.carrier,back&&back.carrier].filter(Boolean).join(' / ')||null,km:dist?dist.km:null,mins:dist?dist.mins:null});
+  }
+  return options.length?options:null;
+}
+function exitCmpHtml(inAirport,opts,trip){
+  if(!opts||!opts.length) return '';
+  const sorted=opts.slice().sort((a,b)=>{ if(a.price==null&&b.price==null)return 0; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
+  const ad=STATE.adults||2; const O=STATE.origin.toUpperCase();
+  const rows=sorted.map((o,idx)=>{
+    const he=AIRPORT_HE[o.exit]||(CITY[o.exit]&&CITY[o.exit].he)||o.exit;
+    const price=o.price!=null?('€'+Math.round(o.price/ad)+' לאחד'):'<span style="color:var(--mut-2)">אין טיסה בתאריך זה</span>';
+    const dir=o.price!=null?(o.baseline?'הלוך-חזור':(o.isDirect?'ישיר':'עם עצירה')):'';
+    const drv=(o.km!=null&&o.km>0)?(o.km+' ק״מ · '+Math.floor(o.mins/60)+'ש׳'+(o.mins%60?(' '+(o.mins%60)+'ד׳'):'')+' נהיגה'):(o.km===0?'אותו שדה':'');
+    const best=idx===0&&o.price!=null?' <span class="exbest">הכי זול</span>':'';
+    const link=o.baseline
+      ? `https://www.kayak.com/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${trip.returnDate}`
+      : `https://www.kayak.com/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${o.exit.toUpperCase()}-${O}/${trip.returnDate}`;
+    const book=o.price!=null?`<a class="exbook" href="${link}" target="_blank" rel="noopener">הזמן ←</a>`:'';
+    return `<div class="exrow"><span class="exinfo"><b>${he} (${o.exit})</b>${best} · ${price}${dir?(' · '+dir):''}${drv?(' · '+drv):''}</span>${book}</div>`;
+  }).join('');
+  const f=iso=>iso.slice(8)+'.'+(+iso.slice(5,7));
+  return `<div class="excmp"><div class="exhead"><span>✈ השוואת שדות חזרה · כניסה ${AIRPORT_HE[inAirport]||inAirport} · ${f(trip.departureDate)}–${f(trip.returnDate)}</span><span class="exclose" data-cmpclose="${trip.departureDate}|${trip.returnDate}">✕</span></div>${rows}<div class="exnote">מחיר חלופי = הלוך ליעד + חזור משדה אחר · בדוק שהנהיגה שווה את החיסכון</div></div>`;
+}
+async function onExitCompare(s,r){
+  if(!LAST||!LAST.dest)return;
+  const exits=exitsFor(LAST.dest); if(!exits)return;
+  const key=s+'|'+r;
+  LAST.exitState=LAST.exitState||{}; LAST.exitCmp=LAST.exitCmp||{};
+  LAST.exitState[key]='loading'; paintResults();
+  const w=(LAST.ranked||[]).find(x=>x.start===s&&x.ret===r);
+  const opts=await compareExits(STATE.origin||'TLV',LAST.dest,exits,{departureDate:s,returnDate:r},STATE.adults,STATE.includeStops, w?w.price:null, w&&w.info?w.info.isDirect:false);
+  delete LAST.exitState[key];
+  LAST.exitCmp[key]=opts?exitCmpHtml(LAST.dest,opts,{departureDate:s,returnDate:r}):'<div class="excmp"><div class="exnote">לא הצלחתי להשוות כרגע (עומס על השרת).</div></div>';
+  paintResults();
+}
+async function fetchOpenJawPrices(origin,inAirport,outAirport,trips,onProgress,includeStops,adults,children,infants){
+  const map={}; RAPID_DIAG=""; LAST_OJ_DIST=null;
+  if(!trips.length) return map;
+  if(!outAirport||outAirport.length<3){ RAPID_DIAG='חסר קוד שדה יציאה'; return map; }
+  // resolve all three airport ids ONCE (avoids re-resolving every call -> rate limit)
+  let ids=null;
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({resolveOJ:true,origin,inAirport,outAirport})});
+    if(!r.ok){ RAPID_DIAG='שלב זיהוי נכשל (HTTP '+r.status+')'; return map; }
+    ids=await r.json();
+  }catch(e){ RAPID_DIAG='שלב זיהוי: '+e.message; return map; }
+  if(!ids||!ids.ok){ RAPID_DIAG='זיהוי שדות נכשל'+(ids&&ids.detail?(' · '+JSON.stringify(ids.detail)):''); return map; }
+  // driving distance once
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dist:true,a:inAirport,b:outAirport})});
+    if(r.ok){ const j=await r.json(); if(j&&j.dist) LAST_OJ_DIST=j.dist; }
+  }catch(e){}
+  async function priceOne(trip, incl){
+    for(let attempt=0; attempt<3; attempt++){
+      try{
+        const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({openJaw:true,origin,inAirport,outAirport,originId:ids.origin_id,inId:ids.in_id,outId:ids.out_id,trips:[trip],adults:adults||2,children:children||0,infants:infants||0,includeStops:!!incl})});
+        if(r.status===429){ RAPID_DIAG='מגבלת קריאות (429)'; await _sleep(2500); continue; }
+        if(!r.ok){ RAPID_DIAG='בדיקת מחיר נכשלה (HTTP '+r.status+')'; return null; }
+        const j=await r.json();
+        if(j&&j.dist&&LAST_OJ_DIST==null) LAST_OJ_DIST=j.dist;
+        if(j&&j.ok&&Array.isArray(j.results)){ const res=j.results.find(x=>x.price!=null); if(res) return res; return null; }
+        if(j&&j.error){ RAPID_DIAG='שרת: '+j.error; }
+        return null;
+      }catch(e){ RAPID_DIAG='בדיקת מחיר: '+e.message; }
+    }
+    return null;
+  }
+  let done=0; const LIMIT=2; // open-jaw = double the calls, so go gentler on the rate limit
+  async function worker(queue){
+    while(queue.length){
+      const trip=queue.shift();
+      let res=await priceOne(trip, includeStops);
+      if(!res && !includeStops){ res=await priceOne(trip, true); }
+      if(res) map[res.departureDate+'|'+res.returnDate]=res;
+      done++; if(onProgress) onProgress(done,trips.length);
+    }
+  }
+  const queue=trips.slice();
+  if(onProgress) onProgress(0,trips.length);
+  await Promise.all(Array(Math.min(LIMIT,queue.length)).fill(0).map(()=>worker(queue)));
+  return map;
+}
+async function fetchPricesFor(trips,params,progressCb){
+  if(!trips.length) return {};
+  return params.useOJ
+    ? await fetchOpenJawPrices(params.origin, params.dest, params.outAirport, trips, progressCb, params.includeStops, params.adults, params.children, params.infants)
+    : await fetchRapidPrices(params.origin, params.dest, trips, progressCb, params.includeStops, params.adults, params.children, params.infants);
+}
+async function loadMoreWindows(){
+  if(!LAST||!LAST.allWindows||LAST.loadingMore) return;
+  const next=LAST.allWindows.filter(w=>!w._priced).slice(0,6);
+  if(!next.length) return;
+  LAST.loadingMore=true; paintResults();
+  const priceMap=await fetchPricesFor(next.map(w=>({departureDate:w.start,returnDate:w.ret})), LAST.priceParams, null);
+  next.forEach(w=>{ w._priced=true; const m=priceMap[w.start+'|'+w.ret]; if(m){ w.price=m.price; w.info=m; } if(LAST.zt&&w.info) w.shabV=shabbatVerdict(w,LAST.zt); });
+  LAST.loadingMore=false;
+  LAST.ranked=rankedWindows(LAST.allWindows);
+  paintResults();
+}
+// Resolve a bare IATA/city code to a Skyscanner entityId via the WORKING suggest
+// path, and cache it on CITY[code]. This way resolveOnly receives an explicit
+// originId/destId and never has to match a bare IATA itself (fixes TLV:no-match,
+// since the default origin TLV had no _entityId while picked dests like MXP did).
+const _entIdCache={};
+const ENT_LS_KEY='tf_entids';
+function _saveEntId(code,id){ try{ const j=JSON.parse(localStorage.getItem(ENT_LS_KEY)||'{}'); j[code]=id; localStorage.setItem(ENT_LS_KEY,JSON.stringify(j)); }catch(e){} }
+function _loadEntIds(){ try{ const j=JSON.parse(localStorage.getItem(ENT_LS_KEY)||'{}'); for(const k in j){ if(!CITY[k])CITY[k]={he:k,cc:''}; if(!CITY[k]._entityId)CITY[k]._entityId=j[k]; } }catch(e){} }
+// "E27544068" is our internal code for an entityId-only city (no IATA). The numeric
+// part IS the Skyscanner entityId the edge wants as destId/originId.
+const _codeEntity=code=>{ const m=/^E(\d+)$/i.exec(code||''); return m?m[1]:null; };
+let FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()}; // how many flights + which carriers the edge returns (diagnostic)
+let EDGE_DIAG=null; // raw Skyscanner diagnostic from the edge (set when the new edge is deployed)
+// Rank ALL priced flights for one window. Each gets its own ._shabV. When not allowing
+// Shabbat flights, non-forbidden are ordered first; otherwise pure price order.
+function _rankFlights(results,trip){
+  let priced=(results||[]).filter(x=>x && x.price!=null);
+  if(!priced.length) return [];
+  priced.forEach(x=>{ x._shabV = _selZT ? shabbatVerdict({start:trip.departureDate,ret:trip.returnDate,info:x},_selZT) : null; });
+  const forb=x=>!!(x._shabV && x._shabV.forbidden);
+  priced.sort((a,b)=>{ if(!STATE.allowShabbat){ const fa=forb(a)?1:0,fb=forb(b)?1:0; if(fa!==fb) return fa-fb; } return (+a.price)-(+b.price); });
+  return priced;
+}
+function _pickFlight(results,trip){
+  if(Array.isArray(results)){ FLT_DIAG.max=Math.max(FLT_DIAG.max,results.length); FLT_DIAG.maxPriced=Math.max(FLT_DIAG.maxPriced,results.filter(x=>x&&x.price!=null).length);
+    results.forEach(x=>{ if(x&&x.carrier){ const f=carrierFamily(x.carrier); FLT_DIAG.carriers.add(f); if(x.price==null) FLT_DIAG.noprice.add(f); } }); }
+  const ranked=_rankFlights(results,trip);
+  if(!ranked.length) return null;
+  const primary=ranked[0];
+  primary._options=ranked; // full list (incl. primary) for multi-flight display
+  return primary;
+}
+function _carrierDiag(){ return ''; /* carrier breakdown kept in EDGE_DIAG / FLT_DIAG for console only */ }
+// combine one outbound leg + one return leg into a single round-trip flight option (the shape
+// flightCard expects). Used to build the full outbound×return cross-product for max coverage.
+function _combineLegs(o,i,trip){
+  return {
+    departureDate:trip.departureDate, returnDate:trip.returnDate, currency:'EUR',
+    price:(o.price!=null&&i.price!=null)?o.price+i.price:null,
+    isDirect:!!(o.isDirect&&i.isDirect), altPrice:null,
+    carrier:[o.carrier,i.carrier].filter(Boolean).join(' / ')||null, operatedBy:null,
+    stops:Math.max(o.stops||0,i.stops||0),               // per-leg semantics for the maxStops filter
+    durationToMin:o.durationMin??null, durationBackMin:i.durationMin??null,
+    outLayovers:o.layovers||[], backLayovers:i.layovers||[],
+    outDep:o.dep, outArr:o.arr, backDep:i.dep, backArr:i.arr,
+    outDepISO:o.depISO, outArrISO:o.arrISO, backDepISO:i.depISO, backArrISO:i.arrISO,
+  };
+}
+async function ensureEntityId(code){
+  if(!code) return null;
+  if(CITY[code]&&CITY[code]._entityId) return CITY[code]._entityId;
+  const ce=_codeEntity(code);
+  if(ce){ if(!CITY[code])CITY[code]={he:code,cc:''}; CITY[code]._entityId=ce; return ce; } // bare entityId code; suggest can't resolve it
+  if(_entIdCache[code]!==undefined) return _entIdCache[code];
+  // the suggest endpoint is flaky — retry, and NEVER cache a failure (a transient miss must not
+  // poison the whole session, which is what made TLV fail on every "try again")
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({suggest:true,q:code})});
+      if(r.ok){
+        const j=await r.json();
+        const ms=(j&&j.ok&&j.matches)?j.matches:[];
+        const hit=ms.find(m=>(m.iata||'').toUpperCase()===String(code).toUpperCase())||ms[0];
+        if(hit&&hit.entityId){
+          if(!CITY[code])CITY[code]={he:hit.name+(hit.sub?(' · '+hit.sub):''),cc:''};
+          CITY[code]._entityId=hit.entityId; _entIdCache[code]=hit.entityId; _saveEntId(code,hit.entityId);
+          return hit.entityId;
+        }
+      }
+    }catch(e){}
+    await _sleep(500);
+  }
+  return null; // failure NOT cached — the next search retries
+}
+async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults,children,infants){
+  const map={}; RAPID_DIAG=""; FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()};
+  if(!trips.length) return map;
+  // step 1: resolve airport ids once (use a known entityId from autocomplete if we have one)
+  let ids=null;
+  await ensureEntityId(origin); await ensureEntityId(dest);
+  const destEntity=(CITY[dest]&&CITY[dest]._entityId)||_codeEntity(dest)||null;
+  const originEntity=(CITY[origin]&&CITY[origin]._entityId)||_codeEntity(origin)||null;
+  try{
+    const body={origin,destination:dest,resolveOnly:true};
+    if(destEntity) body.destId=destEntity;
+    if(originEntity) body.originId=originEntity;
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){ RAPID_DIAG='שלב זיהוי נכשל (HTTP '+r.status+')'; return map; }
+    ids=await r.json();
+  }catch(e){ RAPID_DIAG='שלב זיהוי: '+e.message; return map; }
+  if(!ids||!ids.ok){ RAPID_DIAG='זיהוי שדה תעופה נכשל'+(ids&&ids.detail?(' · '+Object.entries(ids.detail).map(e=>e[0]+':'+e[1]).join(', ')):''); return map; }
+  // step 2: price each trip — retry on rate-limit, transient errors, AND empty results
+  // (RapidAPI sometimes returns a completed-but-empty search; a fresh retry usually recovers)
+  async function priceOne(trip, incl){
+    for(let attempt=0; attempt<3; attempt++){
+      try{
+        const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({originId:ids.origin_id,destId:ids.dest_id,trips:[trip],adults:adults||2,children:children||0,infants:infants||0,includeStops:!!incl})});
+        if(r.status===429){ RAPID_DIAG='מגבלת קריאות (429)'; await _sleep(1500); continue; }
+        if(!r.ok){ RAPID_DIAG='בדיקת מחיר נכשלה (HTTP '+r.status+')'; await _sleep(700); continue; }
+        const j=await r.json();
+        if(j&&j.ok&&Array.isArray(j.results)){
+          const win=j.results[0];
+          if(win && win.diag) EDGE_DIAG=win.diag;
+          const hasOpts=!!(win && Array.isArray(win.options));
+          FLT_DIAG.hasOptions = FLT_DIAG.hasOptions || hasOpts;
+          // If the edge returned separate outbound/returns lists, build a cross-product with CARRIER
+          // COVERAGE: take the cheapest N of each leg PLUS one representative per carrier and ALL
+          // direct flights — so airlines like El Al / Arkia / ITA (often pricier than the cheapest
+          // connections) are never dropped before pairing. Then the machinery ranks cheapest-first,
+          // filters Shabbat per-leg, dedups, and shows top-5 with "show more".
+          let flights;
+          if(win && Array.isArray(win.outbound) && win.outbound.length && Array.isArray(win.returns) && win.returns.length){
+            const _cover=list=>{
+              const out=[], seenCar=new Set(); let n=0;
+              for(const f of list){                                   // list already sorted cheapest-first
+                const fam=carrierFamily(f.carrier);
+                const keep = n<10 || f.isDirect || (fam && !seenCar.has(fam)); // cheap 10 + every direct + 1 per carrier
+                if(keep){ out.push(f); if(fam) seenCar.add(fam); }
+                n++;
+              }
+              return out.slice(0,24); // safety cap per leg
+            };
+            const O=_cover(win.outbound), I=_cover(win.returns);
+            flights=[]; for(const o of O) for(const ii of I){ const cmb=_combineLegs(o,ii,trip); if(cmb.price!=null) flights.push(cmb); }
+          } else {
+            flights=(hasOpts && win.options.length)?win.options:j.results;
+          }
+          const res=_pickFlight(flights,trip);
+          if(res) return res;
+          RAPID_DIAG='חיפוש חזר ריק — מנסה שוב'; await _sleep(800); continue; // transient empty -> retry fresh
+        }
+        if(j&&j.error){ RAPID_DIAG='שרת: '+j.error; await _sleep(700); continue; }
+        await _sleep(700);
+      }catch(e){ RAPID_DIAG='בדיקת מחיר: '+e.message; await _sleep(700); }
+    }
+    return null;
+  }
+  // step 2: price windows, 3 at a time (faster, but gentle on the rate limit)
+  let done=0;
+  const LIMIT=3; // window concurrency. Each window fans out to 2 legs × (1-2 airports) in the edge,
+                 // all parallel; 3 windows keeps the concurrent-call burst reasonable on the Pro tier.
+  async function worker(queue){
+    while(queue.length){
+      const trip=queue.shift();
+      let res=await priceOne(trip, includeStops);
+      if(!res && !includeStops){ res=await priceOne(trip, true); } // fill empties with a connecting flight
+      if(res) map[res.departureDate+'|'+res.returnDate]=res;
+      done++; if(onProgress) onProgress(done,trips.length);
+    }
+  }
+  const queue=trips.slice();
+  if(onProgress) onProgress(0,trips.length);
+  await Promise.all(Array(Math.min(LIMIT,queue.length)).fill(0).map(()=>worker(queue)));
+  return map;
+}
+async function retune(){
+  if(!LAST||!LAST.allWindows||!LAST.allWindows.length) return;
+  let zt=LAST.zt;
+  if(shabAware()){
+    const ws=LAST.allWindows;
+    const zs=ws.reduce((a,w)=>w.start<a?w.start:a,ws[0].start);
+    const ze=ws.reduce((a,w)=>{const e=w.ret||w.start;return e>a?e:a;},ws[0].ret||ws[0].start);
+    try{ zt=await fetchShabbatTimes(zs,ze); LAST.zt=zt; }catch(e){}
+  }
+  _selZT=zt;
+  let dzt=LAST_DZT;
+  if(shabAware() && LAST.dgeo){
+    const ws=LAST.allWindows;
+    const zs=ws.reduce((a,w)=>w.start<a?w.start:a,ws[0].start);
+    const ze=ws.reduce((a,w)=>{const e=w.ret||w.start;return e>a?e:a;},ws[0].ret||ws[0].start);
+    try{ dzt=await fetchShabbatTimes(zs,ze,LAST.dgeo); LAST_DZT=dzt; }catch(e){}
+  }
+  LAST.allWindows.forEach(w=>{ w.shabV=(shabAware()&&w.info)?shabbatVerdict(w,zt):null;
+    if(dzt&&w.info){ w.destV=destVerdict(w,dzt); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>o._destV=destVerdict({start:w.start,ret:w.ret,info:o},dzt)); }
+  });
+  LAST.ranked=rankedWindows(LAST.allWindows);
+  paintResults();
+}
+let _selZT=null; // zt handed to the per-window price selector for Shabbat-aware flight choice
+let LAST_DZT=null; // destination-side Shabbat times for the current result set
+const shabAware=()=>STATE.shabbatTime||STATE.jewishMode!=='off';
+function maxStopsVal(){ return STATE.maxStops==null ? (STATE.includeStops?2:0) : +STATE.maxStops; }
+function rankedWindows(windows){
+  let priced=windows.filter(w=>w._priced);
+  const total=priced.length;
+  const withPrice=priced.filter(w=>w.price!=null).length;
+  const ms=maxStopsVal();
+  // A window is worth showing if ANY of its priced options satisfies the current filters — judging by
+  // the single cheapest flight (w.info) was the bug: a window with real direct options got dropped just
+  // because its cheapest flight happened to have a stop, and since the cheapest varies per API call the
+  // same search flickered between "results" and "all have stops".
+  let droppedStops=0, droppedShab=0;
+  const kept=priced.filter(w=>{
+    if(w.price==null) return true;                                   // unpriced window — keep as a retry/link placeholder
+    let opts=(w.info&&Array.isArray(w.info._options)&&w.info._options.length)?w.info._options:(w.info?[w.info]:[]);
+    if(!opts.length) return true;                                    // priced but no per-flight detail — keep
+    const priceable=opts.filter(o=>o && (o.price!=null || w.price!=null));
+    const stopsOk=priceable.filter(o=>!(o.stops!=null && o.stops>ms));
+    if(!stopsOk.length){ droppedStops++; return false; }
+    const shabOk=STATE.allowShabbat ? stopsOk : stopsOk.filter(o=>!(o._shabV&&o._shabV.forbidden));
+    if(!shabOk.length){ droppedShab++; return false; }
+    return true;
+  });
+  // a Motzei-Shabbat option is only worth showing if it actually has a (post-havdalah) priced flight
+  const afterMotzei=kept.filter(w=>!(w._motzei && (w.price==null || !w.info)));
+  RANK_DIAG={total,withPrice,droppedShab,droppedStops,ms,kept:afterMotzei.length};
+  return sortWindows(afterMotzei);
+}
+function sortWindows(ws){
+  ws.sort((a,b)=>{
+    if(!!a._prefer!==!!b._prefer) return a._prefer?-1:1;
+    if(a.price==null&&b.price==null)return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
+  return ws;
+}
+/* ===== Jewish availability layer: periods from Hebcal (live), classify each window ===== */
+const JCACHE={};
+const _jAddDays=(iso,n)=>new Date(Date.parse(iso+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+function deriveJewishPeriods(items,profile){
+  // Hebcal uses curly apostrophes (’) in titles; normalize to straight (') so matching is reliable
+  items=items.map(x=>Object.assign({},x,{title:(x.title||'').replace(/[\u2018\u2019]/g,"'")}));
+  const firstWith=(sub)=>{ const it=items.find(x=>x.title&&x.title.indexOf(sub)>=0); return it?it.date:null; };
+  const tammuz=firstWith("Tzom Tammuz")||(items.find(x=>x.title&&x.title.indexOf("Tammuz")>=0&&x.title.indexOf("Rosh Chodesh")<0)||{}).date;
+  const tishaBav=(items.find(x=>x.title&&(x.title.indexOf("Tish'a B'Av")>=0||x.title.indexOf("Tisha B'Av")>=0)&&x.title.indexOf("Erev")<0)||{}).date;
+  const rcAv=(items.find(x=>x.title&&x.title.indexOf("Rosh Chodesh Av")>=0)||{}).date;
+  const rcElul=(items.find(x=>x.title&&x.title.indexOf("Rosh Chodesh Elul")>=0)||{}).date;
+  const roshHashana=(items.find(x=>x.title&&x.title.indexOf("Rosh Hashana")>=0)||{}).date;
+  const periods=[];
+  if(tammuz&&tishaBav) periods.push({start:tammuz,end:tishaBav,label:"בין המצרים",kind:"threeweeks"});
+  if(rcAv&&tishaBav) periods.push({start:rcAv,end:tishaBav,label:"תשעת הימים",kind:"ninedays"});
+  if(tishaBav&&rcElul) periods.push({start:_jAddDays(tishaBav,1),end:_jAddDays(rcElul,-1),label:"בין הזמנים",kind:"beinhazmanim"});
+  if(rcElul) periods.push({start:rcElul,end:roshHashana?_jAddDays(roshHashana,-1):_jAddDays(rcElul,28),label:"אלול",kind:"elul"});
+  const holidays=items.filter(x=>x.yomtov===true).map(x=>({date:x.date,label:x.hebrew||x.title}));
+  const cholHamoed=items.filter(x=>x.title&&x.title.indexOf("CH'M")>=0).map(x=>x.date);
+  // favorable windows
+  const favorable=[];
+  const chan=items.filter(x=>x.title&&x.title.indexOf("Chanukah")>=0).map(x=>x.date).sort();
+  if(chan.length) favorable.push({start:chan[0],end:chan[chan.length-1],label:"חנוכה — חופשה",kind:"good"});
+  const purim=(items.find(x=>x.title&&x.title.indexOf("Purim")>=0&&x.title.indexOf("Shushan")<0)||{}).date;
+  if(purim) favorable.push({start:purim,end:purim,label:"פורים",kind:"good"});
+  const atz=(items.find(x=>x.title&&x.title.indexOf("Yom HaAtzma")>=0)||{}).date;
+  if(atz) favorable.push({start:atz,end:atz,label:"יום העצמאות",kind:"good"});
+  const lag=(items.find(x=>x.title&&(x.title.indexOf("Lag BaOmer")>=0||x.title.indexOf("Lag B'Omer")>=0||x.title.indexOf("LaOmer")>=0))||{}).date;
+  if(lag) favorable.push({start:lag,end:lag,label:"ל״ג בעומר",kind:"good"});
+  if(profile==='teacher'){
+    const y=(tishaBav||rcElul||(items[0]&&items[0].date)||"2026-01-01").slice(0,4);
+    favorable.push({start:y+"-07-01",end:y+"-08-31",label:"חופשת קיץ",kind:"good"});
+  }
+  // Tishrei: after Yom Kippur -> Erev Sukkot is busy with Sukkot prep (caution)
+  const yomKippur=firstWith("Yom Kippur");
+  const sukkotDates=items.filter(x=>x.title&&/^Sukkot/.test(x.title)).map(x=>x.date).sort();
+  const sukkot=sukkotDates[0];
+  if(yomKippur&&sukkot&&_jAddDays(yomKippur,1)<sukkot) periods.push({start:_jAddDays(yomKippur,1),end:_jAddDays(sukkot,-1),label:"הכנות לסוכות",kind:"prep"});
+  // Tishrei bein hazmanim: after Shmini Atzeret/Simchat Torah -> end of Tishrei
+  const shminiAtzeret=firstWith("Shmini Atzeret");
+  const rcCheshvan=firstWith("Rosh Chodesh Cheshvan");
+  if(shminiAtzeret&&rcCheshvan) favorable.push({start:_jAddDays(shminiAtzeret,1),end:_jAddDays(rcCheshvan,-1),label:"בין הזמנים תשרי",kind:"good"});
+  // Nisan bein hazmanim: before Pesach (minus last ~3 prep days) and after Pesach
+  const rcNisan=firstWith("Rosh Chodesh Nisan");
+  const pesachDates=items.filter(x=>x.title&&/^Pesach/.test(x.title)&&x.title.indexOf("Sheni")<0).map(x=>x.date).sort();
+  const pesach=pesachDates[0], pesachEnd=pesachDates[pesachDates.length-1];
+  const rcIyar=firstWith("Rosh Chodesh Iyyar");
+  if(rcNisan&&pesach){
+    const prep=_jAddDays(pesach,-3);
+    if(rcNisan< prep) favorable.push({start:rcNisan,end:_jAddDays(prep,-1),label:"בין הזמנים ניסן",kind:"good"});
+    periods.push({start:prep,end:_jAddDays(pesach,-1),label:"הכנות לפסח",kind:"prep"});
+  }
+  // Sefirat HaOmer: 16 Nisan (2nd day Pesach) for 49 days to Shavuot eve
+  if(pesach) periods.push({start:_jAddDays(pesach,1),end:_jAddDays(pesach,49),label:"ספירת העומר",kind:"omer"});
+  if(pesachEnd&&rcIyar) favorable.push({start:_jAddDays(pesachEnd,1),end:_jAddDays(rcIyar,-1),label:"בין הזמנים ניסן (אחרי)",kind:"good"});
+  // minor fasts (travel permitted, but some prefer not to). Yom Kippur is handled as Yom Tov (blocked) separately.
+  const FASTS=[["Tzom Gedaliah","צום גדליה"],["Asara B'Tevet","עשרה בטבת"],["Ta'anit Esther","תענית אסתר"],["Tzom Tammuz","י״ז בתמוז"],["Tish'a B'Av","תשעה באב"]];
+  const fasts=[];
+  for(const it of items){ if(it.title&&it.title.indexOf("Erev")<0){ for(const fm of FASTS){ if(it.title.indexOf(fm[0])>=0){ fasts.push({date:it.date,label:fm[1]}); break; } } } }
+  return {periods,holidays,cholHamoed,favorable,fasts,profile};
+}
+async function fetchJewishData(fromISO,toISO,profile){
+  const from=_jAddDays(fromISO,-45), to=_jAddDays(toISO,45);
+  const key=from+'|'+to+'|'+(profile||'general');
+  if(JCACHE[key]) return JCACHE[key];
+  try{
+    const url=`${JCAL_URL}?start=${from}&end=${to}&_=${Date.now()}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); const items=j.items||[];
+      window.__hebcalRaw=items.map(x=>x.date+' · '+x.title+(x.yomtov?' [YT]':'')); // diagnostic
+      // capture weekly parsha by its Shabbat (Saturday) date — for the "ערב שבת פרשת X" greeting
+      const pmap={}; for(const it of items){ const t=(it.title||''); const mh=/^פרשת\s+(.+)$/.exec(t), me=/^Parashat\s+(.+)$/i.exec(t); if(mh)pmap[(it.date||'').slice(0,10)]=mh[1]; else if(me)pmap[(it.date||'').slice(0,10)]=me[1]; } window.__parshaBySat=pmap;
+      const data=deriveJewishPeriods(items,profile);
+      window.__jPeriods=[...data.periods.map(p=>p.kind+': '+p.label+' '+p.start+'→'+p.end), ...data.favorable.map(p=>'good: '+p.label+' '+p.start+'→'+p.end)]; // diagnostic
+      JCACHE[key]=data; return data; }
+    else { window.__jErr='HTTP '+r.status; }
+  }catch(e){ window.__jErr=String(e); }
+  return {periods:[],holidays:[],cholHamoed:[],favorable:[],profile};
+}
+const _jOverlap=(s1,e1,s2,e2)=>s1<=e2&&e1>=s2;
+// ---- Shabbat-time layer (TLV side): candle-lighting & havdalah, compared to actual flight times ----
+const ZCACHE={};
+async function fetchShabbatTimes(fromISO,toISO,geo){
+  const lat=geo?geo.lat:LAT, lon=geo?geo.lon:LON, tz=geo?geo.tz:'Asia/Jerusalem';
+  const from=_jAddDays(fromISO,-3), to=_jAddDays(toISO,3);
+  const m = STATE.havdalah==='rt72' ? '&m=72' : ''; // rt72 -> fixed 72 min; else 8.5deg (M=on, default in edge)
+  const key=(geo?geo.lat+','+geo.lon:'TLV')+'|'+from+'|'+to+'|'+STATE.candleMin+'|'+STATE.havdalah;
+  if(ZCACHE[key]) return ZCACHE[key];
+  const res={candle:{},havdalah:{},sunrise:{}};
+  try{
+    const url=`${JCAL_URL}?zmanim=1&lat=${lat}&lng=${lon}&tzid=${encodeURIComponent(tz)}&start=${from}&end=${to}&b=${STATE.candleMin}${m}&_=${Date.now()}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); for(const it of (j.zmanim||[])){
+      const d=(it.date||'').slice(0,10);
+      if(it.category==='candles') res.candle[d]=it.date;
+      else if(it.category==='havdalah') res.havdalah[d]=it.date;
+    } if(j.sunrise) res.sunrise=j.sunrise; if(!geo) window.__zmanim=res; }
+    else window.__zErr='HTTP '+r.status;
+  }catch(e){ window.__zErr=String(e); }
+  ZCACHE[key]=res; return res;
+}
+const _isoDate=s=>s?s.slice(0,10):'';
+const _isoMin=s=>s?(+s.slice(11,13)*60 + +s.slice(14,16)):null; // wall-clock minutes (both flight & zmanim are TLV local)
+const _hm=mins=>String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+const _gap=mins=>(mins<0?'-':'')+Math.floor(Math.abs(mins)/60)+':'+String(Math.abs(mins)%60).padStart(2,'0');
+// build "YYYY-MM-DDTHH:MM" from a window date + a flight clock time ("13:45"); used when
+// the edge gives only outDep/backArr (HH:MM) and not the full *ISO* fields.
+const _hmMin=hhmm=>{ const m=/(\d{1,2}):(\d{2})/.exec(hhmm||''); return m?(+m[1]*60 + +m[2]):null; };
+const _mkISO=(ymd,hhmm)=>{ const m=/(\d{1,2}):(\d{2})/.exec(hhmm||''); return (ymd&&m)?(ymd+'T'+String(m[1]).padStart(2,'0')+':'+m[2]):null; };
+const _dow=d=>d?new Date(d+'T12:00:00Z').getUTCDay():null; // 0=Sun … 6=Sat
+// destination coordinates: small built-in table for common destinations (instant),
+// anything else is geocoded online (Open-Meteo, free/no-key) and cached.
+const DEST_GEO={
+  MXP:{lat:45.63,lon:8.72,tz:'Europe/Rome'}, LIN:{lat:45.45,lon:9.28,tz:'Europe/Rome'}, BGY:{lat:45.67,lon:9.70,tz:'Europe/Rome'},
+  FCO:{lat:41.80,lon:12.25,tz:'Europe/Rome'}, CIA:{lat:41.80,lon:12.59,tz:'Europe/Rome'}, VRN:{lat:45.40,lon:10.89,tz:'Europe/Rome'}, TRN:{lat:45.20,lon:7.65,tz:'Europe/Rome'},
+  BUH:{lat:44.57,lon:26.10,tz:'Europe/Bucharest'}, OTP:{lat:44.57,lon:26.10,tz:'Europe/Bucharest'}, CLJ:{lat:46.78,lon:23.69,tz:'Europe/Bucharest'}, IAS:{lat:47.18,lon:27.62,tz:'Europe/Bucharest'},
+  ATH:{lat:37.94,lon:23.95,tz:'Europe/Athens'}, SKG:{lat:40.52,lon:22.97,tz:'Europe/Athens'}, HER:{lat:35.34,lon:25.18,tz:'Europe/Athens'}, RHO:{lat:36.41,lon:28.09,tz:'Europe/Athens'},
+  LCA:{lat:34.88,lon:33.63,tz:'Asia/Nicosia'}, PFO:{lat:34.72,lon:32.49,tz:'Asia/Nicosia'},
+  TBS:{lat:41.67,lon:44.95,tz:'Asia/Tbilisi'}, BCN:{lat:41.30,lon:2.08,tz:'Europe/Madrid'}, MAD:{lat:40.49,lon:-3.57,tz:'Europe/Madrid'},
+  BUD:{lat:47.44,lon:19.26,tz:'Europe/Budapest'}, PRG:{lat:50.10,lon:14.26,tz:'Europe/Prague'}, VIE:{lat:48.11,lon:16.57,tz:'Europe/Vienna'},
+  CDG:{lat:49.01,lon:2.55,tz:'Europe/Paris'}, ORY:{lat:48.73,lon:2.36,tz:'Europe/Paris'}, JFK:{lat:40.64,lon:-73.78,tz:'America/New_York'}, EWR:{lat:40.69,lon:-74.17,tz:'America/New_York'},
+  GVA:{lat:46.24,lon:6.11,tz:'Europe/Zurich'}, ZRH:{lat:47.46,lon:8.55,tz:'Europe/Zurich'}, INN:{lat:47.26,lon:11.34,tz:'Europe/Vienna'}, SZG:{lat:47.79,lon:13.00,tz:'Europe/Vienna'},
+  MUC:{lat:48.35,lon:11.79,tz:'Europe/Berlin'}, LYS:{lat:45.73,lon:5.08,tz:'Europe/Paris'}, SOF:{lat:42.69,lon:23.41,tz:'Europe/Sofia'},
+  LON:{lat:51.47,lon:-0.45,tz:'Europe/London'}, LHR:{lat:51.47,lon:-0.45,tz:'Europe/London'}
+};
+const _geoCache={};
+async function geocodeDest(code,name){
+  const byBook = code && CITY[code] && CITY[code]._book && DEST_GEO[String(CITY[code]._book).toUpperCase()];
+  if(DEST_GEO[code]) return DEST_GEO[code];
+  if(byBook) return byBook;
+  if(CITY[code]&&CITY[code]._geo) return CITY[code]._geo;
+  if(_geoCache[code]!==undefined) return _geoCache[code];
+  const q=String(name||(CITY[code]&&CITY[code].he)||code).split(' · ')[0].split('—')[0].split('/')[0].trim();
+  if(!q) return (_geoCache[code]=null);
+  try{
+    const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+    if(r.ok){ const j=await r.json(); const h=j&&j.results&&j.results[0];
+      if(h&&h.latitude!=null){ const g={lat:h.latitude,lon:h.longitude,tz:h.timezone||'UTC'}; if(CITY[code])CITY[code]._geo=g; return (_geoCache[code]=g); } }
+  }catch(e){}
+  return (_geoCache[code]=null);
+}
+// destination-side verdict: arriving at the destination Fri eve, or departing it on Motzei Shabbat,
+// compared to the DESTINATION's own candle-lighting / havdalah (flight times are local to each airport)
+function destVerdict(w,dzt){
+  if(!w.info||!dzt) return null;
+  const mb=(+STATE.marginBefore||3)*60, ma=(+STATE.marginAfter||3)*60;
+  const parts=[]; let forbidden=false, worst='good'; const rank={good:0,note:1,tight:2}; const bump=c=>{ if(rank[c]>rank[worst]) worst=c; };
+  // arrival at destination (outArr) — date is w.start, +1 if it lands past midnight
+  let oaDate=w.start;
+  if(!w.info.outArrISO && w.info.outDep && w.info.outArr && _hmMin(w.info.outArr)<_hmMin(w.info.outDep)) oaDate=_jAddDays(w.start,1);
+  const oa=w.info.outArrISO || _mkISO(oaDate, w.info.outArr);
+  if(oa){
+    const dd=_isoDate(oa), dow=_dow(dd), t=_isoMin(oa);
+    if(dow===5){ const ct=_isoMin(dzt.candle[dd]);
+      if(ct!=null && t>ct){ parts.push(`✗ נחיתה ביעד ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
+      else if(ct!=null && t>ct-mb){ parts.push(`ביעד · נחיתה ${_hm(t)} · כניסה ${_hm(ct)} · רק ${_gap(ct-t)} ⚠`); bump('tight'); }
+      else if(ct!=null){ parts.push(`ביעד · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} ✓`); bump('good'); }
+    } else if(dow===6){ parts.push('✗ נחיתה ביעד בשבת'); forbidden=true; }
+  }
+  // departure from destination (backDep) on w.ret
+  if(w.ret){
+    const bd=w.info.backDepISO || _mkISO(w.ret, w.info.backDep);
+    if(bd){
+      const dd=_isoDate(bd), dow=_dow(dd), t=_isoMin(bd);
+      if(dow===6){ const ht=_isoMin(dzt.havdalah[dd]);
+        if(ht!=null && t>=ht+ma){ parts.push(`ביעד · יציאה ${_hm(t)} · צאת שבת ${_hm(ht)} ✓`); bump('good'); }
+        else if(ht!=null && t>=ht){ parts.push(`ביעד · יציאה ${_hm(t)} · צאת שבת ${_hm(ht)} · רק ${_gap(t-ht)} ⚠`); bump('tight'); }
+        else if(ht!=null){ parts.push(`✗ יציאה מהיעד ${_hm(t)} לפני צאת שבת ${_hm(ht)}`); forbidden=true; }
+      } else if(dow===5){ const ct=_isoMin(dzt.candle[dd]); if(ct!=null && t>ct){ parts.push(`✗ יציאה מהיעד ${_hm(t)} אחרי כניסת שבת`); forbidden=true; } }
+    }
+  }
+  if(!parts.length) return null;
+  return {t:parts.join(' · '), cls:forbidden?'bad':worst, forbidden};
+}
+// verdict for a window's TLV-side legs: outbound departs TLV, return lands TLV
+function shabbatVerdict(w,zt){
+  if(!w.info) return null;
+  const mb=(+STATE.marginBefore||3)*60, ma=(+STATE.marginAfter||3)*60;
+  const parts=[]; let forbidden=false, worst='good';
+  const rank={good:0,soft:1,note:2,tight:3};
+  const bump=c=>{ if(rank[c]>rank[worst]) worst=c; };
+  // --- outbound departs TLV ---
+  const od=w.info.outDepISO || _mkISO(w.start, w.info.outDep);
+  if(od){
+    const dd=_isoDate(od), dow=new Date(dd+'T12:00:00Z').getUTCDay(), t=_isoMin(od);
+    if(dow===6){ // Saturday departure -> must be Motzei Shabbat
+      const ht=_isoMin(zt.havdalah[dd]);
+      if(ht==null){ parts.push('מוצ״ש? (חסר זמן צאת שבת)'); bump('note'); }
+      else if(t>=ht+ma){ parts.push(`🕯️ מוצ״ש · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · ${_gap(t-ht)} אחרי צאת שבת ✓`); bump('good'); }
+      else if(t>=ht){ parts.push(`🕯️ מוצ״ש צמוד · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · רק ${_gap(t-ht)} אחרי ⚠`); bump('tight'); }
+      else { parts.push(`✗ המראה ${_hm(t)} לפני צאת שבת ${_hm(ht)} (בשבת)`); forbidden=true; }
+    } else if(dow===5){ // Friday departure from TLV
+      const ct=_isoMin(zt.candle[dd]);
+      if(ct!=null && t>ct){ parts.push(`✗ המראה ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
+      else if(ct!=null){ parts.push(`🕯️ יציאה בשישי · המראה ${_hm(t)} · כניסת שבת ${_hm(ct)} · לבדוק נחיתה ביעד`); bump('note'); }
+    }
+  }
+  // --- return lands TLV ---
+  let baDate=w.ret;
+  if(!w.info.backArrISO && w.info.backArr && w.info.backDep){
+    const dep=_hmMin(w.info.backDep), arr=_hmMin(w.info.backArr);
+    if(dep!=null && arr!=null && arr<dep) baDate=_jAddDays(w.ret,1); // landed after midnight
+  }
+  const ba=w.info.backArrISO || _mkISO(baDate, w.info.backArr);
+  if(ba){
+    const dd=_isoDate(ba), dow=new Date(dd+'T12:00:00Z').getUTCDay(), t=_isoMin(ba);
+    if(dow===6){ parts.push(`✗ נחיתה ${_hm(t)} בשבת`); forbidden=true; }
+    else if(dow===5){
+      const ct=_isoMin(zt.candle[dd]);
+      const thr=friThresholdMin(zt,dd);                  // user-chosen line: sunrise / 06:00 / 08:00
+      const early = thr!=null && t < thr;                // landed before the threshold = plenty of time
+      const sedra = parshaFor(_jAddDays(dd,1));           // parsha of this Shabbat (Saturday = dd+1)
+      const erev = `ערב שבת${sedra?` פרשת ${sedra}`:''}`;
+      if(ct==null){ parts.push(`🕯️ ${erev}? (חסר זמן כניסת שבת)`); bump('note'); }
+      else if(early){
+        // very early / night landing — a SOFT, welcoming note, not an alert
+        const icon = (zt.sunrise && _isoMin(zt.sunrise[dd])!=null && t<_isoMin(zt.sunrise[dd])) ? '🌙' : '🌅';
+        parts.push(`${icon} ${erev} · נחיתה ${_hm(t)} · נשארו ${_gap(ct-t)} שעות ✓`); bump('soft');
+      }
+      else if(t<=ct-mb){ parts.push(`🕯️ ${erev} · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · נשארו ${_gap(ct-t)} שעות ✓`); bump('good'); }
+      else if(t<=ct){ parts.push(`🕯️ ${erev} צמוד · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · רק ${_gap(ct-t)} שעות ⚠`); bump('tight'); }
+      else { parts.push(`✗ נחיתה ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
+    }
+  }
+  if(!parts.length) return null;
+  return {forbidden, cls:forbidden?'bad':(worst==='tight'?'tight':(worst==='soft'?'soft':(worst==='note'?'note':'good'))), t:parts.join(' · ')};
+}
+// Friday-landing alert threshold (user-selectable): land after this -> normal alert; before -> soft note
+function friThresholdMin(zt,dd){
+  const m=STATE.friThreshold||'sunrise';
+  if(m==='06:00') return 360;
+  if(m==='08:00') return 480;
+  return zt && zt.sunrise ? _isoMin(zt.sunrise[dd]) : null; // sunrise (netz) of that Friday
+}
+function parshaFor(satDate){ const mp=window.__parshaBySat||{}; return mp[satDate]||''; }
+// per-day status (most relevant wins) for the day-by-day band
+const DAY_HE={ normal:'רגיל', three:'שלושת השבועות', nine:'תשעת הימים', tisha:'תשעה באב', fast:'צום', prep:'הכנות לחג', chm:'חול המועד', good:'חופשה/חג', maybe:'פורים', bein:'בין הזמנים', elul:'אלול', block:'חג' };
+// base = the strongest period/status (excluding minor fasts); fast = is this a minor fast day (overlay)
+function dayStatus(day,data){
+  const fast = (data.fasts||[]).some(f=>f.date===day && f.label!=='תשעה באב');
+  let base='normal';
+  const has=(()=>{
+    for(const h of (data.holidays||[])) if(h.date===day) return 'block';
+    for(const f of (data.fasts||[])) if(f.date===day && f.label==='תשעה באב') return 'tisha';
+    let inNine=false,inThree=false,inElul=false,inBein=false,inPrep=false;
+    for(const p of (data.periods||[])){ if(p.start<=day&&day<=p.end){
+      if(p.kind==='ninedays')inNine=true; else if(p.kind==='threeweeks')inThree=true;
+      else if(p.kind==='elul')inElul=true; else if(p.kind==='beinhazmanim')inBein=true; else if(p.kind==='prep')inPrep=true;
+    }}
+    for(const d of (data.cholHamoed||[])) if(d===day) return 'chm';
+    if(inNine) return 'nine';
+    if(inPrep) return 'prep';
+    if(inThree) return 'three';
+    for(const f of (data.favorable||[])) if(f.start<=day&&day<=f.end) return (f.kind==='maybe'?'maybe':'good');
+    if(inBein) return 'bein';
+    if(inElul) return 'elul';
+    return 'normal';
+  })();
+  base=has;
+  // a standalone fast with no stronger backdrop shows as full fast colour
+  if(fast && base==='normal') return {base:'fast', fast:false};
+  return {base, fast};
+}
+function tripBand(start,ret,data){
+  const days=[]; let d=start;
+  while(d<=ret && days.length<40){
+    const isShabbat=new Date(d+'T00:00:00Z').getUTCDay()===6;
+    const st=dayStatus(d,data);
+    days.push({date:d,cls:st.base,fast:st.fast,shabbat:isShabbat});
+    d=_jAddDays(d,1);
+  }
+  const counts={}; let shab=0, fasts=0;
+  days.forEach(x=>{ counts[x.cls]=(counts[x.cls]||0)+1; if(x.shabbat)shab++; if(x.fast||x.cls==='fast')fasts++; });
+  // named holidays that fall within the trip (so "פורים", "חנוכה" etc are spelled out)
+  const hols=[];
+  for(const f of (data.favorable||[])){ if(f.start<=ret && f.end>=start && f.label && !/קיץ|בין הזמנים/.test(f.label)) hols.push(f.label.replace(' — חופשה','')); }
+  return {days,counts,shab,fasts,hols:[...new Set(hols)]};
+}
+function bandHtml(band){
+  if(!band||!band.days||!band.days.length) return '';
+  const cells=band.days.map(d=>{
+    const title=`${d.date.slice(8)}.${+d.date.slice(5,7)} · ${DAY_HE[d.cls]}${(d.fast||d.cls==='fast')?' · צום':''}${d.shabbat?' · שבת':''}`;
+    const split = d.fast ? `<span class="bc-fasthalf"></span>` : '';
+    return `<span class="bcell bc-${d.cls}${d.shabbat?' bc-shab':''}" title="${title}">${split}</span>`;
+  }).join('');
+  const order=['tisha','nine','three','prep','block','chm','elul','bein','good','normal'];
+  const parts=order.filter(k=>band.counts[k]).map(k=>band.counts[k]+' '+DAY_HE[k]);
+  if(band.fasts) parts.push(band.fasts+' צום');
+  if(band.hols&&band.hols.length) parts.push(...band.hols);
+  if(band.shab) parts.push('🕯️ '+(band.shab>1?(band.shab+' שבתות'):'שבת'));
+  return `<div class="band">${cells}</div><div class="bandleg">${parts.join(' · ')}</div>`;
+}
+const TUNE_PERIODS=[
+  {key:'threeweeks',label:'שלושת השבועות',grp:'m'},
+  {key:'ninedays',label:'תשעת הימים',grp:'m'},
+  {key:'tisha',label:'תשעה באב',grp:'m'},
+  {key:'omer',label:'ספירת העומר',grp:'m'},
+  {key:'fast',label:'צומות',grp:'m'},
+  {key:'beinhazmanim',label:'בין הזמנים',grp:'o'},
+  {key:'chanuka',label:'חנוכה',grp:'o'},
+  {key:'purim',label:'פורים',grp:'o'},
+  {key:'cholhamoed',label:'חול המועד',grp:'o'},
+  {key:'lag',label:'ל״ג בעומר',grp:'o'},
+];
+
+/* ===== שכבת "עונות ביעד" (DEST_SEASONS) — תקופות תיירותיות בלוח הגרגוריאני, לפי היעד.
+   ציר נפרד מ-TUNE_PERIODS (שהוא לוח עברי, צד תל אביב). pilot: איטליה.
+   intensity: 1=קל · 2=בינוני · 3=שיא | dir: 'crowd'=עומס/יוקר · 'both'=אווירה+עומס · 'good'=חלון אידיאלי
+   טווח: from/to בפורמט MM-DD (חוזר כל שנה, תומך במעבר שנה) — או years{} לתאריכים ניידים (פסחא/קרנבל). */
+const DEST_SEASONS=[
+  {cc:'איטליה',emoji:'🎄',label:'חג המולד–אפיפניה',intensity:3,dir:'both',from:'12-24',to:'01-06',desc:'שווקי חג ואווירה חגיגית — מנגד מחירי שיא ועומס'},
+  {cc:'איטליה',emoji:'☀️',label:'שיא קיץ',intensity:3,dir:'crowd',from:'07-01',to:'08-31',desc:'חום כבד בערים, תורים ומחירי שיא'},
+  {cc:'איטליה',emoji:'🏖️',label:'פֵרַאגוסטו',intensity:3,dir:'both',from:'08-10',to:'08-20',desc:'חופים בשיא ואווירה — אך ערים מתרוקנות ועסקים נסגרים (15/8)'},
+  {cc:'איטליה',emoji:'⛪',label:'פסחא / השבוע הקדוש',intensity:2,dir:'crowd',years:{'2026':['2026-03-30','2026-04-06'],'2027':['2027-03-21','2027-03-28'],'2028':['2028-04-10','2028-04-16']},desc:'המון באתרים דתיים, מחירים גבוהים'},
+  {cc:'איטליה',emoji:'🌿',label:'עונת ביניים אידיאלית',intensity:1,dir:'good',from:'04-20',to:'05-31',desc:'מזג אוויר נעים, פחות עומס, מחירים סבירים'},
+  {cc:'איטליה',emoji:'🌿',label:'עונת ביניים אידיאלית',intensity:1,dir:'good',from:'09-01',to:'10-15',desc:'מזג אוויר נעים, פחות עומס, מחירים סבירים'},
+  {city:'VCE',emoji:'🎭',label:'קרנבל ונציה',intensity:3,dir:'both',years:{'2026':['2026-02-07','2026-02-17'],'2027':['2027-01-30','2027-02-09'],'2028':['2028-02-19','2028-02-29']},desc:'מחזה ייחודי — אך ונציה צפופה ויקרה במיוחד'},
+];
+function seasonHits(ccHe,cityCode,startISO,endISO){
+  if(!startISO) return [];
+  const s=String(startISO).slice(0,10), e=String(endISO||startISO).slice(0,10);
+  const code=String(cityCode||'').toUpperCase();
+  const hits=[];
+  for(const p of DEST_SEASONS){
+    const scoped=(p.cc&&p.cc===ccHe)||(p.city&&p.city===code);
+    if(!scoped) continue;
+    let ranges=[];
+    if(p.years){ for(const y in p.years) ranges.push(p.years[y]); }
+    else if(p.from&&p.to){
+      const yrs=new Set([+s.slice(0,4)-1,+s.slice(0,4),+e.slice(0,4)]);
+      for(const Y of yrs){ let a=`${Y}-${p.from}`, b=(p.to<p.from)?`${Y+1}-${p.to}`:`${Y}-${p.to}`; ranges.push([a,b]); }
+    }
+    for(const r of ranges){ if(r[0]<=e && r[1]>=s){ hits.push(p); break; } }
+  }
+  hits.sort((x,y)=>(y.intensity-x.intensity)||((y.city?1:0)-(x.city?1:0)));
+  return hits;
+}
+function seasonLabelHtml(ccHe,cityCode,startISO,endISO){
+  const hits=seasonHits(ccHe,cityCode,startISO,endISO);
+  if(!hits.length) return '';
+  const p=hits[0];
+  const col = p.dir==='crowd'?'background:#5a1e1e;color:#ffd9d9'
+            : p.dir==='good' ?'background:#1e4a2e;color:#bff0cf'
+            :                  'background:#5a4a1e;color:#ffe9b0';
+  const tag = p.intensity===3?' · שיא':(p.intensity===2?' · בינוני':'');
+  const more = hits.length>1?` <span style="font-size:9px;opacity:.7;margin-inline-start:2px">+${hits.length-1}</span>`:'';
+  const title=(p.desc||'').replace(/"/g,'&quot;');
+  return ` <span class="seasonbadge" style="display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap;${col}" title="${title}">${p.emoji} ${p.label}${tag}</span>${more}`;
+}
+function defaultPeriodPrefs(){ const keys=['threeweeks','ninedays','tisha','omer','fast','beinhazmanim','chanuka','purim','cholhamoed','lag']; const o={}; for(const k of keys)o[k]={mode:'normal',scope:'travel'}; return o; }
+function periodRanges(data){
+  const R={}; for(const p of TUNE_PERIODS) R[p.key]=[];
+  for(const p of (data.periods||[])){
+    if(p.kind==='threeweeks')R.threeweeks.push({start:p.start,end:p.end});
+    else if(p.kind==='ninedays')R.ninedays.push({start:p.start,end:p.end});
+    else if(p.kind==='beinhazmanim')R.beinhazmanim.push({start:p.start,end:p.end});
+    else if(p.kind==='omer')R.omer.push({start:p.start,end:p.end});
+  }
+  for(const f of (data.favorable||[])){
+    if(/חנוכה/.test(f.label))R.chanuka.push({start:f.start,end:f.end});
+    else if(/פורים/.test(f.label))R.purim.push({start:f.start,end:f.end});
+    else if(/בעומר/.test(f.label))R.lag.push({start:f.start,end:f.end});
+  }
+  for(const d of (data.cholHamoed||[]))R.cholhamoed.push({start:d,end:d});
+  for(const f of (data.fasts||[])){
+    if(/תשעה באב/.test(f.label))R.tisha.push({start:f.date,end:f.date});
+    else R.fast.push({start:f.date,end:f.date});
+  }
+  return R;
+}
+function periodHits(start,ret,R){
+  const hits={};
+  for(const key in R){
+    let onTravel=false,inTrip=false;
+    for(const r of R[key]){
+      if(_jOverlap(start,ret,r.start,r.end)) inTrip=true;
+      if((start>=r.start&&start<=r.end)||(ret>=r.start&&ret<=r.end)) onTravel=true;
+    }
+    hits[key]={onTravel,inTrip};
+  }
+  return hits;
+}
+// returns {drop:bool, prefer:bool} for a window given its hits and the user's prefs
+function applyPeriodPrefs(hits){
+  const prefs=STATE.periodPrefs||{};
+  let drop=false, prefer=false;
+  for(const key in hits){
+    const pr=prefs[key]; if(!pr||pr.mode==='normal') continue;
+    const h=hits[key];
+    const match = pr.scope==='trip' ? h.inTrip : h.onTravel;
+    if(!match) continue;
+    if(pr.mode==='hide') drop=true;
+    else if(pr.mode==='prefer') prefer=true;
+  }
+  return {drop,prefer};
+}
+function windowJewish(start,ret,data){
+  const tags=[]; let block=false;
+  const push=(t,cls)=>tags.push({t,cls});
+  for(const p of data.periods){ if(_jOverlap(start,ret,p.start,p.end)){
+    let cls='caution';
+    if(p.kind==='beinhazmanim') cls=(data.profile==='yeshiva')?'good':'neutral';
+    push(p.label,cls);
+  } }
+  let spansYomTov=false;
+  for(const h of (data.holidays||[])){ if(_jOverlap(start,ret,h.date,h.date)) spansYomTov=true; if(h.date===start||h.date===ret) block=true; }
+  if(spansYomTov){ push('חג','caution'); push('יו״ט שני בחו״ל?','caution'); }
+  if(data.cholHamoed) for(const d of data.cholHamoed){ if(_jOverlap(start,ret,d,d)){ push('חול המועד','neutral'); break; } }
+  for(const f of (data.favorable||[])){ if(_jOverlap(start,ret,f.start,f.end)) push(f.label,'good'); }
+  let fastOnTravel=false;
+  for(const f of (data.fasts||[])){
+    if(f.date===start||f.date===ret){ push(f.label+' — יום נסיעה','caution'); fastOnTravel=true; }
+    else if(_jOverlap(start,ret,f.date,f.date)){ push(f.label+' (בחופשה)','neutral'); }
+  }
+  const seen=new Set(); let out=tags.filter(x=>{ if(seen.has(x.t))return false; seen.add(x.t); return true; });
+  return {tags:out,block,fastOnTravel};
+}
+function assembleWindowsOLD(fromISO,toISO,rules,priceMap,shabPref){
+  const res=[];
+  for(const w of genWindows(fromISO,toISO,rules)){
+    const TS=windowShabbat(w.start,w.ret);
+    if(!keepByShabbat(TS.k,shabPref)) continue;
+    const key=w.start+'|'+w.nights;
+    res.push({...w,TS,price:priceMap[key]??null,deep_link:priceMap['link|'+key]||null});
+  }
+  res.sort((a,b)=>{ if(a.price==null&&b.price==null) return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
+  return res;
+}
+const ISRAELI_CARRIERS=/\b(el[\s-]?al|israir|arkia|sun[\s-]?d.?or|sundor)\b/i;
+const LOWCOST_CARRIERS=/wizz|ryanair|easy[\s-]?jet|hi[\s-]?sky|transavia|vueling|norwegian|pegasus|fly[\s-]?dubai|bluebird|smart[\s-]?wings|eurowings|volotea|jet2|spirit|wow\s?air|laudamotion|blue\s?air|corendon|enter\s?air|sun\s?express|sky\s?express/i;
+function isLowCost(name){ return LOWCOST_CARRIERS.test(name||''); }
+// the "family" name for grouping/filtering (drop codeshare partners after + or /)
+function carrierFamily(name){ return String(name||'').split(' + ')[0].split(' / ')[0].trim(); }
+// For a round-trip "OUT / IN" carrier string, return EVERY leg's primary carrier — so an airline
+// that only flies one direction (e.g. El Al as the direct return) is still listed and filterable,
+// not hidden behind the outbound carrier.
+function carrierFamilies(name){
+  const fams=[];
+  for(const leg of String(name||'').split(' / ')){ const f=leg.split(' + ')[0].trim(); if(f && !fams.includes(f)) fams.push(f); }
+  return fams;
+}
+// collapse near-duplicate fares of the SAME physical flight (identical times) — keep the cheapest
+function dedupFlights(arr){
+  const best={}, order=[];
+  for(const o of arr){
+    const k=(o.outDep||'')+'|'+(o.outArr||'')+'|'+(o.backDep||'')+'|'+(o.backArr||'')+'|'+(o.stops!=null?o.stops:'');
+    if(!(k in best)){ best[k]=o; order.push(k); }
+    else if((o.price!=null?o.price:1e9)<(best[k].price!=null?best[k].price:1e9)) best[k]=o;
+  }
+  return order.map(k=>best[k]);
+}
+// flight duration from ISO endpoints (offset-aware, so it's correct across time zones)
+function _durMin(iso1,iso2){ if(!iso1||!iso2)return null; const a=Date.parse(iso1),b=Date.parse(iso2); if(isNaN(a)||isNaN(b))return null; let d=Math.round((b-a)/60000); if(d<0)d+=1440; return (d>0&&d<2880)?d:null; }
+function _durFmt(min){ if(min==null)return ''; const h=Math.floor(min/60),m=min%60; return h+'ש'+(m?' '+m+'ד':''); }
+function isIsraeliCarrier(name){ return ISRAELI_CARRIERS.test(name||''); }
+// every leg of the round trip flies an israeli carrier (El Al / Arkia / Israir / Sun d'or) —
+// for the "only israeli" safety filter. A mixed itinerary (e.g. Air Europa out, El Al back) fails.
+function isAllIsraeli(name){ const legs=String(name||'').split(' / '); return legs.length>0 && legs.every(l=>isIsraeliCarrier(l)); }
+function sortFlights(arr){
+  const a=arr.slice(); const sb=STATE.sortBy||'price';
+  if(sb==='time') a.sort((x,y)=>{ const tx=x.outDep||'99:99', ty=y.outDep||'99:99'; return tx<ty?-1:(tx>ty?1:((x.price||0)-(y.price||0))); });
+  else if(sb==='airline') a.sort((x,y)=>{ const ix=isIsraeliCarrier(x.carrier)?0:1, iy=isIsraeliCarrier(y.carrier)?0:1; if(ix!==iy)return ix-iy; const cx=x.carrier||'', cy=y.carrier||''; if(cx!==cy)return cx<cy?-1:1; return (x.price||0)-(y.price||0); });
+  else if(sb==='lowcost') a.sort((x,y)=>{ const ix=isLowCost(x.carrier)?0:1, iy=isLowCost(y.carrier)?0:1; if(ix!==iy)return ix-iy; return (x.price||0)-(y.price||0); });
+  else a.sort((x,y)=>(x.price||0)-(y.price||0));
+  return a;
+}
+// one card per flight
+function flightCard(w,fl,dest,kLink,oneway,isBest){
+  const stopTxt = fl.stops===0?'ישיר':(fl.stops!=null?fl.stops+' עצירות':'');
+  const carrName = fl.carrier||'';
+  const carr = (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + (fl.operatedBy?` <span class="fc-stop">(מבצע: ${fl.operatedBy})</span>`:'');
+  // prefer the edge's TRUE duration (timezone-correct); fall back to ISO subtraction (old provider)
+  const _dOut=_durFmt(fl.durationToMin ?? _durMin(fl.outDepISO,fl.outArrISO)), _dBack=_durFmt(fl.durationBackMin ?? _durMin(fl.backDepISO,fl.backArrISO));
+  // layover detail: airport code + wait time (e.g. "FCO 1ש55ד")
+  const _loTxt=ls=>(Array.isArray(ls)&&ls.length)?ls.map(l=>`${l.code}${l.min?` ${_durFmt(l.min)}`:''}`).join(' · '):'';
+  const _outLo=_loTxt(fl.outLayovers), _backLo=_loTxt(fl.backLayovers);
+  const _loSpan=t=>t?` <span class="fc-stop">⏱ עצירה ${t}</span>`:'';
+  const times = oneway ? (fl.outDep?`טיסה ${fl.outDep}–${fl.outArr}${_dOut?` <span class="fc-dur">(${_dOut})</span>`:''}${_loSpan(_outLo)}`:'') : ((fl.outDep&&fl.backDep)?`הלוך ${fl.outDep}–${fl.outArr}${_dOut?` <span class="fc-dur">(${_dOut})</span>`:''}${_loSpan(_outLo)} · חזור ${fl.backDep}–${fl.backArr}${_dBack?` <span class="fc-dur">(${_dBack})</span>`:''}${_loSpan(_backLo)}`:'');
+  const _tlvTag = fl._shabV ? `<span class="rtg crit shabv-${fl._shabV.cls}">🕯️ ${fl._shabV.t}</span>` : '';
+  const _destTag = fl._destV ? `<span class="rtg crit destv destv-${fl._destV.cls}">📍 ${fl._destV.t}</span>` : '';
+  const verdict = (_tlvTag||_destTag) ? `<div class="rcrit">${_tlvTag}${_destTag}</div>` : '';
+  const perEuro = fl.price!=null ? Math.round(fl.price/STATE.adults) : null;
+  let conv='';
+  if(perEuro!=null && STATE.altCurrency && RATES[STATE.altCurrency]){ const sym={USD:'$',ILS:'₪'}[STATE.altCurrency]||''; conv=` ≈ ${sym}${Math.round(perEuro*RATES[STATE.altCurrency]).toLocaleString()}`; }
+  const priceBlock = perEuro!=null
+    ? `<div class="v">€${perEuro}</div><div class="k">לאחד${conv}${STATE.adults>1?` · סה״כ €${fl.price}`:''}</div>`
+    : `<div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div>`;
+  return `<div class="fcard${isBest?' win':''}${fl._shabV&&fl._shabV.forbidden?' forb':''}">
+    <div class="fc-main">
+      <div class="fc-carrier">${carr}${stopTxt?` <span class="fc-stop">· ${stopTxt}</span>`:''}</div>
+      ${times?`<div class="fc-times">${times}</div>`:''}
+      ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: €${Math.round(fl.altPrice/STATE.adults)} לאחד</div>`:''}
+      ${verdict}
+    </div>
+    <div class="fc-price">${priceBlock}<a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div>
+  </div>`;
+}
+// A CITY entry flagged .ski holds resort names (for ski discovery). For a regular flight
+// result we want the city/airport name, not the resort — pull a clean label instead.
+function cleanCityName(code){
+  const o=CITY[code];
+  if(o && !o.ski) return o.he;
+  const pop=(typeof POPULAR!=='undefined') && POPULAR.find(p=>p[0]===code);
+  if(pop) return pop[1];
+  const pre=(typeof DEST_CHOICES!=='undefined') && DEST_CHOICES.find(p=>p[0]===code);
+  if(pre) return pre[1];
+  return (o&&o.he)||code;
+}
+function windowCard(w,rank,dest){
+  const c=CITY[dest]||{he:dest,cc:''};
+  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');return DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);};
+  const _O=STATE.origin.toUpperCase();
+  const oneway=w.oneway||!w.ret;
+  const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
+  const _iata = /^[A-Z]{3}$/.test(_book) ? _book : ((/^[A-Z]{3}$/.test(dest.toUpperCase())&&!_codeEntity(dest)) ? dest.toUpperCase() : null);
+  let kLink;
+  if(_iata){
+    kLink = oneway
+      ? `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}`
+      : (STATE.openJaw&&STATE.outAirport&&LAST&&LAST.oj)
+      ? `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}/${STATE.outAirport.toUpperCase()}-${_O}/${w.ret}`
+      : `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}/${w.ret}`;
+  } else {
+    const _lbl=(STATE.destLabel||(CITY[dest]&&CITY[dest].he)||dest).split(' · ')[0];
+    kLink = `https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+_lbl+' on '+w.start+(oneway?'':(' returning '+w.ret)))}`;
+  }
+  // header context tags (per window, not per flight)
+  const headTags=[];
+  if(w._motzei) headTags.push('<span class="rtg crit motzei">🌙 מוצאי שבת</span>');
+  if(w._prefer) headTags.push('<span class="rtg crit prefer">⭐ מועדף</span>');
+  const jw=jewishTagFor(c.cc); if(jw) headTags.push(`<span class="rtg crit poi">✡ ${jw.join(' · ')}</span>`);
+  const calTags=[];
+  if(w.jtags&&w.jtags.length) for(const jt of w.jtags) calTags.push(`<span class="rtg j-${jt.cls}">${jt.t}</span>`);
+  // flights for this window
+  const ms=maxStopsVal();
+  const allOpts = (w.info && Array.isArray(w.info._options) && w.info._options.length) ? w.info._options : (w.info?[w.info]:[]);
+  let vis = allOpts.filter(o=>o && o.price!=null).filter(o=>!(o.stops!=null && o.stops>ms));
+  if(!STATE.allowShabbat) vis = vis.filter(o=>!(o._shabV && o._shabV.forbidden));
+  if(STATE.onlyIsraeli) vis = vis.filter(o=>isAllIsraeli(o.carrier));
+  if(STATE.hiddenCarriers && STATE.hiddenCarriers.length) vis = vis.filter(o=>carrierFamilies(o.carrier).some(f=>!STATE.hiddenCarriers.includes(f)));
+  vis = dedupFlights(vis);          // collapse same-flight fare/codeshare duplicates
+  vis = sortFlights(vis);
+  const hiddenCount = (!STATE.allowShabbat) ? allOpts.filter(o=>o && o.price!=null && o._shabV && o._shabV.forbidden && !(o.stops!=null&&o.stops>ms)).length : 0;
+  const wkey=w.start+'|'+(w.ret||'');
+  const CAP=5, expanded=_expandedWins.has(wkey), extra=vis.length-CAP;
+  const shown = expanded ? vis : vis.slice(0,CAP);
+  let cards;
+  if(vis.length){
+    cards = shown.map((fl,idx)=>flightCard(w,fl,dest,kLink,oneway, rank===1&&idx===0)).join('');
+    if(extra>0) cards += `<div class="wgmore"><span class="c on" data-act="expandwin" data-v="${wkey}" style="font-size:11.5px;padding:5px 13px">${expanded?'הצג פחות ▲':'הצג עוד '+extra+' '+(extra===1?'טיסה':'טיסות')+' ▼'}</span></div>`;
+  } else if(STATE.onlyIsraeli && allOpts.some(o=>o&&o.price!=null && !(o.stops!=null&&o.stops>ms))){
+    cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">🇮🇱 אין טיסה ישראלית מלאה בחלון זה</div><div style="margin-top:7px"><span class="c on" data-act="onlyisraeli" style="font-size:11px;padding:3px 11px">הצג גם לא-ישראליות</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
+  } else {
+    const fallbackV = w.shabV ? `<div class="rcrit"><span class="rtg crit shabv-${w.shabV.cls}">🕯️ ${w.shabV.t}</span></div>` : (w.TS?`<div class="fc-times" style="color:var(--mut-2)">${w.TS.t}</div>`:'');
+    cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
+  }
+  let hiddenLine='';
+  if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
+  else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
+  const showCmp = !STATE.openJaw && exitsFor(dest) && w.price!=null;
+  return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}">
+    <div class="wghead">
+      <span class="wgrank">${w._motzei?'🌙':rank}</span>
+      <div class="wgttl"><b>${(dest===STATE.destination?destDisplayName():cleanCityName(dest))}</b> <span class="sm">· ${c.cc}</span> · ${oneway?`${fmt(w.start)} · כיוון אחד →`:`${fmt(w.start)} ← ${fmt(w.ret)} · ${w.nights} לילות`}${seasonLabelHtml(c.cc,dest,w.start,w.ret)}</div>
+      ${headTags.length?`<div class="rcrit wghtags">${headTags.join('')}</div>`:''}
+    </div>
+    ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
+    <div class="wgflights">${cards}</div>
+    ${hiddenLine}
+    <div class="wgfoot">
+      ${showCmp?`<span class="cmpbtn" data-cmp="${w.start}|${w.ret}">⇄ השווה שדות חזרה</span>`:''}
+      <a class="allflights" href="${kLink}" target="_blank" rel="noopener" title="חלק מהטיסות (כמו Wizz ישיר במחיר בינוני) לא תמיד מוחזרות ע&quot;י ה-API — כאן תראה את כולן">🔎 כל הטיסות במסלול ←</a>
+    </div>
+  </div>`;
+}
+
+function buildPrompt(text){
+  return `תרגם בקשת חיפוש טיסות חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
+שדות:
+- origin: IATA מוצא (ברירת מחדל "TLV")
+- destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש, או "SKI" אם הבקשה על סקי/גלישה (המערכת תסרוק יעדי סקי בעונת ינואר–פברואר)
+- departMonth: "YYYY-MM" אם צוין חודש, אחרת ""
+- constraints: {"type":"airline","value":"IZ|LY|W4"} או {"type":"noShabbat"}
+- scorers: {"name":"price|novelty|comfort","w":1-5}
+- unsupported: קריטריונים בלי לבנה (חב״ד/ים/כשרות/מלון) — אל תמציא
+- summary: תקציר עברי קצר
+יעדים: בוקרשט=BUH אתונה=ATH סלוניקי=SKG טביליסי=TBS ירוואן=EVN לרנקה=LCA בודפשט=BUD פראג=PRG ברצלונה=BCN "ניו יורק"=JFK.
+פלט: {"origin":"TLV","destination":"-","departMonth":"","constraints":[],"scorers":[],"unsupported":[],"summary":""}
+הבקשה: "${text}"`;
+}
+async function translateLive(text){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,messages:[{role:"user",content:buildPrompt(text)}]})});
+  if(!r.ok)throw new Error("llm "+r.status);
+  const d=await r.json(); let t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+  t=t.replace(/```json/gi,"").replace(/```/g,"").trim(); return JSON.parse(t);
+}
+function translateLocal(text){
+  const t=text.toLowerCase(),I={origin:"TLV",destination:"-",departMonth:"",constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
+  const has=w=>t.includes(w);
+  if(has("ארקיע"))I.constraints.push({type:"airline",value:"IZ"});
+  if(has("בלי שבת")||has("ימי חול"))I.constraints.push({type:"noShabbat"});
+  if(has("חדש")||has("לא היינו"))I.scorers.push({name:"novelty",w:4});
+  if(has("זול")||has("מחיר"))I.scorers.push({name:"price",w:3});
+  if(has("נוח"))I.scorers.push({name:"comfort",w:2});
+  for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
+  if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
+  const M={ינואר:"01",פברואר:"02",מרץ:"03",אפריל:"04",מאי:"05",יוני:"06",יולי:"07",אוגוסט:"08",ספטמבר:"09",אוקטובר:"10",נובמבר:"11",דצמבר:"12"};
+  for(const [he,mm] of Object.entries(M)){ if(has(he)) I.departMonth="2026-"+mm; }
+  if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות"); if(has("ים")&&!I.unsupported.length)0;
+  if(!I.scorers.length)I.scorers.push({name:"price",w:3});
+  return I;
+}
+
+/* ===== STATE (the single intent, edited by both entries) ===== */
+const STATE={origin:"TLV",destination:"-",departMonth:"2026-07",noShabbat:false,airline:null,
+  scorers:{price:3,novelty:0,comfort:0},unsupported:[],summary:"",
+  skiNights:7, skiFromISO:"2027-01-01", flexNights:7, flexStartDow:null, flexShabbat:"any",
+  fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"ILS", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false};
+const SAVE_KEY='tripfinder_saved_v1';
+const SAVE_FIELDS=['origin','destination','destLabel','tripType','dateMode','months','fromDate','toDate','flexNights','flexStartDow','flexShabbat','includeStops','maxStops','sortBy','adults','children','infants','altCurrency','jewishMode','profile','hideFasts','openJaw','outAirport','flexDays','allowShabbat','shabbatTime','marginBefore','marginAfter','candleMin','havdalah','friThreshold','periodPrefs'];
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]'); }catch(e){ return []; } }
+function persistSaved(arr){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }catch(e){} }
+let SAVED=loadSaved();
+let AC={q:'',matches:[],loading:false,err:''};
+let _acTimer=null, _acSeq=0;
+function customDestChip(){
+  const d=STATE.destination;
+  if(!d||d==='-'||d==='SKI'||d==='variable') return '';
+  if(DEST_CHOICES.some(x=>x[0]===d)) return '';
+  const c=CITY[d]; if(!c&&!STATE.destLabel) return '';
+  const nm=STATE.destLabel||(c&&c.he)||d;
+  return `<span class="c anchor on" data-act="dest" data-v="${d}">${nm}${/^[A-Z]{3}$/.test(d)?` (${d})`:''}</span>`;
+}
+function acResultsHtml(){
+  let h='';
+  if(AC.matches&&AC.matches.length) h+='<div class="aclist">'+AC.matches.map((m,i)=>`<span class="acitem" data-acpick="${i}">${m.name}${m.iata?` (${m.iata})`:''}${m.sub?` · ${m.sub}`:''}</span>`).join('')+'</div>';
+  if(AC.err) h+=`<div class="note" style="color:var(--amber)">${AC.err}</div>`;
+  return h;
+}
+function renderACResults(){
+  const box=document.getElementById('acresults'); if(box) box.innerHTML=acResultsHtml();
+  const st=document.getElementById('acstatus'); if(st) st.textContent=AC.loading?'מחפש…':'';
+  document.querySelectorAll('#acresults [data-acpick]').forEach(el=>el.onclick=()=>onAct('acpick',el.dataset.acpick));
+}
+function onAcType(val){
+  AC.q=val;
+  if(_acTimer) clearTimeout(_acTimer);
+  const q=val.trim();
+  if(q.length<2){ AC.matches=[]; AC.err=''; AC.loading=false; renderACResults(); return; }
+  AC.loading=true; renderACResults();
+  _acTimer=setTimeout(()=>{ liveSuggest(q); }, 400);
+}
+async function liveSuggest(q){
+  const my=++_acSeq; AC.err='';
+  let sendQ=q;
+  if(/[\u0590-\u05FF]/.test(q)){ const en=heToEn(q); if(en) sendQ=en; }
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({suggest:true,q:sendQ})});
+    if(my!==_acSeq) return;
+    if(r.ok){ const j=await r.json(); AC.matches=(j&&j.ok&&j.matches)?j.matches:[]; if(!AC.matches.length)AC.err='לא נמצאו התאמות. נסה באנגלית או קוד IATA.'; }
+    else { AC.matches=[]; AC.err='החיפוש נכשל כרגע (עומס). נסה שוב.'; }
+  }catch(e){ if(my!==_acSeq) return; AC.matches=[]; AC.err='שגיאת רשת. נסה שוב.'; }
+  AC.loading=false; renderACResults();
+}
+// ---- open-jaw exit-airport autocomplete (second instance) ----
+let OJAC={q:'',matches:[],loading:false,err:''};
+let _ojTimer=null, _ojSeq=0;
+function ojResultsHtml(){
+  let h='';
+  if(OJAC.matches&&OJAC.matches.length) h+='<div class="aclist">'+OJAC.matches.map((m,i)=>`<span class="acitem" data-ojpick="${i}">${m.name}${m.iata?` (${m.iata})`:''}${m.sub?` · ${m.sub}`:''}</span>`).join('')+'</div>';
+  if(OJAC.err) h+=`<div class="note" style="color:var(--amber)">${OJAC.err}</div>`;
+  return h;
+}
+function renderOJResults(){
+  const box=document.getElementById('ojresults'); if(box) box.innerHTML=ojResultsHtml();
+  const st=document.getElementById('ojstatus'); if(st) st.textContent=OJAC.loading?'מחפש…':'';
+  document.querySelectorAll('#ojresults [data-ojpick]').forEach(el=>el.onclick=()=>onAct('ojpick',el.dataset.ojpick));
+}
+function onOjType(val){
+  OJAC.q=val;
+  if(_ojTimer) clearTimeout(_ojTimer);
+  const q=val.trim();
+  if(q.length<2){ OJAC.matches=[]; OJAC.err=''; OJAC.loading=false; renderOJResults(); return; }
+  OJAC.loading=true; renderOJResults();
+  _ojTimer=setTimeout(()=>{ liveSuggestOJ(q); }, 400);
+}
+async function liveSuggestOJ(q){
+  const my=++_ojSeq; OJAC.err='';
+  let sendQ=q;
+  if(/[\u0590-\u05FF]/.test(q)){ const en=heToEn(q); if(en) sendQ=en; }
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({suggest:true,q:sendQ})});
+    if(my!==_ojSeq) return;
+    if(r.ok){ const j=await r.json(); OJAC.matches=(j&&j.ok&&j.matches)?j.matches.filter(m=>m.iata):[]; if(!OJAC.matches.length)OJAC.err='לא נמצא שדה מתאים. נסה באנגלית או קוד IATA.'; }
+    else { OJAC.matches=[]; OJAC.err='החיפוש נכשל כרגע (עומס). נסה שוב.'; }
+  }catch(e){ if(my!==_ojSeq) return; OJAC.matches=[]; OJAC.err='שגיאת רשת. נסה שוב.'; }
+  OJAC.loading=false; renderOJResults();
+}
+function saveName(){
+  const d=destDisplayName();
+  const when=STATE.dateMode==='month'?STATE.months.map(m=>monthLabel(m)).join(','):STATE.dateMode==='exact'?STATE.fromDate:(STATE.fromDate+'–'+STATE.toDate);
+  return d+' · '+when+(STATE.openJaw&&STATE.outAirport?(' →'+STATE.outAirport):'');
+}
+function doSave(){
+  const snap={name:saveName()};
+  SAVE_FIELDS.forEach(f=>snap[f]=STATE[f]);
+  // persist the city mappings so entityId/_book/label survive a reload
+  if(CITY[STATE.destination]) snap._destCity=CITY[STATE.destination];
+  if(STATE.outAirport && CITY[STATE.outAirport]) snap._outCity=CITY[STATE.outAirport];
+  SAVED.push(snap); persistSaved(SAVED); renderPanel();
+}
+function loadSearch(i){
+  const s=SAVED[i]; if(!s)return;
+  SAVE_FIELDS.forEach(f=>{ if(s[f]!==undefined) STATE[f]=s[f]; });
+  // heal any save that carries a nonsensical date span (e.g. the old 5.7→31.8 / 57-night default),
+  // regardless of dateMode — month-mode saves kept those stale fromDate/toDate and the calendar shows them
+  if(STATE.fromDate && STATE.toDate){
+    const n=Math.round((Date.parse(STATE.toDate)-Date.parse(STATE.fromDate))/864e5);
+    if(!(n>0) || n>30) STATE.toDate=_jAddDays(STATE.fromDate,5);
+  }
+  if(s._destCity && s.destination) CITY[s.destination]=s._destCity;
+  if(s._outCity && s.outAirport) CITY[s.outAirport]=s._outCity;
+  // legacy saves (entityId dest, no label/city stored): recover a readable label from the saved name
+  if(!STATE.destLabel && _codeEntity(STATE.destination) && s.name){
+    const lbl=s.name.split(' · ').slice(0,-1).join(' · ').replace(/\s*→.*$/,'').trim();
+    if(lbl) STATE.destLabel=lbl;
+  }
+  STATE.panelOpen=false; renderPanel();
+}
+function deleteSearch(i){ SAVED.splice(i,1); persistSaved(SAVED); renderPanel(); }
+// a clean near-future date range, so "new search" never lands on stale/odd defaults
+function freshDates(){ const t=new Date(); t.setDate(t.getDate()+21); const from=t.toISOString().slice(0,10); const e=new Date(t); e.setDate(e.getDate()+5); return {from, to:e.toISOString().slice(0,10)}; }
+// Kayak-style staleness: if the search params changed since the last run, dim the results
+// and show a "click search to refresh" banner — without forcing a reset.
+let _lastRunSig=null;
+function searchSig(){ return [STATE.origin,STATE.destination,STATE.tripType,STATE.dateMode,STATE.fromDate,STATE.toDate,(STATE.months||[]).join(','),STATE.flexDays,STATE.adults,STATE.children,STATE.infants,STATE.openJaw,STATE.outAirport].join('|'); }
+function markStale(){
+  const out=document.getElementById('out'); const bar=document.getElementById('stalebar');
+  const stale = !!(LAST && _lastRunSig!==null && searchSig()!==_lastRunSig);
+  if(out) out.classList.toggle('stale-dim', stale);
+  if(bar) bar.innerHTML = stale ? `<div class="stalebanner" data-act="go">🔄 שינית את פרטי החיפוש — לחץ לעדכון התוצאות</div>` : '';
+}
+// reset the search to a clean slate (keeps halachic preferences: margins, candle, jewishMode, pax)
+function newSearch(){
+  const d=freshDates();
+  Object.assign(STATE,{ destination:'-', destLabel:'', tripType:'round', dateMode:'exact', fromDate:d.from, toDate:d.to, months:[d.from.slice(0,7)], flexDays:0, maxStops:0, includeStops:false, sortBy:'price', hiddenCarriers:[], onlyIsraeli:false, allowShabbat:false, openJaw:false, outAirport:'', sbarPop:null, calOpen:false, paxOpen:false, panelOpen:false });
+  LAST=null; _expandedWins.clear(); EDGE_DIAG=null; LAST_DZT=null; FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()};
+  const out=document.getElementById('out'); if(out) out.innerHTML='';
+  renderPanel();
+}
+
+function applyIntent(I){
+  STATE.origin=I.origin||"TLV";
+  STATE.destination=(I.destination&&I.destination!=="variable")?I.destination:"-";
+  STATE.departMonth=I.departMonth||STATE.departMonth||new Date().toISOString().slice(0,7);
+  STATE.noShabbat=(I.constraints||[]).some(c=>c.type==="noShabbat");
+  const al=(I.constraints||[]).find(c=>c.type==="airline"); STATE.airline=al?al.value:null;
+  STATE.scorers={price:0,novelty:0,comfort:0};
+  (I.scorers||[]).forEach(s=>{if(s.name in STATE.scorers)STATE.scorers[s.name]=s.w||3;});
+  if(!Object.values(STATE.scorers).some(w=>w>0))STATE.scorers.price=3;
+  STATE.unsupported=I.unsupported||[];
+  STATE.summary=I.summary||"";
+}
+function intentOf(S){
+  const constraints=[];
+  if(S.noShabbat)constraints.push({type:"noShabbat"});
+  if(S.airline)constraints.push({type:"airline",value:S.airline});
+  const scorers=Object.entries(S.scorers).filter(([k,w])=>w>0).map(([name,w])=>({name,w}));
+  return {origin:S.origin,destination:S.destination,departMonth:S.departMonth,constraints,scorers,unsupported:S.unsupported};
+}
+
+/* ===== panel (editable intent) ===== */
+const DEST_CHOICES=[["-","לגלות"],["SKI","⛷️ סקי"],["BUH","בוקרשט"],["ATH","אתונה"],["SKG","סלוניקי"],["TBS","טביליסי"],["LCA","לרנקה"],["BUD","בודפשט"],["BCN","ברצלונה"],["JFK","ניו יורק"]];
+const HEB_MON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function monthLabel(ym){ const a=ym.split('-'); const y=+a[0], m=+a[1]; const cy=new Date().getFullYear(); return HEB_MON[m-1]+(y!==cy?(' '+y):''); }
+function monthsList(n){ const out=[]; const d=new Date(); d.setDate(1); for(let i=0;i<n;i++){ const ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); out.push([ym,monthLabel(ym)]); d.setMonth(d.getMonth()+1); } return out; }
+const AIRLINES=[[null,"כל החברות"],["IZ","ארקיע"],["LY","אל על"],["W4","ויזאייר"]];
+const SCORERS=[["price","מחיר"],["novelty","מקום חדש"],["comfort","נוחות"]];
+const SKI_NIGHTS=[[5,"5 לילות"],[7,"7 לילות"]];
+const SKI_FROMS=[["2027-01-01","כל העונה"],["2027-01-13","מ-13.1"],["2027-01-20","מ-20.1"],["2027-02-01","מ-1.2"]];
+
+const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const _fmtHe=iso=>{ if(!iso)return '—'; const p=iso.split('-'); return (+p[2])+'.'+(+p[1])+'.'+p[0]; };
+function rangeCalendarHtml(){
+  const oneway=STATE.tripType==='oneway';
+  const todayISO=new Date().toISOString().slice(0,10);
+  const range= oneway
+    ? `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`
+    : `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="arr">←</span><span class="drlab">חזרה</span><b>${_fmtHe(STATE.toDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`;
+  if(!STATE.calOpen) return range;
+  const view=STATE.calView||(STATE.fromDate?STATE.fromDate.slice(0,7):todayISO.slice(0,7));
+  const y=+view.slice(0,4), m=+view.slice(5,7);
+  const first=new Date(Date.UTC(y,m-1,1)), dim=new Date(Date.UTC(y,m,0)).getUTCDate(), startDow=first.getUTCDay();
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+='<span class="calday empty"></span>';
+  for(let d=1;d<=dim;d++){
+    const iso=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const past=iso<todayISO;
+    let cls='';
+    if(iso===STATE.fromDate) cls+=' selstart';
+    if(!oneway && iso===STATE.toDate) cls+=' selend';
+    if(!oneway && STATE.fromDate&&STATE.toDate&&iso>STATE.fromDate&&iso<STATE.toDate) cls+=' inrange';
+    if(past) cls+=' past';
+    cells+=`<span class="calday${cls}" ${past?'':`data-calday="${iso}"`}>${d}</span>`;
+  }
+  const prevDis = (view<=todayISO.slice(0,7));
+  const hint = oneway ? 'בחר תאריך יציאה' : ((STATE.calPick==='end'?'בחר תאריך חזרה':'בחר תאריך יציאה') + ' · ' + (STATE.fromDate&&STATE.toDate?_nightsBetween(STATE.fromDate,STATE.toDate)+' לילות':''));
+  const cal=`<div class="calwrap">
+    <div class="calhead"><button class="calnav" ${prevDis?'disabled':'data-cal="prev"'}>‹</button><span class="caltitle">${HEB_MONTHS[m-1]} ${y}</span><button class="calnav" data-cal="next">›</button></div>
+    <div class="calgrid">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span class="caldow">${x}</span>`).join('')}${cells}</div>
+    <div class="calhint">${hint}</div>
+  </div>`;
+  return range+cal;
+}
+function _nightsBetween(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/864e5); }
+function calPickDay(iso){
+  if(STATE.tripType==='oneway'){ STATE.fromDate=iso; STATE.calOpen=false; STATE.calPick=null; return; }
+  if(STATE.calPick==='end' && iso>STATE.fromDate){ STATE.toDate=iso; STATE.calPick=null; STATE.calOpen=false; }
+  else { STATE.fromDate=iso; STATE.toDate=_jAddDays(iso,1); STATE.calPick='end'; }
+}
+function paxSummary(){
+  const a=+STATE.adults,c=+STATE.children,i=+STATE.infants;
+  const parts=[a+' '+(a===1?'מבוגר':'מבוגרים')];
+  if(c)parts.push(c+' '+(c===1?'ילד':'ילדים'));
+  if(i)parts.push(i+' '+(i===1?'תינוק':'תינוקות'));
+  return parts.join(' · ');
+}
+function _paxRow(key,label,sub,min,max){
+  const v=+STATE[key];
+  return `<div class="paxr"><div class="paxlbl"><b>${label}</b><span>${sub}</span></div><div class="paxctrl"><button class="paxbtn" ${v<=min?'disabled':`data-act="pax_dec" data-v="${key}"`}>−</button><span class="paxn"><bdi>${v}</bdi></span><button class="paxbtn" ${v>=max?'disabled':`data-act="pax_inc" data-v="${key}"`}>+</button></div></div>`;
+}
+function paxField(){
+  const pop = STATE.paxOpen ? `<div class="paxpop">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="paxtoggle">סגור</div></div>` : '';
+  return `<div class="fld paxfld"><label>נוסעים</label><div class="paxsel" data-act="paxtoggle"><bdi>${paxSummary()}</bdi> <span class="cv">▾</span></div>${pop}</div>`;
+}
+function destDisplayName(){
+  if(STATE.destination==='-') return 'לגלות';
+  if(STATE.destination==='SKI') return '⛷️ סקי';
+  const preset=DEST_CHOICES.find(x=>x[0]===STATE.destination);
+  if(preset) return preset[1];
+  if(STATE.destLabel) return STATE.destLabel;
+  return cleanCityName(STATE.destination);
+}
+const POPULAR=[['BUH','בוקרשט'],['ATH','אתונה'],['SKG','סלוניקי'],['LCA','לרנקה'],['TBS','טביליסי'],['BCN','ברצלונה'],['BUD','בודפשט'],['JFK','ניו יורק'],['MXP','מילאנו'],['CDG','פריז'],['FCO','רומא'],['PRG','פראג']];
+function tripTypeLabel(){ return ({round:'⇄ הלוך-חזור',oneway:'→ כיוון אחד',openjaw:'↩ חזרה מעיר אחרת'})[STATE.openJaw?'openjaw':STATE.tripType]; }
+function _dateFieldVal(){
+  if(STATE.tripType==='oneway') return _fmtHe(STATE.fromDate);
+  if(STATE.dateMode==='month') return STATE.months.map(m=>monthLabel(m)).join(', ')||'בחר חודש';
+  if(STATE.dateMode==='range') return `${_fmtHe(STATE.fromDate)} – ${_fmtHe(STATE.toDate)}`;
+  return `${_fmtHe(STATE.fromDate)} ← ${_fmtHe(STATE.toDate)}`;
+}
+function flexChipsHtml(){
+  return [['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
+    .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
+}
+function monthChipsHtml(){
+  const list=monthsList(STATE.monthsShown||6);
+  return list.map(([v,l])=>`<span class="c anchor ${STATE.months.includes(v)?'on':''}" data-act="monthtoggle" data-v="${v}">${l}</span>`).join('')
+    +`<span class="c moremonths" data-act="moremonths">+ עוד חודשים</span>`;
+}
+function lenRowHtml(){
+  const sb=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
+  const N=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
+  const D=[['','כל יום'],['0','ראשון'],['1','שני'],['2','שלישי'],['3','רביעי'],['4','חמישי'],['5','שישי'],['6','שבת']];
+  const S=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
+  return `<div class="t" style="margin-top:8px">אורך · יום יציאה · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fstart',D,STATE.flexStartDow==null?'':STATE.flexStartDow)} ${sb('fshab',S,STATE.flexShabbat)}</div>`;
+}
+function datePopBody(){
+  if(STATE.tripType==='oneway'){
+    return `<div class="t">תאריך יציאה</div>${rangeCalendarHtml()}<div class="flexinline" style="margin-top:8px">${flexChipsHtml()}</div>`;
+  }
+  const modeBtns=[['exact','תאריך מדויק'],['month','חודשים'],['range','טווח + אורך']]
+    .map(([v,l])=>`<span class="c ${STATE.dateMode===v?'on':''}" data-act="datemode" data-v="${v}">${l}</span>`).join('');
+  let body='';
+  if(STATE.dateMode==='month') body=`<div class="t" style="margin-top:8px">חודשים</div><div class="chips">${monthChipsHtml()}</div>${lenRowHtml()}`;
+  else if(STATE.dateMode==='exact') body=`<div class="t" style="margin-top:8px">בחר תאריכים</div>${rangeCalendarHtml()}<div class="flexinline" style="margin-top:8px">${flexChipsHtml()}</div>`;
+  else body=`<div class="t" style="margin-top:8px">טווח יציאה</div>${rangeCalendarHtml()}${lenRowHtml()}`;
+  return `<div class="chips">${modeBtns}</div>${body}<div class="paxdone" data-act="sbclose" style="margin-top:10px">סיום</div>`;
+}
+function searchBarHtml(){
+  const p=STATE.sbarPop;
+  const destVal = STATE.destination==='-'?'<span class="sval ph">לאן טסים?</span>':`<span class="sval">${destDisplayName()}</span>`;
+  // trip-type dropdown (in-bar)
+  const ttField=`<div class="sfield ttfield ${p==='tt'?'active':''}" data-act="sbpop" data-v="tt"><label>סוג</label><span class="sval">${tripTypeLabel()} ▾</span>${p==='tt'?`<div class="ttmenu" onclick="event.stopPropagation()">${[['round','⇄ הלוך-חזור'],['oneway','→ כיוון אחד'],['openjaw','↩ חזרה מעיר אחרת']].map(o=>`<div class="ttopt ${((o[0]==='openjaw'&&STATE.openJaw)||(o[0]!=='openjaw'&&!STATE.openJaw&&STATE.tripType===o[0]))?'on':''}" data-act="setttype" data-v="${o[0]}">${o[1]}</div>`).join('')}</div>`:''}</div>`;
+  // return-airport field (open-jaw)
+  const ojField = (STATE.openJaw && STATE.destination!=='-' && STATE.destination!=='SKI') ? `<div class="sfield ${p==='oj'?'active':''}" data-act="sbpop" data-v="oj"><label>חזרה מ</label><span class="sval ${STATE.outAirport?'':'ph'}">${STATE.outAirport||'שדה חזרה'}</span>${p==='oj'?`<div class="spop wide" onclick="event.stopPropagation()"><div class="t">שדה חזרה (עיר אחרת)</div><input type="text" id="ojq" autocomplete="off" value="${OJAC.q||''}" placeholder="הקלד (Cluj / קלוז׳)" class="din" style="width:100%" ><span class="note" id="ojstatus">${OJAC.loading?'מחפש…':''}</span><div id="ojresults">${ojResultsHtml()}</div><div class="note" style="margin-top:4px">מחיר = שתי טיסות כיוון-אחד · נראה גם מרחק נהיגה</div></div>`:''}</div>` : '';
+  // origin
+  const oField=`<div class="sfield ofield ${p==='origin'?'active':''}" data-act="sbpop" data-v="origin"><label>מוצא</label><span class="sval"><bdi>${(CITY[STATE.origin]&&CITY[STATE.origin].he)?CITY[STATE.origin].he.split(' — ')[0]:'תל אביב'} · ${STATE.origin}</bdi></span>${p==='origin'?`<div class="spop" onclick="event.stopPropagation()"><div class="t">עיר מוצא</div><div class="origin-edit"><input type="text" id="origq" autocomplete="off" placeholder="קוד/עיר (TLV / ETM)" class="din" style="width:160px" value="${STATE.origin}"><button class="c on" data-act="setorigin">קבע</button></div><div class="note" style="margin-top:6px">בד״כ תל אביב (TLV)</div></div>`:''}</div>`;
+  // swap
+  const swap=`<button class="swapbtn" data-act="swapod" title="החלף מוצא/יעד">⇄</button>`;
+  // destination
+  const dField=`<div class="sfield grow ${p==='dest'?'active':''}" data-act="sbpop" data-v="dest"><label>יעד</label>${destVal}${p==='dest'?`<div class="spop wide" onclick="event.stopPropagation()"><input type="text" id="acq" autocomplete="off" placeholder="התחל להקליד (Miami / מיאמי)" class="din" style="width:100%" value="${AC.q||''}"><span class="note" id="acstatus">${AC.loading?'מחפש…':''}</span><div id="acresults">${acResultsHtml()}</div><div class="spop-cities"><div class="popcities"><span class="c ${STATE.destination==='-'?'on':''}" data-act="dest" data-v="-">✨ לא החלטתי — גלה יעדים</span></div><div class="popcities" style="margin-top:6px"><span class="plabel">פופולרי:</span>${POPULAR.slice(0,8).map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div></div></div>`:''}</div>`;
+  // dates
+  const dtField=`<div class="sfield grow ${p==='dates'?'active':''}" data-act="sbpop" data-v="dates"><label>${STATE.tripType==='oneway'?'תאריך יציאה':'תאריכים'}</label><span class="sval"><bdi>${_dateFieldVal()}</bdi></span>${p==='dates'?`<div class="spop wide" onclick="event.stopPropagation()">${datePopBody()}</div>`:''}</div>`;
+  // passengers
+  const pxField=`<div class="sfield paxfld ${p==='pax'?'active':''}" data-act="sbpop" data-v="pax"><label>נוסעים</label><span class="sval"><bdi>${paxSummary()}</bdi></span>${p==='pax'?`<div class="spop" onclick="event.stopPropagation()">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="sbclose">סיום</div></div>`:''}</div>`;
+  const go=`<button class="sgo" data-act="go">🔍 חפש</button>`;
+  const reset=`<button class="sgo ghost" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺ חדש</button>`;
+  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${go}</div></div>
+    <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div>`;
+}
+function renderPanel(){
+  const dest=DEST_CHOICES.map(([v,l])=>`<span class="c anchor ${STATE.destination===v?'on':''}" data-act="dest" data-v="${v}">${l}</span>`).join('');
+  const mon=monthsList(STATE.monthsShown||6).map(([v,l])=>`<span class="c anchor ${STATE.departMonth===v?'on':''}" data-act="month" data-v="${v}">${l}</span>`).join('');
+  const air=AIRLINES.map(([v,l])=>`<span class="c hard ${STATE.airline===v?'on':''}" data-act="air" data-v="${v===null?'':v}">${l}</span>`).join('');
+  const shab=`<span class="c hard ${STATE.noShabbat?'on':''}" data-act="shab">בלי טיסה בשבת</span>`;
+  const sc=SCORERS.map(([name,l])=>{
+    const w=STATE.scorers[name],on=w>0;
+    return `<span class="sc ${on?'on':''}"><span class="lbl" data-act="sctoggle" data-v="${name}">${on?'':'+ '}${l}</span><span class="w"><button data-act="wdn" data-v="${name}">−</button><b>${w}</b><button data-act="wup" data-v="${name}">+</button></span></span>`;
+  }).join('');
+  const uns=(STATE.unsupported&&STATE.unsupported.length)?`<div class="unsupp"><b>קריטריון בלי לבנה:</b> ${STATE.unsupported.join(' · ')} — לא הומצא, התעלמנו. הסימן להוסיף פונקציה אחת לספרייה.</div>`:'';
+  const ski = STATE.destination==="SKI";
+  const nightsChips=SKI_NIGHTS.map(([v,l])=>`<span class="c ${STATE.skiNights===v?'on':''}" data-act="nights" data-v="${v}">${l}</span>`).join('');
+  const fromChips=SKI_FROMS.map(([v,l])=>`<span class="c ${STATE.skiFromISO===v?'on':''}" data-act="from" data-v="${v}">${l}</span>`).join('');
+  const specificDest = STATE.destination!=="-" && STATE.destination!=="SKI";
+  const monGroup = ski
+    ? `<div class="grp"><div class="t">עונה · אורך · התחלה</div><div class="chips"><span class="c anchor on">⛷️ ינו׳–פבר׳ 2027</span> ${nightsChips} ${fromChips}</div>
+       <div class="t" style="margin-top:8px">התחלה בימי חול · שבוע עם שבת ביעד יורד למטה כאופציה · שבועות עומס מסומנים · מקור יעדים: ${SKI_SOURCE}</div></div>`
+    : '';
+  const DAYS_OPTS=[['','כל יום'],['0','ראשון'],['1','שני'],['2','שלישי'],['3','רביעי'],['4','חמישי'],['5','שישי'],['6','שבת']];
+  const NIGHTS_OPTS=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
+  const SHAB_OPTS=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
+  const selBox=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
+  const modeBtns=[['month','חודשים'],['exact','תאריך מדויק'],['range','טווח + אורך']]
+    .map(([v,l])=>`<span class="c ${STATE.dateMode===v?'on':''}" data-act="datemode" data-v="${v}">${l}</span>`).join('');
+  const monthChips=monthChipsHtml();
+  const nightsSel=selBox('fnights',NIGHTS_OPTS,STATE.flexNights);
+  const startSel=selBox('fstart',DAYS_OPTS,STATE.flexStartDow==null?'':STATE.flexStartDow);
+  const shabSel=selBox('fshab',SHAB_OPTS,STATE.flexShabbat);
+  const _today=new Date().toISOString().slice(0,10);
+  const dateInputs=rangeCalendarHtml();
+  const ADULTS_OPTS=[['1','נוסע 1'],['2','2 נוסעים'],['3','3 נוסעים'],['4','4 נוסעים'],['5','5 נוסעים'],['6','6 נוסעים']];
+  const adultsSel=selBox('adults',ADULTS_OPTS,STATE.adults);
+  const lenRow=`<div class="t" style="margin-top:10px">אורך · יום יציאה · יחס לשבת</div><div class="selrow">${nightsSel} ${startSel} ${shabSel}</div>`;
+  const flexChips=[['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
+    .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
+  let timeBody='';
+  if(STATE.dateMode==='month')
+    timeBody=`<div class="t">חודשים (אפשר לבחור כמה)</div><div class="chips">${monthChips}</div>${lenRow}`;
+  else if(STATE.dateMode==='exact')
+    timeBody=`<div class="t">נסיעה מדויקת · מ – עד · גמישות</div><div class="dateflexrow">${dateInputs}<span class="flexinline">${flexChips}</span></div>${STATE.flexDays>0?`<div class="t" style="margin-top:6px;color:var(--mut-2)">נבדקים כל הצירופים עד ±${STATE.flexDays} ימים סביב התאריכים · הזולים יוצגו ראשונים</div>`:''}`;
+  else
+    timeBody=`<div class="t">טווח יציאה — בין</div>${dateInputs}${lenRow}`;
+  const tripTypeBtns=[['round','⇄ הלוך-חזור'],['oneway','→ כיוון אחד']].map(([v,l])=>`<span class="c ${STATE.tripType===v?'on':''}" data-act="triptype" data-v="${v}">${l}</span>`).join('');
+  const flexGroup = !ski
+    ? `<div class="grp"><div class="t">מתי</div><div class="chips" style="margin-bottom:8px">${tripTypeBtns}</div><div class="chips">${modeBtns}</div><div style="margin-top:10px">${timeBody}</div>
+        <div class="t" style="margin-top:6px">${STATE.tripType==='oneway'?'כיוון אחד — בחר תאריך יציאה בלבד · מתומחר כטיסת כיוון אחד':(specificDest?'"שבת ביעד" = טיול שכולל שבת · "בלי שבת" = חוזר לפני שבת · לעולם לא טיסה בשבת':'ב"לגלות" נסרקות ערים · בחר עיר לחלונות מדויקים עם מחיר אמת')}</div></div>`
+    : '';
+  const destName = destDisplayName();
+  const dowName = STATE.flexStartDow==null?'כל יום':DOW_FULL[STATE.flexStartDow];
+  const shabName = ({any:'שבת: לא משנה',none:'בלי שבת',away:'שבת ביעד'})[STATE.flexShabbat];
+  const lenName = STATE.flexNights==='any'?'כל אורך':STATE.flexNights+' לילות';
+  let timeName='';
+  if(ski) timeName='עונת סקי';
+  else if(STATE.dateMode==='month') timeName=(STATE.months.map(m=>monthLabel(m)).join(', '))+` · ${lenName} · ${dowName}`;
+  else if(STATE.dateMode==='exact') timeName=`<bdi>${_fmtHe(STATE.fromDate)} ← ${_fmtHe(STATE.toDate)}</bdi>${STATE.flexDays>0?` · ±${STATE.flexDays}`:''}`;
+  else timeName=`${STATE.fromDate}–${STATE.toDate} · ${lenName} · ${dowName}`;
+  const summaryLine=`<b>${destName}</b> · ${STATE.tripType==='oneway'?'<bdi>'+_fmtHe(STATE.fromDate)+'</bdi> · כיוון אחד':timeName} · <bdi>${STATE.adults} נוסעים</bdi>${ski?'':' · '+shabName}${maxStopsVal()===0?' · ישיר':(maxStopsVal()===1?' · עד 1 עצירה':' · עד 2 עצירות')}`;
+  document.getElementById('panel').innerHTML=`<div class="panel">
+    ${SAVED.length?`<div class="savedstrip">${SAVED.map((s,i)=>`<span class="savedchip"><span class="ld" data-act="load" data-v="${i}">${s.name}</span><span class="del" data-act="del" data-v="${i}">×</span></span>`).join('')}</div>`:''}
+    ${ski?'':searchBarHtml()}
+    <div class="barhead">
+      <div class="barsum">${summaryLine}</div>
+      <div class="baract"><button class="adjust" data-act="toggle">${STATE.panelOpen?'סגור כוונון ▲':'⚙ כוונון הלכתי ▾'}</button></div>
+    </div>
+    ${STATE.panelOpen?`<div class="detail">
+      ${STATE.summary?`<div class="summary">${STATE.summary}</div>`:''}
+      <div class="grp"><div class="t">לוח עברי — שבת וחג ${STATE.allowShabbat?'מסומנים (מותר לטוס)':'חסומים כברירת מחדל'} · השאר מסומן לשיקולך</div><div class="chips">${[['off','כבוי'],['mark','מופעל']].map(([v,l])=>`<span class="c ${STATE.jewishMode===v?'on':''}" data-act="jmode" data-v="${v}">${l}</span>`).join('')}<span class="c ${STATE.hideFasts?'on':''}" data-act="hfast">${STATE.hideFasts?'צומות מוסתרים ✓':'הסתר צומות'}</span><span class="c hard ${STATE.allowShabbat?'on':''}" data-act="allowshab">${STATE.allowShabbat?'טיסות שבת/חג: מוצגות ✓':'טיסות שבת/חג: ללא'}</span><span class="note">ירוק=חופשה טובה · ענבר=זהירות</span></div></div>
+
+      <div class="advtoggle" data-act="advtoggle">${STATE.advOpen?'פחות אפשרויות ▲':'אפשרויות נוספות ▼'}</div>
+      ${STATE.advOpen?`
+      <div class="grp"><div class="t">אילוצים קשיחים</div><div class="chips">${shab} ${air} ${[[0,'ישיר'],[1,'עד 1 עצירה'],[2,'עד 2 עצירות']].map(o=>`<span class="c hard ${maxStopsVal()===o[0]?'on':''}" data-act="maxstops" data-v="${o[0]}">${o[1]}</span>`).join('')}</div></div>
+      <div class="grp"><div class="t">זמני שבת — בדיקת ערב שבת ומוצ״ש מול שעות הטיסה (צד תל אביב)</div><div class="chips"><span class="c hard ${STATE.shabbatTime?'on':''}" data-act="shabtime">${STATE.shabbatTime?'בדיקת זמנים: פעילה ✓':'בדיקת זמנים: כבויה'}</span></div>${STATE.shabbatTime?`
+        <div class="t" style="margin-top:8px">מרווח לפני כניסת שבת (חזרה בשישי) · שעות</div><div class="chips">${[2,3,4].map(h=>`<span class="c ${(+STATE.marginBefore===h)?'on':''}" data-act="mbefore" data-v="${h}">${h}</span>`).join('')}<input type="text" data-acttext="mbeforefree" value="${[2,3,4].includes(+STATE.marginBefore)?'':STATE.marginBefore}" placeholder="חופשי" class="din" style="width:70px"></div>
+        <div class="t" style="margin-top:8px">מרווח אחרי צאת שבת (יציאה במוצ״ש) · שעות</div><div class="chips">${[2,3,4].map(h=>`<span class="c ${(+STATE.marginAfter===h)?'on':''}" data-act="mafter" data-v="${h}">${h}</span>`).join('')}<input type="text" data-acttext="mafterfree" value="${[2,3,4].includes(+STATE.marginAfter)?'':STATE.marginAfter}" placeholder="חופשי" class="din" style="width:70px"></div>
+        <div class="t" style="margin-top:8px">כניסת נרות (דקות לפני שקיעה) · צאת שבת</div><div class="chips">${[[20,'20 (מרכז)'],[30,'30 (חיפה/צפון)'],[40,'40 (ירושלים)']].map(c=>`<span class="c ${(+STATE.candleMin===c[0])?'on':''}" data-act="candle" data-v="${c[0]}">${c[1]}</span>`).join('')}<span class="c ${STATE.havdalah==='deg85'?'on':''}" data-act="havd" data-v="deg85">צאת רגיל 8.5°</span><span class="c ${STATE.havdalah==='rt72'?'on':''}" data-act="havd" data-v="rt72">רבנו תם 72ד׳</span></div>
+        <div class="t" style="margin-top:8px">סף התראת נחיתת שישי · נחיתה אחרי הסף = התראה מלאה · לפניו = תווית רכה</div><div class="chips">${[['sunrise','🌅 זריחה'],['06:00','עד 06:00'],['08:00','עד 08:00']].map(o=>`<span class="c ${STATE.friThreshold===o[0]?'on':''}" data-act="frithr" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
+        <div class="t" style="margin-top:6px;color:var(--mut-2)">נחיתה בשישי חייבת להיות לפני כניסת שבת פחות המרווח · המראה במוצ״ש אחרי צאת שבת פלוס המרווח · אסור לסמוך על המינימום</div>`:''}</div>
+      <div class="grp"><div class="t">ניקוד רך (משקל)</div><div class="chips">${sc}</div></div>
+      <div class="grp"><div class="t">פרופיל (לחלונות מומלצים)</div><div class="chips">${[['teacher','עובד הוראה (קיץ)'],['yeshiva','ישיבה (בין הזמנים)'],['general','כללי']].map(([v,l])=>`<span class="c ${STATE.profile===v?'on':''}" data-act="prof" data-v="${v}">${l}</span>`).join('')}</div></div>
+      <div class="grp"><div class="t">מטבע להמרה (תצוגה מקורבת)</div><div class="chips">${[['ILS','₪ שקל'],['USD','$ דולר'],['','€ יורו בלבד']].map(([v,l])=>`<span class="c ${STATE.altCurrency===v?'on':''}" data-act="cur" data-v="${v}">${l}</span>`).join('')}</div></div>
+      `:''}
+      ${uns}
+      <div class="detailfoot"><button class="adjust" data-act="jdiag">בדיקת לוח</button><button class="save" data-act="save">שמור חיפוש · v92</button></div>
+      <div id="savebox"></div>
+    </div>`:''}
+  </div>`;
+  document.querySelectorAll('#panel [data-act]').forEach(el=>el.onclick=()=>onAct(el.dataset.act,el.dataset.v));
+  document.querySelectorAll('#panel [data-actsel]').forEach(el=>el.onchange=()=>onAct(el.dataset.actsel,el.value));
+  document.querySelectorAll('#panel [data-actdate]').forEach(el=>el.onchange=()=>onAct('date_'+el.dataset.actdate,el.value));
+  document.querySelectorAll('#panel [data-cal]').forEach(el=>el.onclick=()=>onAct('cal_'+el.dataset.cal,''));
+  document.querySelectorAll('#panel [data-calday]').forEach(el=>el.onclick=()=>onAct('calpick',el.dataset.calday));
+  document.querySelectorAll('#panel [data-acttext]').forEach(el=>el.oninput=()=>onAct('text_'+el.dataset.acttext,el.value));
+  const acq=document.getElementById('acq');
+  if(acq){ acq.oninput=()=>onAcType(acq.value); renderACResults(); }
+  const ojq=document.getElementById('ojq');
+  if(ojq){ ojq.oninput=()=>onOjType(ojq.value); renderOJResults(); }
+  markStale();
+}
+const LIVE_TUNE=new Set(['mbefore','mafter','candle','havd','shabtime','jmode','hfast','allowshab','stops','prof','flexdays','air','shab','datemode','monthtoggle','triptype','sctoggle','wup','wdn','periodmode','periodscope','periodall']);
+let _liveT=null;
+const CHEAP_TUNE=new Set(['mbefore','mafter','candle','havd','shabtime']);
+function onAct(act,v){
+  _onAct(act,v);
+  if(LAST && LAST.specific!==undefined && LIVE_TUNE.has(act)){
+    paintResults();
+    clearTimeout(_liveT);
+    if(CHEAP_TUNE.has(act)) _liveT=setTimeout(()=>retune(),250);
+    else _liveT=setTimeout(()=>{ if(typeof run==='function') run(); },350);
+  }
+}
+function _onAct(act,v){
+  if(act==='sbpop'){ STATE.sbarPop=(STATE.sbarPop===v?null:v); renderPanel(); return; }
+  else if(act==='sbclose'){ STATE.sbarPop=null; renderPanel(); return; }
+  else if(act==='setttype'){ if(v==='openjaw'){ STATE.openJaw=true; STATE.tripType='round'; STATE.sbarPop=(STATE.destination==='-'||STATE.destination==='SKI')?'dest':'oj'; } else { STATE.openJaw=false; STATE.tripType=v; STATE.sbarPop=null; } renderPanel(); return; }
+  else if(act==='swapod'){ const o=STATE.origin,d=STATE.destination; if(d==='-'||d==='SKI'||d==='variable'){ renderPanel(); return; } STATE.origin=d; STATE.destination=o; STATE.destLabel=(CITY[o]&&CITY[o].he)?CITY[o].he:(o==='TLV'?'תל אביב · ישראל':o); if(!CITY[o])CITY[o]={he:(o==='TLV'?'תל אביב · ישראל':o),cc:''}; renderPanel(); return; }
+  else if(act==='setorigin'){ const el=document.getElementById('origq'); if(el&&el.value.trim()){ STATE.origin=el.value.trim().toUpperCase(); } STATE.sbarPop=null; renderPanel(); return; }
+  else if(act==='poppick'){ const item=POPULAR.find(x=>x[0]===v); STATE.destination=v; STATE.destLabel=item?item[1]:''; if(!CITY[v])CITY[v]={he:(item?item[1]:v),cc:''}; else if(item)CITY[v].he=item[1]; AC.matches=[]; AC.q=''; STATE.sbarPop=(STATE.openJaw&&!STATE.outAirport)?'oj':'dates'; renderPanel(); return; }
+  if(act==='dest'){STATE.destination=v; STATE.destLabel=''; if(STATE.sbarPop==='dest')STATE.sbarPop=(v==='-'?null:'dates');}
+  else if(act==='acpick'){
+    const m=AC.matches[+v]; if(!m)return;
+    const code=m.iata||('E'+m.entityId);
+    CITY[code]={he:m.name+(m.sub?(' · '+m.sub):''), cc:'', _entityId:m.entityId, _book:(m.iata||(m.name||'').replace(/\s+/g,'-'))};
+    STATE.destination=code; STATE.destLabel=m.name+(m.sub?(' · '+m.sub):''); AC.matches=[]; AC.q=''; AC.err='';
+    STATE.sbarPop=(STATE.openJaw&&!STATE.outAirport)?'oj':'dates';
+    renderPanel(); return;
+  }
+  else if(act==='ojpick'){
+    const m=OJAC.matches[+v]; if(!m||!m.iata)return;
+    STATE.outAirport=m.iata; OJAC.matches=[]; OJAC.q=''; OJAC.err='';
+    if(STATE.sbarPop==='oj') STATE.sbarPop='dates';
+    renderPanel(); return;
+  }
+  else if(act==='month')STATE.departMonth=v;
+  else if(act==='nights')STATE.skiNights=+v;
+  else if(act==='from')STATE.skiFromISO=v;
+  else if(act==='fnights')STATE.flexNights=(v==='any'?'any':+v);
+  else if(act==='fstart')STATE.flexStartDow=(v===''?null:+v);
+  else if(act==='fshab')STATE.flexShabbat=v;
+  else if(act==='jdiag'){
+    const out=document.getElementById('out');
+    const raw=window.__hebcalRaw||[]; const per=window.__jPeriods||[];
+    out.innerHTML='<div class="meta">בדיקת לוח — תקופות שזוהו</div><div style="font-size:12px;line-height:1.7;padding:12px;white-space:pre-wrap;color:var(--mut)">'+
+      'תקופות:\n'+(per.length?per.join('\n'):'(לא זוהו תקופות)')+
+      '\n\nפריטי Hebcal ('+raw.length+'):\n'+(raw.length?raw.slice(0,80).join('\n'):'(ריק — ייתכן שהקריאה נכשלה)')+
+      (window.__jErr?('\n\nשגיאה: '+window.__jErr):'')+'</div>';
+    return;
+  }
+  else if(act==='load'){ loadSearch(+v); return; }
+  else if(act==='del'){ deleteSearch(+v); return; }
+  else if(act==='ojaw'){ STATE.openJaw=!STATE.openJaw; renderPanel(); return; }
+  else if(act==='text_ojout'){ STATE.outAirport=(v||'').toUpperCase().trim(); return; }
+  else if(act==='hfast'){ STATE.hideFasts=!STATE.hideFasts; renderPanel(); return; }
+  else if(act==='prof')STATE.profile=v;
+  else if(act==='jmode')STATE.jewishMode=v;
+  else if(act==='cur'){ STATE.altCurrency=v; renderPanel(); paintResults(); return; }
+  else if(act==='sortby'){ STATE.sortBy=v; paintResults(); return; }
+  else if(act==='expandwin'){ if(_expandedWins.has(v))_expandedWins.delete(v); else _expandedWins.add(v); paintResults(); return; }
+  else if(act==='carrierfilt'){
+    const cs=carriersInResults().map(c=>c.name);
+    const hid=STATE.hiddenCarriers||[];
+    const visible=cs.filter(n=>!hid.includes(n));
+    if(visible.length===1 && visible[0]===v) STATE.hiddenCarriers=[];          // already isolated → show all
+    else STATE.hiddenCarriers=cs.filter(n=>n!==v);                              // isolate: show only this carrier
+    paintResults(); return;
+  }
+  else if(act==='carrieronly'){ const cs=carriersInResults().map(c=>c.name); STATE.hiddenCarriers=cs.filter(n=>n!==v); paintResults(); return; }
+  else if(act==='carriertoggle'){ const f=STATE.hiddenCarriers||(STATE.hiddenCarriers=[]); const i=f.indexOf(v); if(i>=0)f.splice(i,1); else f.push(v); paintResults(); return; }
+  else if(act==='onlyisraeli'){ STATE.onlyIsraeli=!STATE.onlyIsraeli; paintResults(); return; }
+  else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; paintResults(); return; }
+  else if(act==='rerun'){ if(typeof run==='function') run(); return; }
+  else if(act==='toggle'){ STATE.panelOpen=!STATE.panelOpen; renderPanel(); return; }
+  else if(act==='advtoggle'){ STATE.advOpen=!STATE.advOpen; renderPanel(); return; }
+  else if(act==='adults')STATE.adults=+v;
+  else if(act==='stops')STATE.includeStops=!STATE.includeStops;
+  else if(act==='maxstops'){ STATE.maxStops=+v; STATE.includeStops=(+v>0); if(LAST&&LAST.allWindows){ LAST.ranked=rankedWindows(LAST.allWindows); } paintResults(); return; }
+  else if(act==='moremonths'){ STATE.monthsShown=(STATE.monthsShown||6)+6; renderPanel(); return; }
+  else if(act==='periodmode'){ const [k,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode=m; }
+  else if(act==='periodscope'){ const [k,s]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].scope=s; }
+  else if(act==='periodall'){ const [g,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); TUNE_PERIODS.filter(p=>p.grp===g).forEach(p=>{ if(!STATE.periodPrefs[p.key])STATE.periodPrefs[p.key]={mode:'normal',scope:'travel'}; STATE.periodPrefs[p.key].mode=m; }); }
+  else if(act==='datemode')STATE.dateMode=v;
+  else if(act==='flexdays')STATE.flexDays=+v;
+  else if(act==='allowshab')STATE.allowShabbat=!STATE.allowShabbat;
+  else if(act==='shabtime')STATE.shabbatTime=!STATE.shabbatTime;
+  else if(act==='mbefore')STATE.marginBefore=+v;  else if(act==='mafter')STATE.marginAfter=+v;
+  else if(act==='candle')STATE.candleMin=+v;
+  else if(act==='havd')STATE.havdalah=v;
+  else if(act==='frithr')STATE.friThreshold=v;
+  else if(act==='text_mbeforefree'){ const n=parseFloat(v); if(!isNaN(n)&&n>0)STATE.marginBefore=n; return; }
+  else if(act==='text_mafterfree'){ const n=parseFloat(v); if(!isNaN(n)&&n>0)STATE.marginAfter=n; return; }
+  else if(act==='monthtoggle'){ const i=STATE.months.indexOf(v); if(i>=0){ if(STATE.months.length>1)STATE.months.splice(i,1); } else STATE.months.push(v); }
+  else if(act==='date_from'){ STATE.fromDate=v; if(!STATE.toDate||STATE.toDate<=v){ STATE.toDate=_jAddDays(v,1); } renderPanel(); return; }
+  else if(act==='date_to'){ if(v>STATE.fromDate){ STATE.toDate=v; } else { STATE.toDate=_jAddDays(STATE.fromDate,1); } renderPanel(); return; }
+  else if(act==='cal_toggle'){ STATE.calOpen=!STATE.calOpen; if(STATE.calOpen){ STATE.calView=(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7); STATE.calPick='start'; } renderPanel(); return; }
+  else if(act==='triptype'){ STATE.tripType=v; if(v==='oneway'){ STATE.openJaw=false; STATE.calPick=null; } renderPanel(); return; }
+  else if(act==='paxtoggle'){ STATE.paxOpen=!STATE.paxOpen; renderPanel(); return; }
+  else if(act==='pax_inc'){ const cap={adults:9,children:8,infants:Math.max(1,+STATE.adults)}; STATE[v]=Math.min(cap[v],(+STATE[v])+1); if(+STATE.infants>+STATE.adults)STATE.infants=+STATE.adults; renderPanel(); return; }
+  else if(act==='pax_dec'){ const flo={adults:1,children:0,infants:0}; STATE[v]=Math.max(flo[v],(+STATE[v])-1); if(+STATE.infants>+STATE.adults)STATE.infants=+STATE.adults; renderPanel(); return; }
+  else if(act==='cal_prev'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)-1; if(m<1){m=12;y--;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
+  else if(act==='cal_next'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)+1; if(m>12){m=1;y++;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
+  else if(act==='calpick'){ calPickDay(v); if(!STATE.calOpen && STATE.sbarPop==='dates'){ STATE.sbarPop='pax'; } renderPanel(); return; }
+  else if(act==='air')STATE.airline=v||null;
+  else if(act==='shab')STATE.noShabbat=!STATE.noShabbat;
+  else if(act==='sctoggle')STATE.scorers[v]=STATE.scorers[v]>0?0:3;
+  else if(act==='wup')STATE.scorers[v]=Math.min(5,(STATE.scorers[v]||0)+1);
+  else if(act==='wdn')STATE.scorers[v]=Math.max(0,(STATE.scorers[v]||0)-1);
+  else if(act==='go'){ STATE.panelOpen=false; STATE.calOpen=false; STATE.sbarPop=null; STATE.paxOpen=false; renderPanel(); run(); return; }
+  else if(act==='newsearch'){ newSearch(); return; }
+  else if(act==='save'){ doSave(); return; }
+  renderPanel();
+}
+/* ===== live fetch + render results ===== */
+const EXPLORE_DESTS=['BUH','ATH','SKG','TBS','BUS','EVN','LCA','BUD','BCN','PRG','TIA','SOF','VIE','OPO','LON','ROM'];
+async function fetchOne(origin,dest,month){
+  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&currency=eur`);
+  if(!r.ok)throw new Error("func "+r.status);
+  const d=await r.json(); return (d.flights||[]).map(adapt);
+}
+async function fetchCalOne(origin,dest,month,nights){
+  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&duration=${nights}&mode=cal&currency=eur`);
+  if(!r.ok)throw new Error("cal "+r.status);
+  const d=await r.json(); return (d.flights||[]).map(adapt);
+}
+async function fetchSki(origin,nights){
+  const tasks=[];
+  for(const d of SKI_DESTS) for(const m of SKI_MONTHS) tasks.push(fetchCalOne(origin,d,m,nights));
+  const res=await Promise.allSettled(tasks);
+  let all=[],ok=0,firstErr=null;
+  res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
+  if(ok===0 && firstErr) throw firstErr;
+  return all;
+}
+async function fetchLive(I){
+  const origin=I.origin||"TLV", month=I.departMonth||new Date().toISOString().slice(0,7);
+  // ski mode: scan ski destinations across the season window (Jan–Feb), merge
+  if(I.destination==="SKI"){
+    const tasks=[];
+    for(const d of SKI_DESTS) for(const m of SKI_MONTHS) tasks.push(fetchOne(origin,d,m));
+    const res=await Promise.allSettled(tasks);
+    let all=[],ok=0,firstErr=null;
+    res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
+    if(ok===0 && firstErr) throw firstErr;
+    const best={};
+    for(const f of all){ if(!best[f.to]||f.price<best[f.to].price) best[f.to]=f; }
+    return Object.values(best);
+  }
+  // specific destination -> single query
+  if(I.destination && I.destination!=="-" && I.destination!=="variable"){
+    return fetchOne(origin,I.destination,month);
+  }
+  // "explore" -> scan popular destinations in parallel and merge
+  const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>fetchOne(origin,d,month)));
+  let all=[],ok=0,firstErr=null;
+  res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
+  if(ok===0 && firstErr) throw firstErr;
+  const best={};
+  for(const f of all){ if(!best[f.to]||f.price<best[f.to].price) best[f.to]=f; }
+  return Object.values(best);
+}
+function card(f,rank){
+  const _yy=ms=>new Date(ms).toISOString().slice(2,10).replace(/-/g,'');
+  const gLink = f.retUTC
+    ? `https://www.skyscanner.net/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/${_yy(f.retUTC)}/`
+    : `https://www.skyscanner.net/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/`;
+  const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
+  const out=fmtLocal(f.depUTC);
+  const back=f.retUTC?fmtLocal(f.retUTC):null;
+  const tags=[]; if(f.fresh)tags.push('<span class="rtg fresh">מקום חדש</span>'); if(TS)tags.push(`<span class="rtg trip ${TS.k}">${TS.t}</span>`);
+  const busy=busyLevel(ilAbs(f.depUTC), ilAbs(f.retUTC?f.retUTC+(f.durBack||180)*60000:f.depUTC));
+  if(busy)tags.push(`<span class="rtg busy ${busy.k}">${busy.k==='peak'?'שבוע שיא עומס':'שבוע עמוס'}</span>`);
+  const jw=jewishTagFor(f.cc);
+  if(jw)tags.push(`<span class="rtg jewish">✡ ${jw.join(' · ')}</span>`);
+  const times=`יציאה <b>${out}</b>`+(back?` &nbsp;·&nbsp; חזרה <b>${back}</b>`:'');
+  return `<div class="res ${rank===1?'win':''}"><div class="rank">${rank}</div>
+    <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
+    <div class="rtimes">${times}</div>
+    <div class="rtags">${tags.join('')}</div></div>
+    <div class="rprice"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${f.deep_link}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
+}
+let runSeq=0;
+let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
+async function run(){
+  const my=++runSeq;
+  _lastRunSig=searchSig(); // results about to reflect the current params — clear staleness
+  const sb=document.getElementById('stalebar'); if(sb) sb.innerHTML='';
+  const I=intentOf(STATE);
+  const out=document.getElementById('out');
+  if(out) out.classList.remove('stale-dim');
+  const ski=I.destination==='SKI';
+  const specific=I.destination && I.destination!=='-' && I.destination!=='SKI' && I.destination!=='variable';
+  out.innerHTML = specific
+    ? '<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">בודק מחירי אמת…</div></div>'
+    : '<div class="state"><div class="spin"></div>'+(ski?'סורק יעדי סקי לאורך העונה…':'מושך מחירים אמיתיים…')+'</div>';
+  try{
+    let ranked, flexFallback=false, allWindows=null, lastPriceParams=null, zt=null, dgeo=null;
+    if(ski){
+      const flights=await fetchSki(I.origin||'TLV',STATE.skiNights);
+      if(my!==runSeq)return;
+      const noFly=I.constraints.some(c=>c.type==='noShabbat');
+      ranked=skiSelect(flights,absISO(STATE.skiFromISO),[0,1,2,3,4],noFly).slice(0,12);
+    }else if(specific){
+      let windows;
+      if(STATE.tripType==='oneway'){
+        windows=onewayWindows();
+      }else if(STATE.dateMode==='exact'){
+        if(STATE.flexDays>0){
+          windows=flexWindows(STATE.fromDate,STATE.toDate,STATE.flexDays);
+        }else{
+          const nts=Math.max(1,Math.round((Date.parse(STATE.toDate)-Date.parse(STATE.fromDate))/864e5));
+          windows=[{start:STATE.fromDate,ret:STATE.toDate,nights:nts,TS:windowShabbat(STATE.fromDate,STATE.toDate),price:null}];
+          // offer a Motzei-Shabbat departure (the Saturday night before a Sunday start): one extra night,
+          // only post-havdalah flights survive (the Shabbat-aware layer drops daytime-Saturday ones)
+          if(!STATE.allowShabbat && _dow(STATE.fromDate)===0){
+            const sat=_jAddDays(STATE.fromDate,-1);
+            windows.push({start:sat,ret:STATE.toDate,nights:nts+1,TS:windowShabbat(sat,STATE.toDate),price:null,_motzei:true});
+          }
+        }
+      }else{
+        const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
+        const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
+        const startDows=STATE.flexStartDow==null?null:[STATE.flexStartDow];
+        if(STATE.dateMode==='month'){
+          const ms=(STATE.months.length?STATE.months:[(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7)]).slice().sort();
+          const fromISO=ms[0]+'-01';
+          const [ly,lm]=ms[ms.length-1].split('-').map(Number);
+          const toISO=new Date(Date.UTC(ly,lm,0)).toISOString().slice(0,10);
+          windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows},STATE.flexShabbat)
+            .filter(w=>ms.includes(w.start.slice(0,7)));
+        }else{
+          windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows},STATE.flexShabbat);
+        }
+      }
+      // Jewish availability layer: tag windows; Shabbat/Yom Tov travel is forbidden (always dropped)
+      if(STATE.jewishMode!=='off' && windows.length){
+        const minS=windows.reduce((a,w)=>w.start<a?w.start:a,windows[0].start);
+        const maxR=windows.reduce((a,w)=>{const e=w.ret||w.start; return e>a?e:a;},windows[0].ret||windows[0].start);
+        const jdata=await fetchJewishData(minS,maxR,STATE.profile);
+        if(my!==runSeq)return;
+        windows.forEach(w=>{ const end=w.ret||w.start; const jr=windowJewish(w.start,end,jdata); w.jtags=jr.tags; w._jblock=jr.block; w._fastTravel=jr.fastOnTravel; w.band=tripBand(w.start,end,jdata); });
+        if(!STATE.allowShabbat) windows=windows.filter(w=>!w._jblock || w._motzei);
+        // period preferences (hide / prefer, per travel-day vs whole-trip scope)
+        const PR=periodRanges(jdata);
+        windows.forEach(w=>{ const end=w.ret||w.start; const ap=applyPeriodPrefs(periodHits(w.start,end,PR)); w._periodDrop=ap.drop; w._prefer=ap.prefer; });
+        windows=windows.filter(w=>!w._periodDrop);
+      }
+      const useOJ = STATE.openJaw && STATE.outAirport && STATE.outAirport.length>=3 && I.destination!=='-' && STATE.tripType!=='oneway';
+      const priceParams={origin:I.origin||'TLV', dest:I.destination, useOJ, outAirport:STATE.outAirport, includeStops:true, adults:STATE.adults, children:STATE.children, infants:STATE.infants};
+      _selZT=null; let dzt=null;
+      if(shabAware() && windows.length){
+        const zs=windows.reduce((a,w)=>w.start<a?w.start:a,windows[0].start);
+        const ze=windows.reduce((a,w)=>{const e=w.ret||w.start; return e>a?e:a;},windows[0].ret||windows[0].start);
+        zt=await fetchShabbatTimes(zs,ze); if(my!==runSeq)return;
+        _selZT=zt;
+        try{ dgeo=await geocodeDest(I.destination, STATE.destLabel); if(my!==runSeq)return; if(dgeo){ dzt=await fetchShabbatTimes(zs,ze,dgeo); if(my!==runSeq)return; } }catch(e){}
+      }
+      const first=windows.filter(w=>!w._priced).slice(0,6);
+      const progressCb=(done,total)=>{ if(my!==runSeq)return; const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } };
+      const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
+      if(my!==runSeq)return;
+      first.forEach(w=>{ w._priced=true; const m=priceMap[w.start+'|'+w.ret]; if(m){ w.price=m.price; w.info=m; } if(zt&&w.info) w.shabV=shabbatVerdict(w,zt); if(dzt&&w.info){ w.destV=destVerdict(w,dzt); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},dzt); }); } });
+      ranked=rankedWindows(windows);
+      allWindows=windows; lastPriceParams=priceParams; LAST_DZT=dzt;
+    }else{
+      I.departMonth=STATE.dateMode==='month'?(STATE.months[0]||new Date().toISOString().slice(0,7)):(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7);
+      const flights=await fetchLive(I);
+      if(my!==runSeq)return;
+      ranked=rankLive(flights,I).slice(0,10);
+    }
+    if(!ranked.length){
+      let why='';
+      const RD=RANK_DIAG;
+      // Direct flights sometimes stream in only on a later poll. If we found priced flights but all
+      // were dropped for having stops (and the user wants direct), auto-retry ONCE before giving up.
+      if(specific && RD && RD.withPrice>0 && RD.droppedStops>0 && RD.kept===0 && _directRetrySig!==searchSig()){
+        _directRetrySig=searchSig();
+        out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt">מאתר טיסות ישירות…</div></div>';
+        setTimeout(()=>{ if(my===runSeq) run(); }, 150);
+        return;
+      }
+      if(specific && RD && RD.withPrice>0 && RD.droppedStops>0 && RD.kept===0){
+        why+=`<br><span style="color:var(--amber)">נמצאו טיסות לחלונות — אך כולן עם עצירות, ובחרת "ישיר".</span> <span class="c on" data-act="maxstops" data-v="2" style="margin-inline-start:6px">הצג גם עם עצירות</span>`;
+      } else if(specific && RD && RD.droppedShab>0 && RD.kept===0 && RD.droppedStops===0){
+        why+=`<br><span style="color:var(--amber)">כל הטיסות שנמצאו נוחתות/ממריאות סמוך מדי לשבת.</span> <span class="c on" data-act="allowshab" style="margin-inline-start:6px">הצג גם טיסות שבת</span>`;
+      }
+      if(RAPID_DIAG) why+=`<br><span style="color:var(--amber)">⚠ ${RAPID_DIAG}</span>`;
+      if(specific && RD) why+=`<br><span class="note" style="opacity:.65;font-size:10px">אבחון: חלונות מתומחרים ${RD.total} · עם מחיר ${RD.withPrice} · נפלו עצירות ${RD.droppedStops} · נפלו שבת ${RD.droppedShab}${FLT_DIAG&&FLT_DIAG.max?` · edge: עד ${FLT_DIAG.max} טיסות/חלון${FLT_DIAG.hasOptions?' · edge חדש ✓':' · ⚠ edge ישן (טרם עודכן)'}`:''}${_carrierDiag()}</span>`;
+      // store the priced windows even on the "empty" screen, so the show-with-stops / show-shabbat buttons can re-rank and reveal them
+      if(specific && allWindows) LAST={meta:'', ranked:[], specific, dest:I.destination, oj:(STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
+      out.innerHTML=`<div class="err">אין נתון מתאים לחיפוש הזה כרגע.<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div></div>`;
+    }else{
+      const lbl=ski?'יעדי סקי':specific?'חלונות תאריך':(I.destination==='-')?'יעדים':'אופציות';
+      const note=ski?` · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
+      const rankNote=specific?'מחיר אמת מדורג למעלה · אחרים עם קישור חי · נקי משבת אלא אם סומן':'מדורג: נקי ולא-עמוס למעלה, שבת/עומס למטה';
+      const noPrice = specific && !ranked.some(w=>w.price!=null);
+      const diagNote = (noPrice && RAPID_DIAG) ? ` · <span style="color:var(--amber)">⚠ ${RAPID_DIAG}</span>` : '';
+      const fltNote = (specific && FLT_DIAG && FLT_DIAG.max) ? ` · <span class="note" style="opacity:.6;font-size:10px">edge: עד ${FLT_DIAG.max} טיסות/חלון${FLT_DIAG.hasOptions?' · edge חדש ✓':' · ⚠ edge ישן (טרם עודכן)'}${_carrierDiag()}</span>` : '';
+      let ojNote='';
+      if(specific && STATE.openJaw && STATE.outAirport){
+        const d=LAST_OJ_DIST;
+        const drv=d?`כ-${d.km} ק״מ · ${Math.floor(d.mins/60)}ש׳${d.mins%60?(' '+(d.mins%60)+'ד׳'):''} נהיגה`:'מרחק נהיגה לא זמין לזוג זה';
+        ojNote=` · <span style="color:var(--clear)">✈ טיסה פתוחה: ${I.destination}→${STATE.outAirport} · ${drv}</span>`;
+      }
+      const totalCount = specific && allWindows ? allWindows.length : ranked.length;
+      LAST={meta:`<div class="meta">${totalCount} ${lbl}${note} · ${rankNote}${ojNote}${diagNote}${fltNote}</div>`, ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
+      paintResults();
+      // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
+    }
+  }catch(e){
+    if(my!==runSeq)return;
+    out.innerHTML=`<div class="err"><b>לא הצלחתי למשוך מהפונקציה.</b> ${ski?'ודא שעדכנת את ה-edge function עם מצב calendar (mode=cal) ופרסת מחדש.':'ייתכן חסימת cross-origin.'}<br><code>(${e.message})</code></div>`;
+  }
+}
+
+/* ===== free-text entry ===== */
+const EXAMPLES=[
+  "חופשת סקי בינואר–פברואר, בלי טיסה בשבת",
+  "לאן זול לטוס מתל אביב באוגוסט, מקום חדש שלא היינו בו",
+  "טיסה זולה לבוקרשט ביולי",
+  "משהו זול עם ארקיע, בלי שבת",
+];
+document.getElementById('exs').innerHTML=EXAMPLES.map((e,i)=>`<span class="ex" data-i="${i}">${e.length>38?e.slice(0,38)+'…':e}</span>`).join('');
+document.querySelectorAll('.ex').forEach(el=>el.onclick=()=>{document.getElementById('q').value=EXAMPLES[+el.dataset.i];});
+
+async function translateAndRun(){
+  const text=document.getElementById('q').value.trim();
+  if(!text){document.getElementById('q').focus();return;}
+  const btn=document.getElementById('run'); btn.disabled=true;
+  document.getElementById('panel').innerHTML='<div class="state"><div class="spin"></div>מתרגם את הבקשה לאינטנט…</div>';
+  let I;
+  try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
+  applyIntent(I); renderPanel(); run(); btn.disabled=false;
+}
+document.getElementById('run').onclick=translateAndRun;
+document.getElementById('out').addEventListener('click',e=>{ const t=e.target; if(!t||!t.closest)return; const ab=t.closest('[data-act]'); if(ab){ onAct(ab.dataset.act, ab.dataset.v!=null?ab.dataset.v:''); return; } const mb=t.closest('[data-more]'); if(mb){ loadMoreWindows(); return; } const cl=t.closest('[data-cmpclose]'); if(cl){ const k=cl.dataset.cmpclose; if(LAST&&LAST.exitCmp){ delete LAST.exitCmp[k]; } paintResults(); return; } const el=t.closest('[data-cmp]'); if(el){ const p=el.dataset.cmp.split('|'); onExitCompare(p[0],p[1]); } });
+document.getElementById('stalebar').addEventListener('click',e=>{ const ab=e.target&&e.target.closest&&e.target.closest('[data-act]'); if(ab) onAct(ab.dataset.act, ab.dataset.v||''); });
+document.getElementById('q').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')translateAndRun();});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (STATE.sbarPop||STATE.calOpen||STATE.paxOpen)){ STATE.sbarPop=null; STATE.calOpen=false; STATE.paxOpen=false; renderPanel(); } });
+document.addEventListener('click',e=>{ if(!STATE.sbarPop) return; const t=e.target; if(t&&t.closest&&(t.closest('.sbar')||t.closest('.spop')||t.closest('.ttmenu')||t.closest('.popcities'))) return; STATE.sbarPop=null; renderPanel(); });
+(function(){ const qb=document.getElementById('qbox'), q=document.getElementById('q');
+  q.addEventListener('focus',()=>qb.classList.remove('collapsed'));
+  q.addEventListener('blur',()=>{ if(!q.value.trim()) qb.classList.add('collapsed'); });
+})();
+async function loadHebDate(){
+  const el=document.getElementById('hebdate'); if(!el)return;
+  try{
+    const [rc,rp]=await Promise.all([
+      fetch(`${JCAL_URL}?convert=1&_=${Date.now()}`,{cache:'no-store'}),
+      fetch(`${JCAL_URL}?parsha=1&_=${Date.now()}`,{cache:'no-store'})
+    ]);
+    let s='';
+    if(rc.ok){ const j=await rc.json(); if(j&&j.ok&&j.hebrew){ s=j.hebrew; const ev=(j.events||[]).filter(x=>!/Parashat|Parashas/i.test(x)); if(ev.length) s+=' · '+ev.join(' · '); } }
+    if(rp.ok){ const p=await rp.json(); if(p&&p.ok&&p.il&&p.il.he){
+      const norm=s=>s.replace('פרשת ','').replace(/\s*[-\u05BE]\s*/g,'\u05BE');
+      const ilName=norm(p.il.he);
+      let pstr='פרשת השבוע: '+ilName;
+      if(!p.same && p.diaspora && p.diaspora.he){ pstr+=' · בחו״ל: '+norm(p.diaspora.he); }
+      s = s ? (s+'  ·  '+pstr) : pstr;
+    }}
+    el.textContent=s;
+  }catch(e){ el.textContent=''; }
+}
+
+/* initial: load ski POIs from Supabase (if configured), then show panel + run */
+(async function(){ _loadEntIds(); fetchRates(); loadHebDate(); try{ await Promise.allSettled([loadSki(), loadJewish()]); }catch(e){} renderPanel();
+  document.getElementById('out').innerHTML='<div class="state">כוונן את החיפוש למעלה (יעד, חודש, ימים), ואז לחץ 🔍 חפש</div>'; })();
+</script>
+</body>
+</html>
