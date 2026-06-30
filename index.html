@@ -312,6 +312,9 @@
   .fc-stop{color:var(--mut);font-weight:400;font-size:11px}
   .fc-dur{color:var(--mut-2);font-weight:400;font-size:11px;opacity:.9}
   .fc-times{font-size:12px;color:var(--clear);margin-top:2px}
+  .fc-detail{margin-top:5px;font-size:12px;color:var(--mut);display:flex;flex-wrap:wrap;gap:3px 16px;line-height:1.5}
+  .fc-leg{white-space:nowrap}
+  .fc-leg b{color:var(--mut-2);font-weight:600;margin-left:3px}
   .fc-main .rcrit{margin-top:6px}
   .fc-price{flex:0 0 auto;text-align:end;min-width:88px}
   .ropt{font-size:11.5px;color:var(--mut);margin-top:3px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
@@ -493,7 +496,10 @@ function sortBarHtml(){
   // an israeli / low-cost sort only makes sense when such a flight is competitively priced — not
   // when (e.g. on New York) the only israeli option is El Al at 4× the cheapest fare.
   const band=isFinite(cp.cheapest)?cp.cheapest*1.6:Infinity;
-  const hasIsraeli=isFinite(cp.il)&&cp.il<=band, hasLowCost=isFinite(cp.lc)&&cp.lc<=band;
+  // a category sort is only useful when that category is competitive (within band) AND not already
+  // the very cheapest — if the cheapest flight is itself low-cost (e.g. flydubai to NY), sorting by
+  // low-cost just repeats the price sort, so hide the chip.
+  const hasIsraeli=isFinite(cp.il)&&cp.il<=band&&cp.il>cp.cheapest, hasLowCost=isFinite(cp.lc)&&cp.lc<=band&&cp.lc>cp.cheapest;
   const opts=[['price','מחיר'],['time','מוקדם']];
   if(hasIsraeli) opts.push(['airline','חברה ישראלית']);
   if(hasLowCost) opts.push(['lowcost','לואו-קוסט']);
@@ -1689,12 +1695,26 @@ function isIsraeliCarrier(name){ return ISRAELI_CARRIERS.test(name||''); }
 // every leg of the round trip flies an israeli carrier (El Al / Arkia / Israir / Sun d'or) —
 // for the "only israeli" safety filter. A mixed itinerary (e.g. Air Europa out, El Al back) fails.
 function isAllIsraeli(name){ const legs=String(name||'').split(' / '); return legs.length>0 && legs.every(l=>isIsraeliCarrier(l)); }
+// when the user isolates a single carrier in the side panel, return that carrier; else null
+function _isolatedCarrier(){
+  const hid=STATE.hiddenCarriers||[]; if(!hid.length) return null;
+  const all=carriersInResults().map(c=>c.name); const vis=all.filter(n=>!hid.includes(n));
+  return vis.length===1 ? vis[0] : null;
+}
 function sortFlights(arr){
   const a=arr.slice(); const sb=STATE.sortBy||'price';
-  if(sb==='time') a.sort((x,y)=>{ const tx=x.outDep||'99:99', ty=y.outDep||'99:99'; return tx<ty?-1:(tx>ty?1:((x.price||0)-(y.price||0))); });
-  else if(sb==='airline') a.sort((x,y)=>{ const ix=isIsraeliCarrier(x.carrier)?0:1, iy=isIsraeliCarrier(y.carrier)?0:1; if(ix!==iy)return ix-iy; const cx=x.carrier||'', cy=y.carrier||''; if(cx!==cy)return cx<cy?-1:1; return (x.price||0)-(y.price||0); });
-  else if(sb==='lowcost') a.sort((x,y)=>{ const ix=isLowCost(x.carrier)?0:1, iy=isLowCost(y.carrier)?0:1; if(ix!==iy)return ix-iy; return (x.price||0)-(y.price||0); });
-  else a.sort((x,y)=>(x.price||0)-(y.price||0));
+  // base comparator for the chosen sort mode
+  let cmp;
+  if(sb==='time') cmp=(x,y)=>{ const tx=x.outDep||'99:99', ty=y.outDep||'99:99'; return tx<ty?-1:(tx>ty?1:((x.price||0)-(y.price||0))); };
+  else if(sb==='airline') cmp=(x,y)=>{ const ix=isIsraeliCarrier(x.carrier)?0:1, iy=isIsraeliCarrier(y.carrier)?0:1; if(ix!==iy)return ix-iy; const cx=x.carrier||'', cy=y.carrier||''; if(cx!==cy)return cx<cy?-1:1; return (x.price||0)-(y.price||0); };
+  else if(sb==='lowcost') cmp=(x,y)=>{ const ix=isLowCost(x.carrier)?0:1, iy=isLowCost(y.carrier)?0:1; if(ix!==iy)return ix-iy; return (x.price||0)-(y.price||0); };
+  else cmp=(x,y)=>(x.price||0)-(y.price||0);
+  // when a carrier is isolated, surface FULL same-carrier round trips (that carrier on both legs)
+  // first — e.g. isolating ITA shows ITA↔ITA before ITA+other-airline combinations.
+  const iso=_isolatedCarrier();
+  if(iso){ const pure=o=>{ const fs=carrierFamilies(o.carrier); return (fs.length>0 && fs.every(f=>f===iso))?0:1; };
+    a.sort((x,y)=>{ const p=pure(x)-pure(y); return p||cmp(x,y); }); }
+  else a.sort(cmp);
   return a;
 }
 // one card per flight
@@ -1707,8 +1727,10 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
   // layover detail: airport code + wait time (e.g. "FCO 1ש55ד")
   const _loTxt=ls=>(Array.isArray(ls)&&ls.length)?ls.map(l=>`${l.code}${l.min?` ${_durFmt(l.min)}`:''}`).join(' · '):'';
   const _outLo=_loTxt(fl.outLayovers), _backLo=_loTxt(fl.backLayovers);
-  const _loSpan=t=>t?` <span class="fc-stop">⏱ עצירה ${t}</span>`:'';
-  const times = oneway ? (fl.outDep?`טיסה ${fl.outDep}–${fl.outArr}${_dOut?` <span class="fc-dur">(${_dOut})</span>`:''}${_loSpan(_outLo)}`:'') : ((fl.outDep&&fl.backDep)?`הלוך ${fl.outDep}–${fl.outArr}${_dOut?` <span class="fc-dur">(${_dOut})</span>`:''}${_loSpan(_outLo)} · חזור ${fl.backDep}–${fl.backArr}${_dBack?` <span class="fc-dur">(${_dBack})</span>`:''}${_loSpan(_backLo)}`:'');
+  const times = oneway ? (fl.outDep?`טיסה ${fl.outDep}–${fl.outArr}`:'') : ((fl.outDep&&fl.backDep)?`הלוך ${fl.outDep}–${fl.outArr} · חזור ${fl.backDep}–${fl.backArr}`:'');
+  // readable, spaced detail line (duration + layover) — kept off the cramped times line
+  const _leg=(label,dur,lo)=> (dur||lo) ? `<span class="fc-leg">${label?`<b>${label}</b> `:''}${dur?`⏱ ${dur}`:''}${dur&&lo?' · ':''}${lo?`עצירה ${lo}`:''}</span>` : '';
+  const detail = oneway ? _leg('',_dOut,_outLo) : `${_leg('הלוך',_dOut,_outLo)}${_leg('חזור',_dBack,_backLo)}`;
   const _tlvTag = fl._shabV ? `<span class="rtg crit shabv-${fl._shabV.cls}">🕯️ ${fl._shabV.t}</span>` : '';
   const _destTag = fl._destV ? `<span class="rtg crit destv destv-${fl._destV.cls}">📍 ${fl._destV.t}</span>` : '';
   const verdict = (_tlvTag||_destTag) ? `<div class="rcrit">${_tlvTag}${_destTag}</div>` : '';
@@ -1722,6 +1744,7 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
     <div class="fc-main">
       <div class="fc-carrier">${carr}${stopTxt?` <span class="fc-stop">· ${stopTxt}</span>`:''}</div>
       ${times?`<div class="fc-times">${times}</div>`:''}
+      ${detail?`<div class="fc-detail">${detail}</div>`:''}
       ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: €${Math.round(fl.altPrice/STATE.adults)} לאחד</div>`:''}
       ${verdict}
     </div>
