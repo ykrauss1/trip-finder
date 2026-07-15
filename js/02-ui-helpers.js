@@ -117,7 +117,7 @@ function sortBarHtml(){
 async function fetchRates(){
   // try Frankfurter (ECB), then fawazahmed0 CDN as a backup
   try{
-    const r=await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,ILS');
+    const r=await fetch('https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD,ILS');
     if(r.ok){ const j=await r.json(); if(j&&j.rates&&j.rates.ILS){ RATES=j.rates; RATES_LIVE=true; return; } }
   }catch(e){}
   try{
