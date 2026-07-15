@@ -18,14 +18,14 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
   let conv='';
   if(perEuro!=null && STATE.altCurrency && RATES[STATE.altCurrency]){ const sym={USD:'$',ILS:'₪'}[STATE.altCurrency]||''; conv=` ≈ ${sym}${Math.round(perEuro*RATES[STATE.altCurrency]).toLocaleString()}`; }
   const priceBlock = perEuro!=null
-    ? `<div class="v">€${perEuro}</div><div class="k">לאחד${conv}${STATE.adults>1?` · סה״כ €${fl.price}`:''}</div>`
+    ? `<div class="v">€${perEuro}</div><div class="k">${STATE.adults>1?'לאחד':''}${conv.replace(/^ ≈ /,STATE.adults>1?' ≈ ':'≈ ')}${STATE.adults>1?` · סה״כ €${fl.price}`:''}</div>`
     : `<div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div>`;
   return `<div class="fcard${isBest?' win':''}${fl._shabV&&fl._shabV.forbidden?' forb':''}">
     <div class="fc-main">
       <div class="fc-carrier">${carr}${stopTxt?` <span class="fc-stop">· ${stopTxt}</span>`:''}</div>
       ${times?`<div class="fc-times">${times}</div>`:''}
       ${detail?`<div class="fc-detail">${detail}</div>`:''}
-      ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: €${Math.round(fl.altPrice/STATE.adults)} לאחד</div>`:''}
+      ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: €${Math.round(fl.altPrice/STATE.adults)}${STATE.adults>1?' לאחד':''}</div>`:''}
       ${verdict}
     </div>
     <div class="fc-price">${priceBlock}<a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div>
