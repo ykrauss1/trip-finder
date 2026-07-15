@@ -228,20 +228,20 @@ document.addEventListener('click',e=>{ if(!STATE.sbarPop) return; const t=e.targ
   q.addEventListener('blur',()=>{ if(!q.value.trim()) qb.classList.add('collapsed'); });
 })();
 /* Hebcal מחזיר שמות אירועים באנגלית — תרגום לעברית, עם fallback לאנגלית אם לא מוכר */
-const HEB_MONTHS={"Nisan":"ניסן","Iyyar":"אייר","Sivan":"סיוון","Tamuz":"תמוז","Av":"אב","Elul":"אלול","Tishrei":"תשרי","Cheshvan":"חשוון","Kislev":"כסלו","Tevet":"טבת","Sh'vat":"שבט","Adar":"אדר","Adar I":"אדר א׳","Adar II":"אדר ב׳"};
-const HEB_ROMAN={"I":"א׳","II":"ב׳","III":"ג׳","IV":"ד׳","V":"ה׳","VI":"ו׳","VII":"ז׳","VIII":"ח׳"};
-const HEB_EVENTS={"Rosh Hashana":"ראש השנה","Erev Rosh Hashana":"ערב ראש השנה","Yom Kippur":"יום כיפור","Erev Yom Kippur":"ערב יום כיפור","Sukkot":"סוכות","Erev Sukkot":"ערב סוכות","Shmini Atzeret":"שמיני עצרת","Simchat Torah":"שמחת תורה","Chanukah":"חנוכה","Tu BiShvat":"ט״ו בשבט","Purim":"פורים","Shushan Purim":"שושן פורים","Erev Purim":"ערב פורים","Pesach":"פסח","Erev Pesach":"ערב פסח","Pesach Sheni":"פסח שני","Lag BaOmer":"ל״ג בעומר","Shavuot":"שבועות","Erev Shavuot":"ערב שבועות","Tish'a B'Av":"תשעה באב","Erev Tish'a B'Av":"ערב תשעה באב","Tzom Tammuz":"צום שבעה עשר בתמוז","Tzom Gedaliah":"צום גדליה","Asara B'Tevet":"עשרה בטבת","Ta'anit Esther":"תענית אסתר","Ta'anit Bechorot":"תענית בכורות","Yom HaShoah":"יום השואה","Yom HaZikaron":"יום הזיכרון","Yom HaAtzma'ut":"יום העצמאות","Yom Yerushalayim":"יום ירושלים","Sigd":"סיגד","Yom HaAliyah":"יום העלייה","Rosh Hashana LaBehemot":"ראש השנה לבהמות","Shabbat Shuva":"שבת שובה","Shabbat Shekalim":"שבת שקלים","Shabbat Zachor":"שבת זכור","Shabbat Parah":"שבת פרה","Shabbat HaChodesh":"שבת החודש","Shabbat HaGadol":"שבת הגדול","Shabbat Chazon":"שבת חזון","Shabbat Nachamu":"שבת נחמו","Shabbat Shirah":"שבת שירה","Hoshana Raba":"הושענא רבה","Yom Kippur Katan":"יום כיפור קטן"};
+const HEBCAL_MONTHS={"Nisan":"ניסן","Iyyar":"אייר","Sivan":"סיוון","Tamuz":"תמוז","Av":"אב","Elul":"אלול","Tishrei":"תשרי","Cheshvan":"חשוון","Kislev":"כסלו","Tevet":"טבת","Sh'vat":"שבט","Adar":"אדר","Adar I":"אדר א׳","Adar II":"אדר ב׳"};
+const HEBCAL_ROMAN={"I":"א׳","II":"ב׳","III":"ג׳","IV":"ד׳","V":"ה׳","VI":"ו׳","VII":"ז׳","VIII":"ח׳"};
+const HEBCAL_EVENTS={"Rosh Hashana":"ראש השנה","Erev Rosh Hashana":"ערב ראש השנה","Yom Kippur":"יום כיפור","Erev Yom Kippur":"ערב יום כיפור","Sukkot":"סוכות","Erev Sukkot":"ערב סוכות","Shmini Atzeret":"שמיני עצרת","Simchat Torah":"שמחת תורה","Chanukah":"חנוכה","Tu BiShvat":"ט״ו בשבט","Purim":"פורים","Shushan Purim":"שושן פורים","Erev Purim":"ערב פורים","Pesach":"פסח","Erev Pesach":"ערב פסח","Pesach Sheni":"פסח שני","Lag BaOmer":"ל״ג בעומר","Shavuot":"שבועות","Erev Shavuot":"ערב שבועות","Tish'a B'Av":"תשעה באב","Erev Tish'a B'Av":"ערב תשעה באב","Tzom Tammuz":"צום שבעה עשר בתמוז","Tzom Gedaliah":"צום גדליה","Asara B'Tevet":"עשרה בטבת","Ta'anit Esther":"תענית אסתר","Ta'anit Bechorot":"תענית בכורות","Yom HaShoah":"יום השואה","Yom HaZikaron":"יום הזיכרון","Yom HaAtzma'ut":"יום העצמאות","Yom Yerushalayim":"יום ירושלים","Sigd":"סיגד","Yom HaAliyah":"יום העלייה","Rosh Hashana LaBehemot":"ראש השנה לבהמות","Shabbat Shuva":"שבת שובה","Shabbat Shekalim":"שבת שקלים","Shabbat Zachor":"שבת זכור","Shabbat Parah":"שבת פרה","Shabbat HaChodesh":"שבת החודש","Shabbat HaGadol":"שבת הגדול","Shabbat Chazon":"שבת חזון","Shabbat Nachamu":"שבת נחמו","Shabbat Shirah":"שבת שירה","Hoshana Raba":"הושענא רבה","Yom Kippur Katan":"יום כיפור קטן"};
 function hebEvName(t){
   if(!t) return t;
-  let m=/^Rosh Chodesh (.+)$/.exec(t); if(m) return 'ראש חודש '+(HEB_MONTHS[m[1]]||m[1]);
-  m=/^Chanukah: (\d+) Candles?$/.exec(t); if(m) return 'חנוכה · נר '+(HEB_ROMAN[['','I','II','III','IV','V','VI','VII','VIII'][+m[1]]]||m[1]);
+  let m=/^Rosh Chodesh (.+)$/.exec(t); if(m) return 'ראש חודש '+(HEBCAL_MONTHS[m[1]]||m[1]);
+  m=/^Chanukah: (\d+) Candles?$/.exec(t); if(m) return 'חנוכה · נר '+(HEBCAL_ROMAN[['','I','II','III','IV','V','VI','VII','VIII'][+m[1]]]||m[1]);
   if(/^Chanukah: 8th Day$/.test(t)) return 'זאת חנוכה';
-  m=/^(.+?)\s+([IVX]+)\s*\(CH['’]{2}M\)$/.exec(t); if(m) return 'חול המועד '+(HEB_EVENTS[m[1]]||m[1]);
-  m=/^(.+?)\s*\(CH['’]{2}M\)$/.exec(t); if(m) return 'חול המועד '+(HEB_EVENTS[m[1]]||m[1]);
+  m=/^(.+?)\s+([IVX]+)\s*\(CH['’]{2}M\)$/.exec(t); if(m) return 'חול המועד '+(HEBCAL_EVENTS[m[1]]||m[1]);
+  m=/^(.+?)\s*\(CH['’]{2}M\)$/.exec(t); if(m) return 'חול המועד '+(HEBCAL_EVENTS[m[1]]||m[1]);
   m=/^(.+?)\s+VII\s*\(Hoshana Raba\)$/.exec(t); if(m) return 'הושענא רבה';
-  m=/^(.+?) \(observed\)$/.exec(t); if(m) return (HEB_EVENTS[m[1]]||m[1])+' (נדחה)';
-  m=/^(.+?)\s+([IVX]+)$/.exec(t); if(m&&HEB_EVENTS[m[1]]) return HEB_EVENTS[m[1]]+' '+(HEB_ROMAN[m[2]]||m[2]);
-  return HEB_EVENTS[t]||t;
+  m=/^(.+?) \(observed\)$/.exec(t); if(m) return (HEBCAL_EVENTS[m[1]]||m[1])+' (נדחה)';
+  m=/^(.+?)\s+([IVX]+)$/.exec(t); if(m&&HEBCAL_EVENTS[m[1]]) return HEBCAL_EVENTS[m[1]]+' '+(HEBCAL_ROMAN[m[2]]||m[2]);
+  return HEBCAL_EVENTS[t]||t;
 }
 async function loadHebDate(){
   const el=document.getElementById('hebdate'); if(!el)return;
