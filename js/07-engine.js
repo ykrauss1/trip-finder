@@ -214,7 +214,11 @@ function destVerdict(w,dzt){
       if(ct!=null && t>ct){ parts.push(`✗ נחיתה ביעד ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
       else if(ct!=null && t>ct-mb){ parts.push(`ביעד · נחיתה ${_hm(t)} · כניסה ${_hm(ct)} · רק ${_gap(ct-t)} ⚠`); bump('tight'); }
       else if(ct!=null){ parts.push(`ביעד · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} ✓`); bump('good'); }
-    } else if(dow===6){ parts.push('✗ נחיתה ביעד בשבת'); forbidden=true; }
+    } else if(dow===6){ const ht=_isoMin(dzt.havdalah[dd]);
+      if(ht!=null && t>ht){ parts.push(`ביעד · נחיתה במוצ״ש ${_hm(t)} · צאת שבת ${_hm(ht)} ✓`); bump('good'); }
+      else if(ht!=null){ parts.push(`✗ נחיתה ביעד בשבת · ${_hm(t)} לפני צאת שבת ${_hm(ht)}`); forbidden=true; }
+      else { parts.push('✗ נחיתה ביעד בשבת'); forbidden=true; }
+    }
   }
   // departure from destination (backDep) on w.ret
   if(w.ret){
