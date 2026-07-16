@@ -289,7 +289,9 @@ async function translateAndRun(){
   document.getElementById('panel').innerHTML='<div class="state"><div class="spin"></div>מתרגם את הבקשה לאינטנט…</div>';
   let I;
   try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
-  applyIntent(I); renderPanel(); run(); btn.disabled=false;
+  applyIntent(I); renderPanel();
+  if(I.mode==='dates'){ runPlanner(); } else { run(); }
+  btn.disabled=false;
 }
 document.getElementById('run').onclick=translateAndRun;
 document.getElementById('out').addEventListener('click',e=>{ const t=e.target; if(!t||!t.closest)return; const ab=t.closest('[data-act]'); if(ab){ onAct(ab.dataset.act, ab.dataset.v!=null?ab.dataset.v:''); return; } const mb=t.closest('[data-more]'); if(mb){ loadMoreWindows(); return; } const cl=t.closest('[data-cmpclose]'); if(cl){ const k=cl.dataset.cmpclose; if(LAST&&LAST.exitCmp){ delete LAST.exitCmp[k]; } paintResults(); return; } const el=t.closest('[data-cmp]'); if(el){ const p=el.dataset.cmp.split('|'); onExitCompare(p[0],p[1]); } });
