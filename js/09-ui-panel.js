@@ -127,12 +127,19 @@ function monthChipsHtml(){
   return list.map(([v,l])=>`<span class="c anchor ${STATE.months.includes(v)?'on':''}" data-act="monthtoggle" data-v="${v}">${l}</span>`).join('')
     +`<span class="c moremonths" data-act="moremonths">+ עוד חודשים</span>`;
 }
+function _dowSel(){ return (STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow!=null?[STATE.flexStartDow]:null); }
+function dayChipsHtml(act,arr){
+  const DN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const on=arr&&arr.length?arr:null;
+  return `<span class="c ${!on?'on':''}" data-act="${act}" data-v="">כל יום</span>`+DN.map((l,d)=>`<span class="c ${on&&on.includes(d)?'on':''}" data-act="${act}" data-v="${d}">${l}</span>`).join('');
+}
 function lenRowHtml(){
   const sb=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
   const N=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
-  const D=[['','כל יום'],['0','ראשון'],['1','שני'],['2','שלישי'],['3','רביעי'],['4','חמישי'],['5','שישי'],['6','שבת']];
   const S=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
-  return `<div class="t" style="margin-top:8px">אורך · יום יציאה · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fstart',D,STATE.flexStartDow==null?'':STATE.flexStartDow)} ${sb('fshab',S,STATE.flexShabbat)}</div>`;
+  return `<div class="t" style="margin-top:8px">אורך · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fshab',S,STATE.flexShabbat)}</div>`
+    +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
 }
 function datePopBody(){
   if(STATE.tripType==='oneway'){
@@ -186,7 +193,6 @@ function renderPanel(){
     ? `<div class="grp"><div class="t">עונה · אורך · התחלה</div><div class="chips"><span class="c anchor on">⛷️ ינו׳–פבר׳ 2027</span> ${nightsChips} ${fromChips}</div>
        <div class="t" style="margin-top:8px">התחלה בימי חול · שבוע עם שבת ביעד יורד למטה כאופציה · שבועות עומס מסומנים · מקור יעדים: ${SKI_SOURCE}</div></div>`
     : '';
-  const DAYS_OPTS=[['','כל יום'],['0','ראשון'],['1','שני'],['2','שלישי'],['3','רביעי'],['4','חמישי'],['5','שישי'],['6','שבת']];
   const NIGHTS_OPTS=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
   const SHAB_OPTS=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
   const selBox=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
@@ -194,13 +200,14 @@ function renderPanel(){
     .map(([v,l])=>`<span class="c ${STATE.dateMode===v?'on':''}" data-act="datemode" data-v="${v}">${l}</span>`).join('');
   const monthChips=monthChipsHtml();
   const nightsSel=selBox('fnights',NIGHTS_OPTS,STATE.flexNights);
-  const startSel=selBox('fstart',DAYS_OPTS,STATE.flexStartDow==null?'':STATE.flexStartDow);
   const shabSel=selBox('fshab',SHAB_OPTS,STATE.flexShabbat);
   const _today=new Date().toISOString().slice(0,10);
   const dateInputs=rangeCalendarHtml();
   const ADULTS_OPTS=[['1','נוסע 1'],['2','2 נוסעים'],['3','3 נוסעים'],['4','4 נוסעים'],['5','5 נוסעים'],['6','6 נוסעים']];
   const adultsSel=selBox('adults',ADULTS_OPTS,STATE.adults);
-  const lenRow=`<div class="t" style="margin-top:10px">אורך · יום יציאה · יחס לשבת</div><div class="selrow">${nightsSel} ${startSel} ${shabSel}</div>`;
+  const lenRow=`<div class="t" style="margin-top:10px">אורך · יחס לשבת</div><div class="selrow">${nightsSel} ${shabSel}</div>`
+    +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
   const flexChips=[['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
     .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
   let timeBody='';
@@ -216,7 +223,8 @@ function renderPanel(){
         <div class="t" style="margin-top:6px">${STATE.tripType==='oneway'?'כיוון אחד — בחר תאריך יציאה בלבד · מתומחר כטיסת כיוון אחד':(specificDest?'"שבת ביעד" = טיול שכולל שבת · "בלי שבת" = חוזר לפני שבת · לעולם לא טיסה בשבת':'ב"לגלות" נסרקות ערים · בחר עיר לחלונות מדויקים עם מחיר אמת')}</div></div>`
     : '';
   const destName = destDisplayName();
-  const dowName = STATE.flexStartDow==null?'כל יום':DOW_FULL[STATE.flexStartDow];
+  const _sd=_dowSel();
+  const dowName = (!_sd?'כל יום':_sd.map(d=>DOW_FULL[d]).join('/'))+(STATE.flexEndDows&&STATE.flexEndDows.length?' ← '+STATE.flexEndDows.map(d=>DOW_FULL[d]).join('/'):'');
   const shabName = ({any:'שבת: לא משנה',none:'בלי שבת',away:'שבת ביעד'})[STATE.flexShabbat];
   const lenName = STATE.flexNights==='any'?'כל אורך':STATE.flexNights+' לילות';
   let timeName='';
@@ -304,7 +312,8 @@ function _onAct(act,v){
   else if(act==='nights')STATE.skiNights=+v;
   else if(act==='from')STATE.skiFromISO=v;
   else if(act==='fnights')STATE.flexNights=(v==='any'?'any':+v);
-  else if(act==='fstart')STATE.flexStartDow=(v===''?null:+v);
+  else if(act==='fstartd'){ if(v===''){STATE.flexStartDows=null;} else {let a=(_dowSel()||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexStartDows=a.length?a:null;} STATE.flexStartDow=null; }
+  else if(act==='fendd'){ if(v===''){STATE.flexEndDows=null;} else {let a=(STATE.flexEndDows||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexEndDows=a.length?a:null;} }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
     const out=document.getElementById('out');
