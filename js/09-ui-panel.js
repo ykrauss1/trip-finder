@@ -376,7 +376,7 @@ function _onAct(act,v){
   else if(act==='pax_dec'){ const flo={adults:1,children:0,infants:0}; STATE[v]=Math.max(flo[v],(+STATE[v])-1); if(+STATE.infants>+STATE.adults)STATE.infants=+STATE.adults; renderPanel(); return; }
   else if(act==='cal_prev'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)-1; if(m<1){m=12;y--;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
   else if(act==='cal_next'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)+1; if(m>12){m=1;y++;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
-  else if(act==='calpick'){ calPickDay(v); if(!STATE.calOpen && STATE.sbarPop==='dates'){ STATE.sbarPop='pax'; } renderPanel(); return; }
+  else if(act==='calpick'){ calPickDay(v); if(!STATE.calOpen && STATE.sbarPop==='dates' && (STATE.tripType==='oneway' || STATE.dateMode==='exact')){ STATE.sbarPop='pax'; } renderPanel(); return; }
   else if(act==='air')STATE.airline=v||null;
   else if(act==='shab')STATE.noShabbat=!STATE.noShabbat;
   else if(act==='sctoggle')STATE.scorers[v]=STATE.scorers[v]>0?0:3;
