@@ -112,6 +112,7 @@ function genWindows(fromISO,toISO,rules){
     if(rules.startDows && !rules.startDows.includes(start.getUTCDay())) continue;
     for(let n=rules.nightsMin;n<=rules.nightsMax;n++){
       const ret=new Date(start.getTime()+n*864e5);
+      if(rules.endDows && !rules.endDows.includes(ret.getUTCDay())) continue;
       out.push({start:start.toISOString().slice(0,10),nights:n,ret:ret.toISOString().slice(0,10)});
     }
   }
