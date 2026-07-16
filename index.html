@@ -11,7 +11,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '2';
+var APP_VER = '3';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 </script>
 </head>
@@ -56,6 +56,16 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
   </footer>
 </div>
 
+<button id="toTop" title="חזרה לראש העמוד" style="display:none;position:fixed;bottom:18px;left:18px;z-index:999;width:44px;height:44px;border-radius:50%;border:1px solid #2f3d73;background:#1b2547;color:#cfe3ff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45)">↑</button>
+<script>
+/* כפתור צף לחזרה לראש העמוד — מופיע אחרי גלילה של 400px */
+(function(){
+  var b=document.getElementById('toTop');
+  function chk(){ var y=window.scrollY||document.documentElement.scrollTop||0; b.style.display=y>400?'block':'none'; }
+  window.addEventListener('scroll',chk); chk();
+  b.onclick=function(){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); } };
+})();
+</script>
 <script>
 /* טוען את כל קבצי ה-JS עם מספר הגרסה (APP_VER מוגדר למעלה ב-head).
    async=false שומר על סדר הרצה זהה לתגים סטטיים. */
