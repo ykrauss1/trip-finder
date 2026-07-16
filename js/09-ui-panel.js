@@ -21,7 +21,12 @@ function newSearch(){
 function applyIntent(I){
   STATE.origin=I.origin||"TLV";
   STATE.destination=(I.destination&&I.destination!=="variable")?I.destination:"-";
-  STATE.departMonth=I.departMonth||STATE.departMonth||new Date().toISOString().slice(0,7);
+  STATE.departMonth=I.departMonth||(I.months&&I.months[0])||STATE.departMonth||new Date().toISOString().slice(0,7);
+  if(I.months&&I.months.length){ STATE.dateMode='month'; STATE.months=I.months.slice().sort(); }
+  if(I.startDays&&I.startDays.length){ STATE.flexStartDows=I.startDays.slice().sort(); STATE.flexStartDow=null; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  if(I.endDays&&I.endDays.length){ STATE.flexEndDows=I.endDays.slice().sort(); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  if(I.nights!=null&&isFinite(+I.nights)){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  else if((I.startDays&&I.startDays.length)||(I.endDays&&I.endDays.length)){ STATE.flexNights='any'; }
   STATE.noShabbat=(I.constraints||[]).some(c=>c.type==="noShabbat");
   const al=(I.constraints||[]).find(c=>c.type==="airline"); STATE.airline=al?al.value:null;
   STATE.scorers={price:0,novelty:0,comfort:0};
