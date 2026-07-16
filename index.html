@@ -11,7 +11,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '1';
+var APP_VER = '2';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 </script>
 </head>
@@ -51,6 +51,7 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 
   <footer>
     <p><b>איך זה עובד —</b> טקסט חופשי → מודל שפה מתרגם לאינטנט → צ׳יפים לחיצים לכוונון → המנוע מדרג (אילוצים, ניקוד, עדשת שבת על כל מעטפת הטיסה) → מחירים אמיתיים מ-<code>flights-search</code> שלך → deep link להזמנה.</p>
+    <p style="margin-top:6px;color:var(--mut-2);font-size:11px">גרסת אפליקציה: <b id="appver"></b></p>
     <p style="margin-top:6px"><b>שמירה —</b> כפתור "שמור חיפוש" מראה את אובייקט האינטנט שיישמר. החיבור לטבלאות Supabase (כדי שחיפוש יחזור ואפשר יהיה לנטר אותו) — להמשך, יחד.</p>
   </footer>
 </div>
@@ -59,6 +60,7 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 /* טוען את כל קבצי ה-JS עם מספר הגרסה (APP_VER מוגדר למעלה ב-head).
    async=false שומר על סדר הרצה זהה לתגים סטטיים. */
 (function(){
+  var av=document.getElementById('appver'); if(av) av.textContent=APP_VER;
   var files=['01-config','02-ui-helpers','03-halacha','04-data','05-ranking','06-api','07-engine','08-ui-cards','09-ui-panel','10-main'];
   for(var i=0;i<files.length;i++){
     var s=document.createElement('script');
