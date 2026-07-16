@@ -111,17 +111,24 @@ function windowCard(w,rank,dest){
 }
 
 function buildPrompt(text){
-  return `תרגם בקשת חיפוש טיסות חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
+  const today=new Date().toISOString().slice(0,10);
+  return `תרגם בקשת חיפוש טיסות/תכנון חופשה חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
+התאריך היום: ${today}. כשמזוהה חודש/עונה בלי שנה — בחר את המופע העתידי הקרוב.
 שדות:
 - origin: IATA מוצא (ברירת מחדל "TLV")
-- destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש, או "SKI" אם הבקשה על סקי/גלישה (המערכת תסרוק יעדי סקי בעונת ינואר–פברואר)
-- departMonth: "YYYY-MM" אם צוין חודש, אחרת ""
+- destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש/לא צוין יעד, או "SKI" אם הבקשה על סקי/גלישה
+- months: מערך "YYYY-MM" של כל החודשים הרלוונטיים. עונות: חורף=דצמבר+ינואר+פברואר, אביב=מרץ+אפריל+מאי, קיץ=יוני+יולי+אוגוסט, סתיו=ספטמבר+אוקטובר+נובמבר. אם לא צוין זמן — []
+- startDays: מערך ימי יציאה אפשריים כמספרים (ראשון=0, שני=1, שלישי=2, רביעי=3, חמישי=4, שישי=5, שבת=6). "מראשון"→[0]. אם לא צוין — []
+- endDays: מערך ימי חזרה אפשריים באותו קידוד. "עד חמישי או שישי"→[4,5]. אם לא צוין — []
+- nights: מספר לילות אם צוין במפורש ("5 לילות"→5, "שבוע"→7), אחרת null. אם צוינו ימי יציאה וחזרה — השאר null (הימים קובעים)
+- mode: "dates" אם מבקשים רק לבדוק תאריכים/מתי כדאי/בלי טיסות/תכנון מול חגים; אחרת "flights"
 - constraints: {"type":"airline","value":"IZ|LY|W4"} או {"type":"noShabbat"}
 - scorers: {"name":"price|novelty|comfort","w":1-5}
 - unsupported: קריטריונים בלי לבנה (חב״ד/ים/כשרות/מלון) — אל תמציא
-- summary: תקציר עברי קצר
-יעדים: בוקרשט=BUH אתונה=ATH סלוניקי=SKG טביליסי=TBS ירוואן=EVN לרנקה=LCA בודפשט=BUD פראג=PRG ברצלונה=BCN "ניו יורק"=JFK.
-פלט: {"origin":"TLV","destination":"-","departMonth":"","constraints":[],"scorers":[],"unsupported":[],"summary":""}
+- summary: תקציר עברי קצר של מה שהובן
+יעדים: בוקרשט=BUH אתונה=ATH סלוניקי=SKG טביליסי=TBS ירוואן=EVN לרנקה=LCA בודפשט=BUD פראג=PRG ברצלונה=BCN "ניו יורק"=JFK מילאנו=MIL רומא=ROM פריז=PAR לונדון=LON.
+דוגמה — "מחפש חופשה מראשון עד חמישי במהלך חודשי החורף" ⇒ {"origin":"TLV","destination":"-","months":["2026-12","2027-01","2027-02"],"startDays":[0],"endDays":[4],"nights":null,"mode":"flights","constraints":[],"scorers":[{"name":"price","w":3}],"unsupported":[],"summary":"חופשה ראשון–חמישי בחורף, לפי מחיר"}
+פלט: {"origin":"TLV","destination":"-","months":[],"startDays":[],"endDays":[],"nights":null,"mode":"flights","constraints":[],"scorers":[],"unsupported":[],"summary":""}
 הבקשה: "${text}"`;
 }
 async function translateLive(text){
@@ -132,18 +139,34 @@ async function translateLive(text){
   t=t.replace(/```json/gi,"").replace(/```/g,"").trim(); return JSON.parse(t);
 }
 function translateLocal(text){
-  const t=text.toLowerCase(),I={origin:"TLV",destination:"-",departMonth:"",constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
+  const t=text.toLowerCase(),I={origin:"TLV",destination:"-",months:[],startDays:[],endDays:[],nights:null,mode:"flights",constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
   const has=w=>t.includes(w);
   if(has("ארקיע"))I.constraints.push({type:"airline",value:"IZ"});
   if(has("בלי שבת")||has("ימי חול"))I.constraints.push({type:"noShabbat"});
   if(has("חדש")||has("לא היינו"))I.scorers.push({name:"novelty",w:4});
   if(has("זול")||has("מחיר"))I.scorers.push({name:"price",w:3});
   if(has("נוח"))I.scorers.push({name:"comfort",w:2});
+  if(has("בלי טיסות")||has("רק תאריכים")||has("תאריכים בלבד")||has("מתי כדאי")||has("מתי שווה"))I.mode="dates";
   for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
   if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
-  const M={ינואר:"01",פברואר:"02",מרץ:"03",אפריל:"04",מאי:"05",יוני:"06",יולי:"07",אוגוסט:"08",ספטמבר:"09",אוקטובר:"10",נובמבר:"11",דצמבר:"12"};
-  for(const [he,mm] of Object.entries(M)){ if(has(he)) I.departMonth="2026-"+mm; }
-  if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות"); if(has("ים")&&!I.unsupported.length)0;
+  // חודש עתידי קרוב: אם החודש כבר עבר השנה — השנה הבאה
+  const _futureYM=mm=>{const now=new Date();const y=now.getFullYear();return (mm>=now.getMonth()+1?y:y+1)+"-"+String(mm).padStart(2,"0");};
+  const M={ינואר:1,פברואר:2,מרץ:3,אפריל:4,מאי:5,יוני:6,יולי:7,אוגוסט:8,ספטמבר:9,אוקטובר:10,נובמבר:11,דצמבר:12};
+  for(const [he,mm] of Object.entries(M)){ if(has(he)) I.months.push(_futureYM(mm)); }
+  const SEASONS={"חורף":[12,1,2],"קיץ":[6,7,8],"אביב":[3,4,5],"סתיו":[9,10,11]};
+  for(const [he,list] of Object.entries(SEASONS)){ if(has(he)){ list.forEach(mm=>I.months.push(_futureYM(mm))); } }
+  I.months=[...new Set(I.months)].sort();
+  // ימי שבוע: "מ<יום>" → יציאה, "עד <יום>" → חזרה, "או <יום>" מצטרף לאחרון שזוהה
+  const DAYS={"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6,"מוצ\"ש":6,"מוצאי שבת":6};
+  let lastList=null;
+  for(const [he,d] of Object.entries(DAYS)){
+    if(t.includes("מיום "+he)||t.includes("מ"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
+    if(t.includes("עד יום "+he)||t.includes("עד "+he)||t.includes("ל"+he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; }
+  }
+  for(const [he,d] of Object.entries(DAYS)){ if(t.includes("או "+he)&&lastList&&!lastList.includes(d)) lastList.push(d); }
+  I.startDays.sort(); I.endDays.sort();
+  const nm=t.match(/(\d+)\s*לילות/); if(nm)I.nights=+nm[1]; else if(has("שבוע")&&!has("שבועיים"))I.nights=7; else if(has("שבועיים"))I.nights=14;
+  if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות");
   if(!I.scorers.length)I.scorers.push({name:"price",w:3});
   return I;
 }
