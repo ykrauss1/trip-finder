@@ -7,7 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<script>
+/* ================= גרסת מטמון =================
+   בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
+   זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
+var APP_VER = '1';
+document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -49,15 +55,18 @@
   </footer>
 </div>
 
-<script src="js/01-config.js"></script>
-<script src="js/02-ui-helpers.js"></script>
-<script src="js/03-halacha.js"></script>
-<script src="js/04-data.js"></script>
-<script src="js/05-ranking.js"></script>
-<script src="js/06-api.js"></script>
-<script src="js/07-engine.js"></script>
-<script src="js/08-ui-cards.js"></script>
-<script src="js/09-ui-panel.js"></script>
-<script src="js/10-main.js"></script>
+<script>
+/* טוען את כל קבצי ה-JS עם מספר הגרסה (APP_VER מוגדר למעלה ב-head).
+   async=false שומר על סדר הרצה זהה לתגים סטטיים. */
+(function(){
+  var files=['01-config','02-ui-helpers','03-halacha','04-data','05-ranking','06-api','07-engine','08-ui-cards','09-ui-panel','10-main'];
+  for(var i=0;i<files.length;i++){
+    var s=document.createElement('script');
+    s.src='js/'+files[i]+'.js?v='+APP_VER;
+    s.async=false;
+    document.body.appendChild(s);
+  }
+})();
+</script>
 </body>
 </html>
