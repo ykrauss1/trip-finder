@@ -105,16 +105,17 @@ async function run(){
       }else{
         const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
         const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
-        const startDows=STATE.flexStartDow==null?null:[STATE.flexStartDow];
+        const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
+        const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
         if(STATE.dateMode==='month'){
           const ms=(STATE.months.length?STATE.months:[(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7)]).slice().sort();
           const fromISO=ms[0]+'-01';
           const [ly,lm]=ms[ms.length-1].split('-').map(Number);
           const toISO=new Date(Date.UTC(ly,lm,0)).toISOString().slice(0,10);
-          windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows},STATE.flexShabbat)
+          windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat)
             .filter(w=>ms.includes(w.start.slice(0,7)));
         }else{
-          windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows},STATE.flexShabbat);
+          windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat);
         }
       }
       // Jewish availability layer: tag windows; Shabbat/Yom Tov travel is forbidden (always dropped)
