@@ -171,8 +171,9 @@ function searchBarHtml(){
   // passengers
   const pxField=`<div class="sfield paxfld ${p==='pax'?'active':''}" data-act="sbpop" data-v="pax"><label>נוסעים</label><span class="sval"><bdi>${paxSummary()}</bdi></span>${p==='pax'?`<div class="spop" onclick="event.stopPropagation()">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="sbclose">סיום</div></div>`:''}</div>`;
   const go=`<button class="sgo" data-act="go">🔍 חפש</button>`;
+  const plan=`<button class="sgo ghost" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות">📅 תאריכים בלבד</button>`;
   const reset=`<button class="sgo ghost" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺ חדש</button>`;
-  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${go}</div></div>
+  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${plan}${go}</div></div>
     <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div>`;
 }
 function renderPanel(){
@@ -383,6 +384,7 @@ function _onAct(act,v){
   else if(act==='wup')STATE.scorers[v]=Math.min(5,(STATE.scorers[v]||0)+1);
   else if(act==='wdn')STATE.scorers[v]=Math.max(0,(STATE.scorers[v]||0)-1);
   else if(act==='go'){ STATE.panelOpen=false; STATE.calOpen=false; STATE.sbarPop=null; STATE.paxOpen=false; renderPanel(); run(); return; }
+  else if(act==='goplan'){ STATE.panelOpen=false; STATE.calOpen=false; STATE.sbarPop=null; STATE.paxOpen=false; renderPanel(); runPlanner(); return; }
   else if(act==='newsearch'){ newSearch(); return; }
   else if(act==='save'){ doSave(); return; }
   renderPanel();
