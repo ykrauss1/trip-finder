@@ -66,6 +66,79 @@ function card(f,rank){
 }
 let runSeq=0;
 let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
+/* ===== מתכנן תאריכים בלבד — חלונות מול הלוח העברי, בלי חיפוש טיסות ===== */
+let plannerSeq=0;
+async function runPlanner(){
+  const my=++plannerSeq; runSeq++; // מבטל חיפוש טיסות שרץ ברקע
+  _lastRunSig=searchSig();
+  const sb=document.getElementById('stalebar'); if(sb) sb.innerHTML='';
+  const out=document.getElementById('out');
+  out.innerHTML='<div class="state"><div class="spin"></div>בונה חלונות תאריכים מול הלוח העברי…</div>';
+  try{
+    let windows;
+    if(STATE.dateMode==='exact'){
+      const nts=Math.max(1,Math.round((Date.parse(STATE.toDate)-Date.parse(STATE.fromDate))/864e5));
+      windows=[{start:STATE.fromDate,ret:STATE.toDate,nights:nts,TS:windowShabbat(STATE.fromDate,STATE.toDate),price:null}];
+      if(!STATE.allowShabbat && _dow(STATE.fromDate)===0){
+        const sat=_jAddDays(STATE.fromDate,-1);
+        windows.push({start:sat,ret:STATE.toDate,nights:nts+1,TS:windowShabbat(sat,STATE.toDate),price:null,_motzei:true});
+      }
+    }else{
+      const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
+      const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
+      const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
+      const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
+      if(STATE.dateMode==='month'){
+        const ms=(STATE.months.length?STATE.months:[new Date().toISOString().slice(0,7)]).slice().sort();
+        const fromISO=ms[0]+'-01';
+        const [ly,lm]=ms[ms.length-1].split('-').map(Number);
+        const toISO=new Date(Date.UTC(ly,lm,0)).toISOString().slice(0,10);
+        windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat).filter(w=>ms.includes(w.start.slice(0,7)));
+      }else{
+        windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat);
+      }
+    }
+    if(STATE.jewishMode!=='off' && windows.length){
+      const minS=windows.reduce((a,w)=>w.start<a?w.start:a,windows[0].start);
+      const maxR=windows.reduce((a,w)=>{const e=w.ret||w.start;return e>a?e:a;},windows[0].ret||windows[0].start);
+      const jdata=await fetchJewishData(minS,maxR,STATE.profile);
+      if(my!==plannerSeq)return;
+      windows.forEach(w=>{const end=w.ret||w.start;const jr=windowJewish(w.start,end,jdata);w.jtags=jr.tags;w._jblock=jr.block;w.band=tripBand(w.start,end,jdata);});
+      if(!STATE.allowShabbat) windows=windows.filter(w=>!w._jblock||w._motzei);
+      const PR=periodRanges(jdata);
+      windows.forEach(w=>{const end=w.ret||w.start;const ap=applyPeriodPrefs(periodHits(w.start,end,PR));w._periodDrop=ap.drop;w._prefer=ap.prefer;});
+      windows=windows.filter(w=>!w._periodDrop);
+    }
+    if(my!==plannerSeq)return;
+    windows.sort((a,b)=>((a._prefer?0:1)-(b._prefer?0:1))||(a.start<b.start?-1:(a.start>b.start?1:0)));
+    paintPlanner(windows);
+  }catch(e){ out.innerHTML='<div class="state">שגיאה בתכנון התאריכים: '+e+'</div>'; }
+}
+function plannerCard(w,i){
+  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');return DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);};
+  const headTags=[];
+  if(w._motzei) headTags.push('<span class="rtg crit motzei">🌙 יציאה במוצאי שבת</span>');
+  if(w._prefer) headTags.push('<span class="rtg crit prefer">⭐ מועדף</span>');
+  const calTags=[]; if(w.jtags&&w.jtags.length) for(const jt of w.jtags) calTags.push(`<span class="rtg j-${jt.cls}">${jt.t}</span>`);
+  return `<div class="wgroup${w._motzei?' motzei':''}">
+    <div class="wghead">
+      <span class="wgrank">${w._motzei?'🌙':i+1}</span>
+      <div class="wgttl"><b><bdi>${fmt(w.start)} ← ${fmt(w.ret||w.start)}</bdi></b> · ${w.nights} לילות</div>
+      ${headTags.length?`<div class="rcrit wghtags">${headTags.join('')}</div>`:''}
+    </div>
+    ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
+  </div>`;
+}
+function paintPlanner(ws){
+  const out=document.getElementById('out');
+  if(!ws.length){
+    out.innerHTML='<div class="state">לא נמצאו חלונות מתאימים בטווח שנבחר.<br>אפשר להרחיב את הטווח, להוסיף ימי יציאה/חזרה, או לרכך העדפות תקופה ב״כיוונון הלכתי״.</div>';
+    return;
+  }
+  out.innerHTML=`<div class="meta">📅 תכנון תאריכים בלבד — ${ws.length} חלונות · מועדפים תחילה, אחר כך לפי תאריך · בלי חיפוש טיסות</div>`
+    + bandLegend()
+    + ws.map((w,i)=>plannerCard(w,i)).join('');
+}
 async function run(){
   const my=++runSeq;
   _lastRunSig=searchSig(); // results about to reflect the current params — clear staleness
