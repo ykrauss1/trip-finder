@@ -1,3 +1,8 @@
+function skiSortChips(){
+  const s=STATE.skiSort||'rank';
+  const chip=(v,l)=>`<span class="c ${s===v?'on':''}" data-act="skisort" data-v="${v}" style="padding:2px 10px;margin-inline-start:4px">${l}</span>`;
+  return ` · מיון: ${chip('rank','התאמה')}${chip('price','מחיר')}${chip('date','תאריך')}`;
+}
 /* ===== העשרת סקי במחירים חיים: המטמון מגלה, Google Flights מאמת את המובילים ===== */
 async function skiLivePrice(f){
   const dep=new Date(f.depUTC).toISOString().slice(0,10);
@@ -6,6 +11,7 @@ async function skiLivePrice(f){
   return m[dep+'|'+ret]||null;
 }
 async function skiAutoLive(list,seq){
+  for(let t=0;t<10 && !document.querySelector("[data-skip]");t++) await _sleep(500); // ממתין שהכרטיסים ייצבעו
   for(const f of list){
     if(seq!==runSeq)return; // חיפוש חדש התחיל — עוצרים
     const sel=`[data-skip="${f.to}|${f.depUTC}"]`;
@@ -71,8 +77,9 @@ async function fetchLive(I){
 function card(f,rank){
   const _yy=ms=>new Date(ms).toISOString().slice(2,10).replace(/-/g,'');
   const gLink = f.retUTC
-    ? `https://www.skyscanner.net/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/${_yy(f.retUTC)}/`
-    : `https://www.skyscanner.net/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/`;
+    ? `https://www.skyscanner.co.il/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/${_yy(f.retUTC)}/?adultsv2=${STATE.adults||1}`
+    : `https://www.skyscanner.co.il/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/?adultsv2=${STATE.adults||1}`;
+  const dl=String(f.deep_link||'').replace('www.skyscanner.net','www.skyscanner.co.il');
   const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
   const out=fmtLocal(f.depUTC);
   const back=f.retUTC?fmtLocal(f.retUTC):null;
@@ -86,7 +93,7 @@ function card(f,rank){
     <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
     <div class="rtimes">${times}</div>
     <div class="rtags">${tags.join('')}</div></div>
-    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${f.deep_link}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
+    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${dl}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
 }
 let runSeq=0;
 let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
@@ -287,7 +294,8 @@ async function run(){
         ojNote=` · <span style="color:var(--clear)">✈ טיסה פתוחה: ${I.destination}→${STATE.outAirport} · ${drv}</span>`;
       }
       const totalCount = specific && allWindows ? allWindows.length : ranked.length;
-      LAST={meta:`<div class="meta">${totalCount} ${lbl}${note} · ${rankNote}${ojNote}${diagNote}${fltNote}</div>`, ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
+      const metaBase=`${totalCount} ${lbl}${note} · ${rankNote}${ojNote}${diagNote}${fltNote}`;
+      LAST={meta:`<div class="meta">${metaBase}${ski?skiSortChips():''}</div>`, metaBase:(ski?metaBase:null), baseRanked:(ski?ranked.slice():null), ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
       paintResults();
       // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
     }
