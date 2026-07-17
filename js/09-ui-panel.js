@@ -320,6 +320,18 @@ function _onAct(act,v){
   else if(act==='fnights')STATE.flexNights=(v==='any'?'any':+v);
   else if(act==='fstartd'){ if(v===''){STATE.flexStartDows=null;} else {let a=(_dowSel()||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexStartDows=a.length?a:null;} STATE.flexStartDow=null; }
   else if(act==='fendd'){ if(v===''){STATE.flexEndDows=null;} else {let a=(STATE.flexEndDows||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexEndDows=a.length?a:null;} }
+  else if(act==='skisort'){
+    STATE.skiSort=v;
+    if(LAST&&LAST.baseRanked){
+      let r=LAST.baseRanked.slice();
+      if(v==='price') r.sort((a,b)=>((a.price??1e12)-(b.price??1e12))||(a.depUTC-b.depUTC));
+      else if(v==='date') r.sort((a,b)=>(a.depUTC-b.depUTC));
+      LAST.ranked=r;
+      LAST.meta=`<div class="meta">${LAST.metaBase}${skiSortChips()}</div>`;
+      paintResults();
+    }
+    return;
+  }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
     const out=document.getElementById('out');
