@@ -12,20 +12,28 @@ async function skiLivePrice(f){
 }
 async function skiAutoLive(list,seq){
   for(let t=0;t<10 && !document.querySelector("[data-skip]");t++) await _sleep(500); // ממתין שהכרטיסים ייצבעו
+  // פס התקדמות קטן מתחת לשורת הכותרת
+  let prog=document.getElementById('skiprog');
+  if(!prog){ prog=document.createElement('div'); prog.id='skiprog'; prog.className='meta'; const m=document.querySelector('#out .meta'); if(m) m.insertAdjacentElement('afterend',prog); }
+  let done=0, found=0;
+  const upd=()=>{ if(prog) prog.innerHTML=done<list.length?`⏳ אימות מחירים חיים מול Google Flights… ${done}/${list.length}`:`✓ אימות חי הושלם · נמצאו ${found}/${list.length}`; };
+  upd();
   for(const f of list){
     if(seq!==runSeq)return; // חיפוש חדש התחיל — עוצרים
     const sel=`[data-skip="${f.to}|${f.depUTC}"]`;
     try{
       const live=await skiLivePrice(f);
       if(seq!==runSeq)return;
-      const box=document.querySelector(sel); if(!box)continue;
+      const box=document.querySelector(sel); if(!box){done++;upd();continue;}
       const vEl=box.querySelector('.v'), kEl=box.querySelector('.k');
       if(live&&live.price!=null){
+        found++;
         const per=Math.round(live.price/Math.max(1,STATE.adults));
         if(vEl)vEl.textContent='€'+per;
         if(kEl)kEl.textContent=(STATE.adults>1?`לאחד · סה״כ €${live.price} · חי ✓`:'מחיר חי ✓');
       }else if(kEl){ kEl.textContent='מטמון · אימות חי לא נמצא'; }
     }catch(e){ const box=document.querySelector(sel); const kEl=box&&box.querySelector('.k'); if(kEl)kEl.textContent='מטמון · אימות חי נכשל'; }
+    done++; upd();
   }
 }
 async function fetchOne(origin,dest,month){
@@ -79,7 +87,6 @@ function card(f,rank){
   const gLink = f.retUTC
     ? `https://www.skyscanner.co.il/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/${_yy(f.retUTC)}/?adultsv2=${STATE.adults||1}`
     : `https://www.skyscanner.co.il/transport/flights/${STATE.origin.toLowerCase()}/${(f.to||'').toLowerCase()}/${_yy(f.depUTC)}/?adultsv2=${STATE.adults||1}`;
-  const dl=String(f.deep_link||'').replace('www.skyscanner.net','www.skyscanner.co.il');
   const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
   const out=fmtLocal(f.depUTC);
   const back=f.retUTC?fmtLocal(f.retUTC):null;
@@ -93,7 +100,7 @@ function card(f,rank){
     <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
     <div class="rtimes">${times}</div>
     <div class="rtags">${tags.join('')}</div></div>
-    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${dl}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
+    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">הזמן ← סקייסקנר</a></div></div>`;
 }
 let runSeq=0;
 let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
