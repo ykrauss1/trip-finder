@@ -1,3 +1,27 @@
+/* ===== העשרת סקי במחירים חיים: המטמון מגלה, Google Flights מאמת את המובילים ===== */
+async function skiLivePrice(f){
+  const dep=new Date(f.depUTC).toISOString().slice(0,10);
+  const ret=f.retUTC?new Date(f.retUTC).toISOString().slice(0,10):null;
+  const m=await fetchRapidPrices(STATE.origin||'TLV',f.to,[{departureDate:dep,returnDate:ret}],null,STATE.includeStops,STATE.adults,STATE.children,STATE.infants);
+  return m[dep+'|'+ret]||null;
+}
+async function skiAutoLive(list,seq){
+  for(const f of list){
+    if(seq!==runSeq)return; // חיפוש חדש התחיל — עוצרים
+    const sel=`[data-skip="${f.to}|${f.depUTC}"]`;
+    try{
+      const live=await skiLivePrice(f);
+      if(seq!==runSeq)return;
+      const box=document.querySelector(sel); if(!box)continue;
+      const vEl=box.querySelector('.v'), kEl=box.querySelector('.k');
+      if(live&&live.price!=null){
+        const per=Math.round(live.price/Math.max(1,STATE.adults));
+        if(vEl)vEl.textContent='€'+per;
+        if(kEl)kEl.textContent=(STATE.adults>1?`לאחד · סה״כ €${live.price} · חי ✓`:'מחיר חי ✓');
+      }else if(kEl){ kEl.textContent='מטמון · אימות חי לא נמצא'; }
+    }catch(e){ const box=document.querySelector(sel); const kEl=box&&box.querySelector('.k'); if(kEl)kEl.textContent='מטמון · אימות חי נכשל'; }
+  }
+}
 async function fetchOne(origin,dest,month){
   const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&currency=eur`);
   if(!r.ok)throw new Error("func "+r.status);
@@ -62,7 +86,7 @@ function card(f,rank){
     <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
     <div class="rtimes">${times}</div>
     <div class="rtags">${tags.join('')}</div></div>
-    <div class="rprice"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${f.deep_link}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
+    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">🔍 טיסות אמיתיות</a><a class="book2" href="${f.deep_link}" target="_blank" rel="noopener">הזמנה ←</a></div></div>`;
 }
 let runSeq=0;
 let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
@@ -158,6 +182,7 @@ async function run(){
       if(my!==runSeq)return;
       const noFly=I.constraints.some(c=>c.type==='noShabbat');
       ranked=skiSelect(flights,absISO(STATE.skiFromISO),[0,1,2,3,4],noFly).slice(0,12);
+      const _seq=runSeq; setTimeout(()=>skiAutoLive(ranked.slice(0,6),_seq),700); // אחרי הצביעה: אימות חי ל-6 המובילים
     }else if(specific){
       let windows;
       if(STATE.tripType==='oneway'){
