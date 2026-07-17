@@ -69,7 +69,9 @@ async function loadSki(){
     if(!rows || !rows.length) return false;
     const built=buildSkiFromRows(rows);
     if(!Object.keys(built).length) return false;
-    SKI=built; SKI_DESTS=Object.keys(built); SKI_SOURCE='Supabase ('+rows.length+' אתרים)';
+    // מיזוג: שורות Supabase גוברות, אבל יעדים מהרשימה המקומית שאינם בטבלה נשארים — כיסוי מלא של האלפים
+    for(const k in SKI){ if(!built[k]) built[k]={he:SKI[k].he, cc:SKI[k].cc, price_level:null, resorts:[SKI[k].he]}; }
+    SKI=built; SKI_DESTS=Object.keys(built); SKI_SOURCE='Supabase+מקומי ('+Object.keys(built).length+' יעדים)';
     for(const k in built) CITY[k]={he:built[k].he,cc:built[k].cc,fresh:false,ski:true};
     return true;
   }catch(e){ return false; }
