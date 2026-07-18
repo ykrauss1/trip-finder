@@ -46,9 +46,10 @@ async function fetchCalOne(origin,dest,month,nights){
   if(!r.ok)throw new Error("cal "+r.status);
   const d=await r.json(); return (d.flights||[]).map(adapt);
 }
+function _skiMonths(){ return (STATE.dateMode==='month'&&STATE.months&&STATE.months.length)?STATE.months:SKI_MONTHS; } // חודשי הסריקה: מהבקשה אם ניתנו, אחרת עונת ברירת המחדל
 async function fetchSki(origin,nights){
   const tasks=[];
-  for(const d of SKI_DESTS) for(const m of SKI_MONTHS) tasks.push(fetchCalOne(origin,d,m,nights));
+  for(const d of SKI_DESTS) for(const m of _skiMonths()) tasks.push(fetchCalOne(origin,d,m,nights));
   const res=await Promise.allSettled(tasks);
   let all=[],ok=0,firstErr=null;
   res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
@@ -60,7 +61,7 @@ async function fetchLive(I){
   // ski mode: scan ski destinations across the season window (Jan–Feb), merge
   if(I.destination==="SKI"){
     const tasks=[];
-    for(const d of SKI_DESTS) for(const m of SKI_MONTHS) tasks.push(fetchOne(origin,d,m));
+    for(const d of SKI_DESTS) for(const m of _skiMonths()) tasks.push(fetchOne(origin,d,m));
     const res=await Promise.allSettled(tasks);
     let all=[],ok=0,firstErr=null;
     res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
@@ -194,7 +195,7 @@ async function run(){
     if(ski){
       const flights=await fetchSki(I.origin||'TLV',STATE.skiNights);
       if(my!==runSeq)return;
-      const noFly=I.constraints.some(c=>c.type==='noShabbat');
+      const noFly=I.constraints.some(c=>c.type==='noShabbat') || !STATE.allowShabbat; // מכבד גם את הכיוונון ההלכתי הגלובלי
       ranked=skiSelect(flights,absISO(STATE.skiFromISO),[0,1,2,3,4],noFly).slice(0,12);
       const _seq=runSeq; setTimeout(()=>skiAutoLive(ranked.slice(0,6),_seq),700); // אחרי הצביעה: אימות חי ל-6 המובילים
     }else if(specific){
