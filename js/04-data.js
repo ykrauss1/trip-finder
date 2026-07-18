@@ -27,6 +27,7 @@ let SKI={
   GVA:{he:'ז׳נבה — שאמוני/ורבייה',cc:'שוויץ/צרפת'},
   INN:{he:'אינסברוק — טירול',cc:'אוסטריה'},
   SZG:{he:'זלצבורג — סקי אמאדה',cc:'אוסטריה'},
+  VIE:{he:'וינה — אלפים אוסטריים',cc:'אוסטריה'},
   TRN:{he:'טורינו — ויה לאטאה',cc:'איטליה'},
   MXP:{he:'מילאנו — אלפים',cc:'איטליה'},
   VRN:{he:'ורונה — דולומיטים',cc:'איטליה'},
@@ -35,7 +36,7 @@ let SKI={
   MUC:{he:'מינכן — אלפים בוואריים',cc:'גרמניה'},
   SOF:{he:'סופיה — בנסקו/בורובץ',cc:'בולגריה'},
 };
-for(const k in SKI) CITY[k]={he:SKI[k].he,cc:SKI[k].cc,fresh:false,ski:true};
+for(const k in SKI) if(!CITY[k]) CITY[k]={he:SKI[k].he,cc:SKI[k].cc,fresh:false,ski:true}; // לא דורס ערים רגילות (וינה, סופיה)
 let SKI_DESTS=Object.keys(SKI);
 let SKI_SOURCE='רשימה מקומית';
 const SKI_MONTHS=['2027-01','2027-02']; // עונת השלג
