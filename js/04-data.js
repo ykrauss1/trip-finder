@@ -16,6 +16,7 @@ const CITY={
   ATH:{he:'אתונה',cc:'יוון',fresh:false}, LCA:{he:'לרנקה',cc:'קפריסין',fresh:false},
   AMS:{he:'אמסטרדם',cc:'הולנד',fresh:false}, BUD:{he:'בודפשט',cc:'הונגריה',fresh:false},
   PRG:{he:'פראג',cc:'צ׳כיה',fresh:false}, VIE:{he:'וינה',cc:'אוסטריה',fresh:false},
+  VNO:{he:'וילנה',cc:'ליטא',fresh:true}, RIX:{he:'ריגה',cc:'לטביה',fresh:true}, TLL:{he:'טאלין',cc:'אסטוניה',fresh:true},
   MIL:{he:'מילאנו',cc:'איטליה',fresh:false}, JFK:{he:'ניו יורק',cc:'ארה"ב',fresh:false},
   BER:{he:'ברלין',cc:'גרמניה',fresh:false},
 };
