@@ -113,7 +113,7 @@ function windowCard(w,rank,dest){
 function buildPrompt(text){
   const today=new Date().toISOString().slice(0,10);
   return `תרגם בקשת חיפוש טיסות/תכנון חופשה חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
-התאריך היום: ${today}. כשמזוהה חודש/עונה בלי שנה — בחר את המופע העתידי הקרוב.
+התאריך היום: ${today}. כשמזוהה חודש/עונה בלי שנה — בחר את המופע העתידי הקרוב. אם צוינה שנה מפורשת ("2027", "שנת 2027") או "שנה הבאה" — החל אותה על כל החודשים.
 שדות:
 - origin: IATA מוצא (ברירת מחדל "TLV")
 - destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש/לא צוין יעד, או "SKI" אם הבקשה על סקי/גלישה
@@ -149,8 +149,11 @@ function translateLocal(text){
   if(has("בלי טיסות")||has("רק תאריכים")||has("תאריכים בלבד")||has("מתי כדאי")||has("מתי שווה"))I.mode="dates";
   for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
   if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
-  // חודש עתידי קרוב: אם החודש כבר עבר השנה — השנה הבאה
-  const _futureYM=mm=>{const now=new Date();const y=now.getFullYear();return (mm>=now.getMonth()+1?y:y+1)+"-"+String(mm).padStart(2,"0");};
+  // שנה מפורשת ("2027" / "שנת 2027") או "שנה הבאה" גוברות; אחרת — המופע העתידי הקרוב
+  const _yrM=t.match(/20\d\d/); let _forcedY=_yrM?+_yrM[0]:null;
+  if(!_forcedY&&(has("שנה הבאה")||has("בשנה הבאה")))_forcedY=new Date().getFullYear()+1;
+  if(_forcedY&&_forcedY<new Date().getFullYear())_forcedY=null;
+  const _futureYM=mm=>{const now=new Date();const y=now.getFullYear();if(_forcedY)return _forcedY+"-"+String(mm).padStart(2,"0");return (mm>=now.getMonth()+1?y:y+1)+"-"+String(mm).padStart(2,"0");};
   const M={ינואר:1,פברואר:2,מרץ:3,אפריל:4,מאי:5,יוני:6,יולי:7,אוגוסט:8,ספטמבר:9,אוקטובר:10,נובמבר:11,דצמבר:12};
   for(const [he,mm] of Object.entries(M)){ if(has(he)) I.months.push(_futureYM(mm)); }
   const SEASONS={"חורף":[12,1,2],"קיץ":[6,7,8],"אביב":[3,4,5],"סתיו":[9,10,11]};
