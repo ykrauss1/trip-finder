@@ -108,7 +108,9 @@ function onewayWindows(){
 }
 function genWindows(fromISO,toISO,rules){
   const out=[];
+  const minStart=new Date(Date.now()+864e5).toISOString().slice(0,10); // אין חלונות בעבר — יציאה מוקדמת ביותר: מחר
   for(const start of dateRange(fromISO,toISO)){
+    if(start.toISOString().slice(0,10)<minStart) continue;
     if(rules.startDows && !rules.startDows.includes(start.getUTCDay())) continue;
     for(let n=rules.nightsMin;n<=rules.nightsMax;n++){
       const ret=new Date(start.getTime()+n*864e5);
