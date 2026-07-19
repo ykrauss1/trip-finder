@@ -1,84 +1,405 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>מנוע הנסיעות שלי</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
-<script>
-/* ================= גרסת מטמון =================
-   בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
-   זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '9';
-document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
-</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מעורר לשבת</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="manifest" id="mLink">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--cd:#111827;--bd:#1e2a42;--ac:#f0c040;--ad:#b8922e;--gl:rgba(240,192,64,.15);--t1:#e8e0d0;--t2:#8a8070;--t3:#5a5548;--er:#f87171;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Rubik',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;direction:rtl}
+.ctn{max-width:540px;margin:0 auto;padding:8px 14px 60px;position:relative}
+@media(display-mode:standalone){body{height:100dvh;overflow:hidden}.ctn{padding-bottom:0;display:flex;flex-direction:column;height:100dvh;overflow:hidden}}
+.hdr{text-align:center;margin-bottom:10px;padding-top:0}
+.hdr h1{font-family:'Frank Ruhl Libre',serif;font-size:1.5rem;font-weight:700;color:var(--ac)}
+.hdr .sub{font-size:.72rem;color:var(--t3)}
+.clk{background:linear-gradient(135deg,#111827,#0d1321);border:1px solid var(--bd);border-radius:12px;padding:12px;text-align:center;margin-bottom:10px}
+.clk-t{font-size:2.5rem;font-weight:800;color:var(--ac);line-height:1}
+.clk-s{font-size:1rem;color:var(--ad);vertical-align:super}.clk-p{font-size:.75rem;color:var(--t3);margin-right:4px}
+.clk-hd{font-family:'Frank Ruhl Libre',serif;font-size:.82rem;color:var(--ad);margin-top:4px}
+.clk-gd{font-size:.7rem;color:var(--t2);margin-top:2px}
+.sbi{text-align:center;padding:6px 8px;background:var(--gl);border-radius:8px;border:1px solid rgba(240,192,64,.15);margin-bottom:8px}
+.sbt{font-size:.78rem;color:var(--ac);font-weight:500}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.cd.alarms-cd{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
+.ct{font-family:'Frank Ruhl Libre',serif;font-size:.9rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ls{width:100%;font-size:.85rem;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:var(--t1);font-family:'Rubik',sans-serif}
+.ls:focus{outline:none;border-color:var(--ad)}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.tb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border-radius:8px;border:2px solid var(--bd);background:0;cursor:pointer;font-family:'Rubik',sans-serif;transition:.2s}
+.tb:hover{border-color:var(--ad)}.tb.sel{background:var(--gl);border-color:var(--ac)}
+.tn{font-size:.85rem;font-weight:600;color:var(--t1)}.tt{font-size:.78rem;color:var(--ac);font-weight:500}
+.td{font-size:.65rem;color:var(--t3)}
+.ti{font-size:1.2rem}
+.fl{display:block;font-size:.75rem;color:var(--t3);margin-bottom:4px}
+input[type="time"],input[type="number"],select{font-family:'Rubik',sans-serif;width:100%;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:var(--t1);font-size:.88rem;direction:ltr;text-align:center}
+select{direction:rtl;text-align:right}input:focus,select:focus{outline:none;border-color:var(--ad)}
+.pr{display:flex;gap:8px;align-items:center;margin-top:8px}.pr span{font-size:.75rem;color:var(--t3)}
+.cw{font-size:.85rem;color:var(--ac);margin-top:8px;font-weight:500;text-align:center;padding:8px;background:rgba(240,192,64,.08);border-radius:8px}
+.dsr{display:flex;gap:4px;justify-content:center;margin-bottom:8px}
+.db{width:34px;height:34px;border-radius:50%;border:2px solid var(--bd);background:0;color:var(--t2);font-family:'Rubik',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.db:hover{border-color:var(--ad);color:var(--ac)}.db.a{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.dsc{display:flex;gap:5px;justify-content:center;margin-bottom:5px;flex-wrap:wrap}
+.sb{font-family:'Rubik',sans-serif;font-size:.7rem;padding:3px 9px;border-radius:16px;border:1px solid var(--bd);background:0;color:var(--t3);cursor:pointer;transition:.2s}
+.sb:hover{border-color:var(--ad);color:var(--ac)}
+.sl{display:flex;flex-direction:column;gap:4px}
+.si{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:0;cursor:pointer;font-family:'Rubik',sans-serif;color:var(--t2);font-size:.85rem;text-align:right;width:100%;transition:.2s}
+.si:hover{border-color:var(--ad)}.si.sel{background:var(--gl);border-color:var(--ac);color:var(--ac)}
+.si .sn{flex:1}.si .sp{background:0;border:0;color:var(--t3);cursor:pointer;font-size:.9rem;padding:2px 5px}.si .sp:hover{color:var(--ac)}
+.vr{display:flex;align-items:center;gap:8px;margin-top:8px}
+input[type="range"]{flex:1;-webkit-appearance:none;height:4px;background:var(--bd);border-radius:2px;outline:0}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ac);cursor:pointer}
+.fr{display:flex;gap:10px}.fg{flex:1}.cr{display:flex;gap:7px;align-items:center}
+.cp{width:24px;height:24px;border-radius:50%;border:2px solid var(--bd)}
+.btn{font-family:'Rubik',sans-serif;font-size:.88rem;font-weight:600;padding:9px 16px;border-radius:10px;border:0;cursor:pointer;flex:1;text-align:center;transition:.2s}
+.bp{background:var(--ac);color:var(--bg)}.bp:hover{background:#f5cc55}
+.al{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--ad) transparent}
+.ae{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r)}
+.ae.ring{border-color:var(--ac);animation:rp 1s infinite}
+@keyframes rp{50%{box-shadow:0 0 25px var(--gl)}}
+.atd{font-size:1.3rem;font-weight:700;color:var(--ac);min-width:68px}.ain{flex:1}
+.add{font-size:.7rem;color:var(--t3)}.asd{font-size:.7rem;color:var(--t2);margin-top:1px}
+.ato{position:relative;width:40px;height:21px;background:var(--bd);border-radius:11px;cursor:pointer;transition:.3s;flex-shrink:0}
+.ato.on{background:var(--ac)}.ato::after{content:'';position:absolute;top:2px;right:2px;width:17px;height:17px;background:#fff;border-radius:50%;transition:.3s}
+.ato.on::after{transform:translateX(-19px)}
+.adl{background:0;border:0;color:var(--t3);cursor:pointer;font-size:.95rem;padding:3px}.adl:hover{color:var(--er)}
+.es{text-align:center;padding:10px;color:var(--t3);font-size:.8rem}
+.cov{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(10,14,26,.88)}
+.cov.act{display:flex}
+.cn{font-size:6rem;font-weight:900;color:var(--ac);text-shadow:0 0 50px rgba(240,192,64,.5);animation:cp 1s infinite}
+@keyframes cp{50%{transform:scale(1.04);opacity:.8}}
+.ccl{font-size:1rem;color:var(--t2)}
+.csb{font-family:'Rubik',sans-serif;font-size:.95rem;font-weight:600;padding:13px 40px;border-radius:50px;border:2px solid var(--er);background:rgba(248,113,113,.12);color:var(--er);cursor:pointer}
+.mode-toggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--bd);margin-bottom:14px}
+.mode-btn{flex:1;padding:9px;text-align:center;font-family:'Rubik',sans-serif;font-size:.82rem;font-weight:500;background:0;border:0;color:var(--t2);cursor:pointer;transition:.2s}
+.mode-btn.act{background:var(--ac);color:var(--bg);font-weight:600}
+.fov{display:none;position:fixed;inset:0;z-index:50;pointer-events:none}.fov.act{display:block}
+.ham{position:absolute;top:10px;left:10px;z-index:60;width:36px;height:36px;border-radius:8px;background:var(--cd);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;color:var(--t2);transition:.2s}
+.ham:hover{color:var(--ac);border-color:var(--ad)}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70}.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-320px;width:300px;max-width:85vw;height:100vh;background:var(--bg);border-left:1px solid var(--bd);z-index:80;overflow-y:auto;padding:20px 16px;transition:right .3s ease}.drawer.open{right:0}
+.drawer-title{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;font-weight:700;color:var(--ac);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.drawer-close{background:0;border:0;color:var(--t3);font-size:1.2rem;cursor:pointer;padding:4px}.drawer-close:hover{color:var(--ac)}
+.drawer-section{margin-bottom:18px}
+.drawer-label{font-size:.82rem;font-weight:600;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.loc-current{font-size:.78rem;color:var(--ac);margin-top:6px;font-weight:500}
+.lock-screen{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none}.lock-screen.act{display:flex}
+.lock-screen .lock-time{font-size:4rem;font-weight:800;color:var(--ac);margin-bottom:8px}
+.lock-screen .lock-date{font-family:'Frank Ruhl Libre',serif;font-size:1.1rem;color:var(--ad);margin-bottom:4px}
+.lock-screen .lock-msg{font-size:.85rem;color:var(--t3);margin-top:20px}
+.lock-screen .lock-unlock{position:fixed;bottom:40px;left:0;right:0;font-size:.75rem;color:var(--t3);text-align:center;padding:0 20px}
+.lock-screen .lock-unlock-inner{display:none;margin-top:8px}
+.lock-screen .lock-unlock button{font-family:'Rubik',sans-serif;font-size:.8rem;padding:8px 24px;border-radius:8px;border:1px solid var(--bd);background:0;color:var(--t2);cursor:pointer}
+.lock-counter{font-size:.7rem;color:var(--t3);margin-top:4px}
+.zmanim-src{font-size:.65rem;color:var(--t3);text-align:center;margin-top:4px;font-style:italic}
+.zmanim-offline{font-size:.68rem;color:var(--er);text-align:center;margin-top:3px;display:none}
+@media(max-width:480px){.clk-t{font-size:2.5rem}.ctn{padding:8px 10px 0}.db{width:33px;height:33px;font-size:.75rem}.fr{flex-direction:column;gap:8px}}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <header class="brand">
-    <div class="brandl">
-      <span class="logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="lgbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2547"/><stop offset="1" stop-color="#11183a"/></linearGradient>
-          <linearGradient id="lgpl" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#46b9e8"/><stop offset="1" stop-color="#5fe0bf"/></linearGradient>
-        </defs>
-        <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="url(#lgbg)" stroke="#2f3d73" stroke-width="1.5"/>
-        <path d="M11 33 C18 31 22 24 31 13" fill="none" stroke="#f2b257" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.5 4.5"/>
-        <path d="M36.5 12 L20.5 34.5 L18.7 26.2 Z" fill="url(#lgpl)"/>
-        <path d="M36.5 12 L26.5 22.8 L18.7 26.2 Z" fill="#bfeede"/>
-        <path d="M36.5 12 L20.5 34.5 L25.3 25.4 Z" fill="#2f8fc9"/>
-        <circle cx="36.5" cy="12" r="2.4" fill="#f2b257"/>
-      </svg></span>
-      <div class="brandtxt">
-        <h1>מנוע הנסיעות <span class="em">שלי</span><span class="live"><span class="dot"></span>מחירי אמת</span></h1>
-        <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
-      </div>
-    </div>
-    <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." style="margin-inline-start:auto;align-self:center;border:none;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;color:#fff;background:#3a3f55;cursor:pointer;white-space:nowrap">מקור: Skyscanner (ישן)</button>
-  </header>
-
-  <div class="box collapsed" id="qbox">
-    <textarea id="q" rows="1" placeholder="חיפוש חופשי: לאן זול לטוס מתל אביב באוגוסט, בלי טיסה בשבת…"></textarea>
-    <div class="go"><button id="run">תרגם והרץ ←</button><span class="exhint" style="font-size:12px;color:var(--mut-2)">או לחץ דוגמה:</span></div>
-    <div class="exs" id="exs"></div>
-  </div>
-
-  <div id="panel"></div>
-  <div id="stalebar"></div>
-  <div id="out"></div>
-
-  <footer>
-    <p><b>איך זה עובד —</b> טקסט חופשי → מודל שפה מתרגם לאינטנט → צ׳יפים לחיצים לכוונון → המנוע מדרג (אילוצים, ניקוד, עדשת שבת על כל מעטפת הטיסה) → מחירים אמיתיים מ-<code>flights-search</code> שלך → deep link להזמנה.</p>
-    <p style="margin-top:6px;color:var(--mut-2);font-size:11px">גרסת אפליקציה: <b id="appver"></b></p>
-    <p style="margin-top:6px"><b>שמירה —</b> כפתור "שמור חיפוש" מראה את אובייקט האינטנט שיישמר. החיבור לטבלאות Supabase (כדי שחיפוש יחזור ואפשר יהיה לנטר אותו) — להמשך, יחד.</p>
-  </footer>
+<div class="fov" id="fov"></div>
+<div class="lock-screen" id="lockScreen">
+<div style="font-family:'Frank Ruhl Libre',serif;font-size:2.2rem;color:var(--ac);font-weight:700;margin-bottom:4px" id="lockTitle">&#x1F56F;&#xFE0F; שבת שלום</div>
+<div class="lock-time" id="lockTime">--:--</div>
+<div class="lock-date" id="lockDate"></div>
+<div style="font-size:.85rem;color:var(--t2);margin-top:8px;line-height:1.6" id="lockShabbat"></div>
+<div style="font-size:1rem;color:var(--ac);margin-top:16px;font-weight:600" id="lockNextAlarm"></div>
+<div style="font-size:.75rem;color:var(--t2);margin-top:2px" id="lockAlarmDur"></div>
+<div style="font-size:1.3rem;color:var(--er);margin-top:8px;font-weight:700;display:none" id="lockCountdown"></div>
+<div class="lock-msg" style="font-size:.75rem;margin-top:4px;margin-bottom:160px">המעוררים ימשיכו לפעול</div>
+<div class="lock-unlock">
+<div style="background:rgba(255,255,255,.06);border:1px solid var(--bd);border-radius:10px;padding:14px 18px;max-width:280px;margin:0 auto">
+<div style="font-size:.85rem;color:var(--t1);font-weight:600;margin-bottom:6px">&#x1F513; ביטול נעילה</div>
+<div style="font-size:.8rem;color:var(--t2);line-height:1.6">לחץ לחיצה ארוכה על המסך<br><strong style="color:var(--ac)">5 שניות רצופות</strong></div>
+<div id="lockProgress" style="margin-top:10px;display:none"><div style="background:var(--bd);border-radius:4px;height:8px;overflow:hidden"><div id="lockProgressBar" style="height:100%;width:0;background:var(--ac);border-radius:4px;transition:width .1s linear"></div></div><div style="font-size:.75rem;color:var(--ac);margin-top:4px;text-align:center" id="lockProgressText"></div></div>
+<div id="lockShakeHint" style="display:none;margin-top:8px;font-size:.75rem;color:var(--t3)">💡 לא מצליח? נער את המכשיר</div>
+<div class="lock-unlock-inner" id="lockUnlockInner" style="margin-top:10px"><button id="lockConfirmOff" style="font-family:'Rubik',sans-serif;font-size:.85rem;padding:10px 28px;border-radius:8px;border:2px solid var(--ac);background:var(--gl);color:var(--ac);cursor:pointer;font-weight:600">&#x1F513; בטל נעילה</button></div>
+</div></div></div>
+<div class="cov" id="cov"><div class="ccl">המעורר ייפסק בעוד</div><div class="cn" id="cnum">0</div><div class="ccl">שניות</div><button class="csb" id="cstop">&#9724; עצור</button></div>
+<button class="ham" id="hamBtn">&#9776;</button>
+<div class="drawer-overlay" id="drOv"></div>
+<div class="drawer" id="drawer">
+<div class="drawer-title">&#9881; הגדרות <button class="drawer-close" id="drClose">&#x2715;</button></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F4CD; מיקום</div>
+<select class="ls" id="cSel" style="width:100%">
+<option value="auto_gps">&#x1F4F1; מיקום אוטומטי (GPS)</option>
+<optgroup label="ישראל"><option value="jerusalem">ירושלים</option><option value="telaviv">תל אביב</option><option value="haifa">חיפה</option><option value="beersheva">באר שבע</option><option value="bnei_brak">בני ברק</option><option value="petach_tikva">פתח תקווה</option><option value="ashdod">אשדוד</option><option value="netanya">נתניה</option><option value="modiin">מודיעין</option><option value="eilat">אילת</option><option value="tzfat">צפת</option><option value="tiberias">טבריה</option></optgroup>
+<optgroup label='ארה"ב'><option value="nyc">ניו יורק</option><option value="lakewood">לייקווד</option><option value="losangeles">לוס אנג׳לס</option><option value="miami">מיאמי</option><option value="chicago">שיקגו</option><option value="baltimore">בולטימור</option></optgroup>
+<optgroup label="אירופה"><option value="london">לונדון</option><option value="paris">פריז</option><option value="antwerp">אנטוורפן</option><option value="zurich">ציריך</option><option value="manchester">מנצ׳סטר</option></optgroup>
+<optgroup label="אחר"><option value="melbourne">מלבורן</option><option value="toronto">טורונטו</option><option value="buenosaires">בואנוס איירס</option></optgroup>
+</select><div class="loc-current" id="lI"></div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F305; זמן תפילה לפני הנץ</div>
+<div style="display:flex;gap:8px;align-items:center"><input type="number" id="tefBeforeNetz" value="30" min="10" max="60" step="5" style="width:75px"><span style="font-size:.75rem;color:var(--t3)">דקות לפני הנץ</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:4px">משפיע על חישוב זמן ותיקין</div></div>
+<div class="drawer-section"><div class="drawer-label">&#x23F1;&#xFE0F; משך צלצול</div>
+<div style="display:flex;gap:8px;align-items:center"><input type="number" id="dI" value="60" min="10" max="600" step="10" style="width:75px"><span style="font-size:.75rem;color:var(--t3)">שניות</span></div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F3A8; צבעי הבהוב</div>
+<div class="fr"><div class="fg"><label class="fl">צבע 1</label><div class="cr"><div class="cp" id="cP1" style="background:#FFD700"></div><select id="c1"><option value="#FFD700" selected>זהב</option><option value="#fff">לבן</option><option value="#3b82f6">כחול</option><option value="#ef4444">אדום</option><option value="#22c55e">ירוק</option><option value="#eab308">צהוב</option><option value="#f97316">כתום</option><option value="#a855f7">סגול</option></select></div></div>
+<div class="fg"><label class="fl">צבע 2</label><div class="cr"><div class="cp" id="cP2" style="background:#f97316"></div><select id="c2"><option value="#FFD700">זהב</option><option value="#fff">לבן</option><option value="#3b82f6">כחול</option><option value="#ef4444">אדום</option><option value="#22c55e">ירוק</option><option value="#eab308">צהוב</option><option value="#f97316" selected>כתום</option><option value="#a855f7">סגול</option></select></div></div></div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F3B5; בחירת ניגון</div><div class="sl" id="sL"></div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F4F3; רטט</div>
+<div style="display:flex;align-items:center;gap:10px"><div class="ato" id="vibToggle"></div><span style="font-size:.78rem;color:var(--t2)" id="vibLabel">כבוי</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:4px">רטט בזמן הצלצול (מובייל)</div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F50A; עוצמה הדרגתית</div>
+<div style="display:flex;align-items:center;gap:10px"><div class="ato on" id="gradVolToggle"></div><span style="font-size:.78rem;color:var(--t2)" id="gradVolLabel">פעיל</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:4px">עוצמת הצלצול עולה בהדרגה. כבה לעוצמה מלאה מיידית.</div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F4E1; שימוש ב-GPS</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div class="ato on" id="gpsToggle"></div><span style="font-size:.78rem;color:var(--t2)" id="gpsLabel">פעיל</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:4px">קביעת מיקום אוטומטית. כבה אם רוצים לבחור עיר ידנית.</div></div>
+<div class="drawer-section"><div class="drawer-label">&#x1F512; נעילת מסך לשבת</div>
+<div style="font-size:.75rem;color:var(--t2);margin-bottom:8px">מונע נגיעה מקרית במסך.</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div class="ato" id="autoLockToggle"></div><span style="font-size:.78rem;color:var(--t2)" id="autoLockLabel">נעילה אוטומטית כבויה</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-bottom:8px">כשמופעל, המסך ננעל אוטומטית בכניסת שבת (הדלקת נרות)</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="sb" id="lockBtn" style="padding:6px 14px;font-size:.78rem">&#x1F512; נעילה ידנית</button>
+<button class="sb" id="lockOffBtn" style="padding:6px 14px;font-size:.78rem;display:none">&#x1F513; בטל נעילה</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+<button class="sb" id="simShabbat" style="padding:5px 12px;font-size:.72rem">&#x1F56F;&#xFE0F; סימולציית שבת</button>
+<button class="sb" id="simMotzash" style="padding:5px 12px;font-size:.72rem">&#x1F312; סימולציית מוצ״ש</button></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:6px" id="lockStatus"></div></div></div>
+<div class="ctn">
+<div class="hdr"><h1>&#9200; מעורר לשבת</h1><div class="sub">הפסקה אוטומטית — ללא צורך בלחיצה</div></div>
+<div class="clk"><div class="clk-t" id="cT">--:--</div><div class="clk-hd" id="cHD"></div><div class="clk-gd" id="cGD"></div></div>
+<div class="sbi"><div class="sbt" id="sbt"></div></div>
+<div class="cd"><div class="ct">&#x23F0; שעת השכמה</div>
+<div class="mode-toggle"><button class="mode-btn act" id="modeSimple">שעה רגילה</button><button class="mode-btn" id="modeTef">&#x1F54D; לפי זמן תפילה</button></div>
+<div id="panelSimple"><label class="fl">בחר שעה</label><input type="time" id="simpleTime" value="06:30"></div>
+<div id="panelTef" style="display:none">
+<div class="tg" id="tG">
+<button class="tb sel" data-type="vatikin"><span class="ti">&#x1F305;</span><span class="tn">ותיקין</span><span class="tt"><span id="vT">--:--</span> <span style="font-size:.65rem;color:var(--t2);font-weight:400" id="vTnetz">| הנץ: --:--</span></span></button>
+<button class="tb" data-type="t0700"><span class="ti">&#x1F566;</span><span class="tn">מניין 07:00</span></button>
+<button class="tb" data-type="t0800"><span class="ti">&#x1F567;</span><span class="tn">מניין 08:00</span></button>
+<button class="tb" data-type="t0900"><span class="ti">&#x1F564;</span><span class="tn">מניין 09:00</span></button>
+<button class="tb" data-type="shmaGra"><span class="ti">&#x1F4D6;</span><span class="tn">ק״ש גר״א</span><span class="tt" id="shmaGraT">--:--</span></button>
+<button class="tb" data-type="shmaMga"><span class="ti">&#x1F4D6;</span><span class="tn">ק״ש מג״א</span><span class="tt" id="shmaMgaT">--:--</span></button>
+<button class="tb" data-type="custom"><span class="ti">&#9998;</span><span class="tn">זמן אחר</span></button></div>
+<div id="ctR" style="display:none"><label class="fl">שעת תפילה</label><input type="time" id="ctT" value="06:30"></div>
+<div class="pr"><span>זמן התארגנות:</span><input type="number" id="pT" value="15" min="0" max="60" step="5" style="width:55px"><span>דקות</span></div>
+<div class="zmanim-src" id="zmanimSrc"></div>
+<div class="zmanim-offline" id="zmanimOffline">&#x26A0; אופליין — הזמנים מחושבים מקומית (סטייה אפשרית של 1-2 דקות)</div>
 </div>
-
-<button id="toTop" title="חזרה לראש העמוד" style="display:none;position:fixed;bottom:18px;left:18px;z-index:999;width:44px;height:44px;border-radius:50%;border:1px solid #2f3d73;background:#1b2547;color:#cfe3ff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45)">↑</button>
+<div class="cw" id="cW">&#9200; שעת השכמה: --:--</div></div>
+<div class="cd"><div class="ct">&#x1F4C5; ימים</div>
+<div class="dsc"><button class="sb" id="bSh">&#x1F56F;&#xFE0F; שבת</button><button class="sb" id="bAl">כל יום</button><button class="sb" id="bWd">א׳–ה׳</button><button class="sb" id="bFS">ו׳–ש׳</button><button class="sb" id="bRs">איפוס</button></div>
+<div class="dsr" id="dR"><button class="db" data-day="0">א׳</button><button class="db" data-day="1">ב׳</button><button class="db" data-day="2">ג׳</button><button class="db" data-day="3">ד׳</button><button class="db" data-day="4">ה׳</button><button class="db" data-day="5">ו׳</button><button class="db" data-day="6">ש׳</button></div></div>
+<div class="cd"><div class="ct">&#x1F3B5; ניגון</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span id="curSongIcon" style="font-size:1.2rem"></span><span id="curSongName" style="font-size:.85rem;color:var(--t1)"></span><button class="sb" id="prevBtn" style="padding:4px 10px;font-size:.95rem" title="השמע">&#9654;</button><button class="sb" id="changeSongBtn" style="margin-right:auto;padding:4px 10px">&#9998; שנה</button></div>
+<div class="vr"><span style="font-size:.85rem;color:var(--t3)">&#x1F508;</span><input type="range" id="vS" min="0" max="100" value="70"><span style="font-size:.85rem;color:var(--t3)">&#x1F50A;</span></div>
+<div style="font-size:.7rem;color:var(--t3);margin-top:3px;text-align:center">&#x2713; עוצמה עולה בהדרגה</div></div>
+<div style="display:flex;gap:10px;margin-top:8px"><button class="btn bp" id="sAB" style="width:100%">&#9200; הגדר מעורר</button></div>
+<div class="cd alarms-cd"><div class="ct">&#x1F4CB; מעוררים</div><div class="al" id="aL"><div class="es" id="eS">לא הוגדרו מעוררים</div></div></div></div>
+<audio id="aA" preload="auto"></audio>
 <script>
-/* כפתור צף לחזרה לראש העמוד — מופיע אחרי גלילה של 400px */
-(function(){
-  var b=document.getElementById('toTop');
-  function chk(){ var y=window.scrollY||document.documentElement.scrollTop||0; b.style.display=y>400?'block':'none'; }
-  window.addEventListener('scroll',chk); chk();
-  b.onclick=function(){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); } };
-})();
+const CT={jerusalem:{n:'ירושלים',la:31.77,ln:35.21,tz:'Asia/Jerusalem'},telaviv:{n:'תל אביב',la:32.09,ln:34.78,tz:'Asia/Jerusalem'},haifa:{n:'חיפה',la:32.79,ln:34.99,tz:'Asia/Jerusalem'},beersheva:{n:'באר שבע',la:31.25,ln:34.79,tz:'Asia/Jerusalem'},bnei_brak:{n:'בני ברק',la:32.08,ln:34.83,tz:'Asia/Jerusalem'},petach_tikva:{n:'פתח תקווה',la:32.08,ln:34.89,tz:'Asia/Jerusalem'},ashdod:{n:'אשדוד',la:31.80,ln:34.64,tz:'Asia/Jerusalem'},netanya:{n:'נתניה',la:32.32,ln:34.85,tz:'Asia/Jerusalem'},modiin:{n:'מודיעין',la:31.90,ln:35.01,tz:'Asia/Jerusalem'},eilat:{n:'אילת',la:29.56,ln:34.95,tz:'Asia/Jerusalem'},tzfat:{n:'צפת',la:32.96,ln:35.50,tz:'Asia/Jerusalem'},tiberias:{n:'טבריה',la:32.79,ln:35.53,tz:'Asia/Jerusalem'},nyc:{n:'ניו יורק',la:40.71,ln:-74.01,tz:'America/New_York'},lakewood:{n:'לייקווד',la:40.10,ln:-74.22,tz:'America/New_York'},losangeles:{n:'לוס אנג׳לס',la:34.05,ln:-118.24,tz:'America/Los_Angeles'},miami:{n:'מיאמי',la:25.76,ln:-80.19,tz:'America/New_York'},chicago:{n:'שיקגו',la:41.88,ln:-87.63,tz:'America/Chicago'},baltimore:{n:'בולטימור',la:39.29,ln:-76.61,tz:'America/New_York'},london:{n:'לונדון',la:51.51,ln:-0.13,tz:'Europe/London'},paris:{n:'פריז',la:48.86,ln:2.35,tz:'Europe/Paris'},antwerp:{n:'אנטוורפן',la:51.22,ln:4.40,tz:'Europe/Brussels'},zurich:{n:'ציריך',la:47.38,ln:8.54,tz:'Europe/Zurich'},manchester:{n:'מנצ׳סטר',la:53.48,ln:-2.24,tz:'Europe/London'},melbourne:{n:'מלבורן',la:-37.81,ln:144.96,tz:'Australia/Melbourne'},toronto:{n:'טורונטו',la:43.65,ln:-79.38,tz:'America/Toronto'},buenosaires:{n:'בואנוס איירס',la:-34.60,ln:-58.38,tz:'America/Argentina/Buenos_Aires'}};
+const P=n=>String(n).padStart(2,'0');
+function calcSun(lat,lng,d){const r=Math.PI/180,dy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5),g=(2*Math.PI/365)*(dy-1),eq=229.18*(.000075+.001868*Math.cos(g)-.032077*Math.sin(g)-.014615*Math.cos(2*g)-.040849*Math.sin(2*g)),dc=.006918-.399912*Math.cos(g)+.070257*Math.sin(g)-.006758*Math.cos(2*g)+.000907*Math.sin(2*g)-.002697*Math.cos(3*g)+.00148*Math.sin(3*g),z=90.8333*r,lr=lat*r,ch=(Math.cos(z)/(Math.cos(lr)*Math.cos(dc)))-Math.tan(lr)*Math.tan(dc);if(ch>1||ch<-1)return null;const ha=Math.acos(ch)/r;return{srU:720-4*(lng+ha)-eq,ssU:720-4*(lng-ha)-eq};}
+function toL(u,d,tz){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),Math.floor(u/60),Math.round(u%60))),s=dt.toLocaleString('en-US',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}),[h,m]=s.split(':').map(Number);return{h,m};}
+function getSun(ck,d){const c=CT[ck];if(!c)return null;const t=calcSun(c.la,c.ln,d);if(!t)return null;return{sr:toL(t.srU,d,c.tz),ss:toL(t.ssU,d,c.tz)};}
+// Local fallback for sofZmanShma: sunrise + 3 shaot zmaniot (GRA), alot+3 (MGA)
+function calcShmaLocal(ck,d){const c=CT[ck];if(!c)return null;const t=calcSun(c.la,c.ln,d);if(!t)return null;const sr=t.srU,ss=t.ssU;const shaahGra=(ss-sr)/12;const shmaGra=sr+3*shaahGra;// MGA: alot=sunrise-72min, tzeit=sunset+72min, shaah=(tzeit-alot)/12
+const alot=sr-72,tzeit=ss+72,shaahMga=(tzeit-alot)/12;const shmaMga=alot+3*shaahMga;return{shmaGra:toL(shmaGra,d,c.tz),shmaMga:toL(shmaMga,d,c.tz)};}
+function hDay(d){if(d===15)return'ט"ו';if(d===16)return'ט"ז';const T=['','י','כ','ל'],O=['','א','ב','ג','ד','ה','ו','ז','ח','ט'];if(d<=9)return O[d]+'׳';if(d===10)return'י׳';const t=Math.floor(d/10),o=d%10;return o===0?T[t]+'׳':T[t]+'"'+O[o];}
+function hYear(y){const L={1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',20:'כ',30:'ל',40:'מ',50:'נ',60:'ס',70:'ע',80:'פ',90:'צ',100:'ק',200:'ר',300:'ש',400:'ת',500:'תק',600:'תר',700:'תש',800:'תת'};const h=Math.floor((y%1000)/100),t=Math.floor((y%100)/10),o=y%10;let r='';if(h>0)r+=(L[h*100]||'');if(t>0)r+=(L[t*10]||'');if(o>0)r+=(L[o]||'');return r.length>1?r.slice(0,-1)+'"'+r.slice(-1):r+'׳';}
+function hebDate(d){try{const dn=parseInt(new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{day:'numeric'}).format(d)),mn=new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{month:'long'}).format(d),yn=parseInt(new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{year:'numeric'}).format(d));return hDay(dn)+' '+mn+' '+hYear(yn);}catch(e){return'';}}
+function getShabbat(ck,d){const dow=d.getDay();let df=(5-dow+7)%7;if(dow===6)df=6;const fri=new Date(d);fri.setDate(fri.getDate()+df);const sat=new Date(fri);sat.setDate(sat.getDate()+1);const ft=getSun(ck,fri),st=getSun(ck,sat);if(!ft||!st)return null;const co=ck==='jerusalem'?40:18;let ch=ft.ss.h,cm=ft.ss.m-co;if(cm<0){cm+=60;ch--;}let hh=st.ss.h,hm=st.ss.m+35;if(hm>=60){hm-=60;hh++;}return{candle:P(ch)+':'+P(cm),havdalah:P(hh)+':'+P(hm),shd:hebDate(sat),df,isFri:dow===5,isShab:dow===6};}
+// Hebcal API zmanim
+let hebcalData=null,hebcalDate='',hebcalOnline=false;
+async function fetchHebcal(lat,lon,tzid){
+const today=new Date();const ds=today.getFullYear()+'-'+P(today.getMonth()+1)+'-'+P(today.getDate());
+if(hebcalDate===ds&&hebcalData)return;
+try{const url='https://www.hebcal.com/zmanim?cfg=json&lat='+lat+'&lon='+lon+'&tzid='+encodeURIComponent(tzid)+'&date='+ds;
+const r=await fetch(url);if(!r.ok)throw new Error(r.status);const j=await r.json();
+hebcalData=j.times;hebcalDate=ds;hebcalOnline=true;
+$('zmanimSrc').textContent='זמנים מ-Hebcal.com ('+ds+')';$('zmanimOffline').style.display='none';
+updZmanimDisplay();}catch(e){hebcalOnline=false;$('zmanimOffline').style.display='block';$('zmanimSrc').textContent='';}}
+function hcTime(isoStr){if(!isoStr)return null;const d=new Date(isoStr);return{h:d.getHours(),m:d.getMinutes()};}
+function updZmanimDisplay(){updVatikinDisplay();updShmaDisplay();}
+function updVatikinDisplay(){
+const tefBefore=parseInt($('tefBeforeNetz').value)||30;
+let srH,srM;
+if(hebcalOnline&&hebcalData&&hebcalData.sunrise){const t=hcTime(hebcalData.sunrise);srH=t.h;srM=t.m;}
+else if(curSR){srH=curSR.h;srM=curSR.m;}
+else{const sun=getSun(curCity,new Date());if(sun){srH=sun.sr.h;srM=sun.sr.m;}else return;}
+$('vTnetz').textContent='הנץ: '+P(srH)+':'+P(srM);
+let vh=srH,vm=srM-tefBefore;if(vm<0){vm+=60;vh--;}
+vT.textContent='תפילה: '+P(vh)+':'+P(vm);}
+function updShmaDisplay(){
+let gH,gM,mH,mM;
+if(hebcalOnline&&hebcalData){
+if(hebcalData.sofZmanShma){const t=hcTime(hebcalData.sofZmanShma);gH=t.h;gM=t.m;}
+if(hebcalData.sofZmanShmaMGA){const t=hcTime(hebcalData.sofZmanShmaMGA);mH=t.h;mM=t.m;}}
+else{const sh=calcShmaLocal(curCity,new Date());if(sh){gH=sh.shmaGra.h;gM=sh.shmaGra.m;mH=sh.shmaMga.h;mM=sh.shmaMga.m;}}
+if(gH!=null)$('shmaGraT').textContent=P(gH)+':'+P(gM);
+if(mH!=null)$('shmaMgaT').textContent=P(mH)+':'+P(mM);}
+const HARP_ICON="";const SHOFAR_ICON="";const SHOFAR_URI="";
+const HDS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'],SONGS=[{id:'tone_gentle',name:'צלצול עדין',icon:'🔔',type:'tone'},{id:'tone_chimes',name:'פעמונים',icon:'🎐',type:'tone'},{id:'tone_shofar',name:'תקיעת שופר',icon:'📯',type:'shofar'},{id:'tone_harp',name:'נבל',icon:'🎵',type:'tone'},{id:'tone_birds',name:'ציפורי בוקר',icon:'🐦',type:'tone'},{id:'custom',name:'שיר מותאם',icon:'📂',type:'custom'}];
+let alarms=[],aIdC=0,selDays=new Set(),selSong='tone_gentle',actRing=null,flInt=null,cdInt=null,audioCtx=null,custFile=null,lastTrig=-1,curCity='auto_gps',selTef='vatikin',curSR=null,wkLock=null,lastDK='',timeMode='simple';
+const $=id=>document.getElementById(id);
+const cT=$('cT'),cHD=$('cHD'),cGD=$('cGD'),sbt=$('sbt'),cSel=$('cSel'),lI=$('lI'),tG=$('tG'),vT=$('vT'),ctR=$('ctR'),ctT=$('ctT'),pT=$('pT'),cW=$('cW'),dR=$('dR'),sL=$('sL'),aL=$('aL'),eS=$('eS'),dI=$('dI'),vS=$('vS'),c1=$('c1'),c2=$('c2'),cP1=$('cP1'),cP2=$('cP2'),sAB=$('sAB'),fov=$('fov'),cov=$('cov'),cnum=$('cnum'),cstop=$('cstop'),aA=$('aA'),panelSimple=$('panelSimple'),panelTef=$('panelTef'),modeSimple=$('modeSimple'),modeTef=$('modeTef'),simpleTime=$('simpleTime');
+// Drawer
+const hamBtn=$('hamBtn'),drawer=$('drawer'),drOv=$('drOv'),drClose=$('drClose');
+function openDrawer(){drawer.classList.add('open');drOv.classList.add('open');}
+function closeDrawer(){stopDrwPrev();drawer.classList.remove('open');drOv.classList.remove('open');}
+hamBtn.onclick=openDrawer;drOv.onclick=closeDrawer;drClose.onclick=closeDrawer;
+// Auto GPS on first load
+function initGPS(){
+if(!gpsEnabled){if(!CT[curCity]){curCity='telaviv';cSel.value='telaviv';}lI.textContent=CT[curCity]?CT[curCity].n:'';tick();fetchHebcalForCity();return;}
+if(navigator.geolocation){lI.textContent='מאתר מיקום...';
+navigator.geolocation.getCurrentPosition(p=>{
+CT['auto_gps']={n:'מיקום נוכחי',la:p.coords.latitude,ln:p.coords.longitude,tz:Intl.DateTimeFormat().resolvedOptions().timeZone};
+curCity='auto_gps';cSel.value='auto_gps';
+lI.textContent='📍 '+p.coords.latitude.toFixed(2)+'°N '+p.coords.longitude.toFixed(2)+'°E';
+lastDK='';tick();fetchHebcalForCity();
+},()=>{lI.textContent='GPS לא זמין — ברירת מחדל: תל אביב';curCity='telaviv';cSel.value='telaviv';lastDK='';tick();fetchHebcalForCity();},
+{timeout:8000,maximumAge:300000});}
+else{curCity='telaviv';cSel.value='telaviv';lI.textContent='תל אביב';tick();fetchHebcalForCity();}}
+function fetchHebcalForCity(){const c=CT[curCity];if(c)fetchHebcal(c.la,c.ln,c.tz);}
+modeSimple.onclick=()=>{timeMode='simple';modeSimple.classList.add('act');modeTef.classList.remove('act');panelSimple.style.display='block';panelTef.style.display='none';updWake();};
+modeTef.onclick=()=>{timeMode='tefillah';modeTef.classList.add('act');modeSimple.classList.remove('act');panelSimple.style.display='none';panelTef.style.display='block';updWake();};
+simpleTime.addEventListener('change',updWake);
+$('tefBeforeNetz').addEventListener('change',()=>{updVatikinDisplay();updWake();});
+function tick(){const n=new Date(),h=n.getHours(),m=P(n.getMinutes()),s=P(n.getSeconds()),h12=h===0?12:h>12?h-12:h,per=h>=12?'PM':'AM';cT.innerHTML=h12+':'+m+'<span class="clk-s">:'+s+'</span> <span class="clk-p">'+per+'</span>';const dk=n.getFullYear()+'-'+n.getMonth()+'-'+n.getDate()+'-'+m;if(dk!==lastDK){lastDK=dk;const hd=hebDate(n);if(hd)cHD.textContent=hd;cGD.textContent=n.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});const sb=getShabbat(curCity,n),cn=CT[curCity];if(sb&&cn){if(sb.isShab)sbt.innerHTML='\u{1F56F}\uFE0F שבת שלום! ('+sb.shd+') \u00B7 הבדלה: <strong style="color:#34d399">'+sb.havdalah+'</strong> ('+cn.n+')';else if(sb.isFri)sbt.innerHTML='\u{1F56F}\uFE0F הדלקת נרות: <strong style="color:#f0c040">'+sb.candle+'</strong> ('+cn.n+') \u00B7 שבת '+sb.shd;else if(sb.df<=3)sbt.innerHTML='\u{1F56F}\uFE0F כניסת השבת הקרובה '+sb.shd+': <strong style="color:#f0c040">'+sb.candle+'</strong> ('+cn.n+')';else sbt.innerHTML='';}const sun=getSun(curCity,n);if(sun){curSR=sun.sr;}updZmanimDisplay();updWake();rAlarms();}chkAlarms(n);}
+setInterval(tick,1000);
+cSel.addEventListener('change',()=>{const v=cSel.value;if(v==='auto_gps'){initGPS();return;}
+curCity=v;lI.textContent=CT[v]?CT[v].n:'';lastDK='';hebcalData=null;hebcalDate='';tick();fetchHebcalForCity();save();});
+tG.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>{tG.querySelectorAll('.tb').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');selTef=b.dataset.type;ctR.style.display=selTef==='custom'?'block':'none';updWake();}));
+ctT.addEventListener('change',updWake);pT.addEventListener('change',updWake);
+function getTefMin(){
+const tefBefore=parseInt($('tefBeforeNetz').value)||30;
+if(selTef==='vatikin'){
+let srH,srM;
+if(hebcalOnline&&hebcalData&&hebcalData.sunrise){const t=hcTime(hebcalData.sunrise);srH=t.h;srM=t.m;}else if(curSR){srH=curSR.h;srM=curSR.m;}else return null;
+return srH*60+srM-tefBefore;}
+if(selTef==='t0700')return 420;if(selTef==='t0800')return 480;if(selTef==='t0900')return 540;
+if(selTef==='shmaGra'){
+let h,m;if(hebcalOnline&&hebcalData&&hebcalData.sofZmanShma){const t=hcTime(hebcalData.sofZmanShma);h=t.h;m=t.m;}else{const sh=calcShmaLocal(curCity,new Date());if(sh){h=sh.shmaGra.h;m=sh.shmaGra.m;}}
+return h!=null?h*60+m:null;}
+if(selTef==='shmaMga'){
+let h,m;if(hebcalOnline&&hebcalData&&hebcalData.sofZmanShmaMGA){const t=hcTime(hebcalData.sofZmanShmaMGA);h=t.h;m=t.m;}else{const sh=calcShmaLocal(curCity,new Date());if(sh){h=sh.shmaMga.h;m=sh.shmaMga.m;}}
+return h!=null?h*60+m:null;}
+if(selTef==='custom'){const[h,m]=ctT.value.split(':').map(Number);return h*60+m;}return null;}
+function updWake(){if(timeMode==='simple'){const ws=simpleTime.value;if(!ws){cW.innerHTML='&#9200; שעת השכמה: --:--';return null;}cW.innerHTML='&#9200; שעת השכמה: <strong>'+ws+'</strong>';return ws;}const tm=getTefMin();if(tm===null){cW.innerHTML='&#9200; שעת השכמה: --:--';return null;}const pr=parseInt(pT.value)||15;let w=tm-pr;if(w<0)w+=1440;const ws=P(Math.floor(w/60))+':'+P(w%60);cW.innerHTML='&#9200; שעת השכמה: <strong>'+ws+'</strong>';return ws;}
+dR.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>{const d=+b.dataset.day;if(selDays.has(d)){selDays.delete(d);b.classList.remove('a');}else{selDays.add(d);b.classList.add('a');}}));
+function updDB(){dR.querySelectorAll('.db').forEach(b=>b.classList.toggle('a',selDays.has(+b.dataset.day)));}
+$('bSh').onclick=()=>{selDays=new Set([6]);updDB();};$('bAl').onclick=()=>{selDays=new Set([0,1,2,3,4,5,6]);updDB();};$('bWd').onclick=()=>{selDays=new Set([0,1,2,3,4]);updDB();};$('bFS').onclick=()=>{selDays=new Set([5,6]);updDB();};$('bRs').onclick=()=>{selDays.clear();updDB();};
+let drwPrev=null,drwPrevTO=null;
+function stopDrwPrev(){if(drwPrev){drwPrev.sp.textContent='\u25B6';drwPrev=null;}stopShofar();if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}aA.pause();aA.currentTime=0;if(drwPrevTO){clearTimeout(drwPrevTO);drwPrevTO=null;}}
+function rSongs(){sL.innerHTML='';SONGS.forEach(s=>{const el=document.createElement('button');el.className='si'+(selSong===s.id?' sel':'');el.innerHTML=(selSong===s.id?'<span style="color:var(--ac);font-size:.9rem;width:18px">✔</span>':'<span style="width:18px"></span>')+'<span style="font-size:1.1rem;width:22px;text-align:center;display:inline-flex;align-items:center;justify-content:center">'+s.icon+'</span><span class="sn">'+s.name+'</span>'+(s.type==='custom'?'<span class="sp">&#x1F4C1;</span>':'<span class="sp">&#x25B6;</span>');el.addEventListener('click',()=>{stopDrwPrev();if(s.type==='custom'){const i=document.createElement('input');i.type='file';i.accept='audio/*';i.onchange=e=>{if(e.target.files[0]){custFile=URL.createObjectURL(e.target.files[0]);selSong='custom';rSongs();updSongDisplay();}};i.click();}else{selSong=s.id;rSongs();updSongDisplay();}});const spBtn=el.querySelector('.sp');spBtn.addEventListener('click',e=>{e.stopPropagation();if(drwPrev&&drwPrev.id===s.id){stopDrwPrev();return;}stopDrwPrev();spBtn.textContent='\u23F9';drwPrev={id:s.id,sp:spBtn};if(s.type==='tone'||s.type==='shofar')prevTone(s.id);else if(custFile){aA.src=custFile;aA.volume=vS.value/100;aA.play().catch(()=>{});}drwPrevTO=setTimeout(()=>{stopDrwPrev();},4000);});sL.appendChild(el);});}
+function updSongDisplay(){const s=SONGS.find(x=>x.id===selSong);if(s){$('curSongIcon').textContent=s.icon;$('curSongName').textContent=s.name;}}
+rSongs();updSongDisplay();
+$('changeSongBtn').onclick=openDrawer;
+let prevPlaying=false,prevTO=null;
+$('prevBtn').onclick=function(){if(prevPlaying){stopShofar();if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}prevPlaying=false;$('prevBtn').textContent='\u25B6';if(prevGradInt)clearInterval(prevGradInt);return;}
+const vol=parseFloat(vS.value)/100;if(gradVolEnabled){let cv=0.05;prevTone(selSong);prevGradInt=setInterval(()=>{cv=Math.min(cv+vol/5,vol);},500);}else{prevTone(selSong);}
+prevPlaying=true;$('prevBtn').textContent='\u23F9';prevTO=setTimeout(()=>{stopShofar();if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}prevPlaying=false;$('prevBtn').textContent='\u25B6';if(prevGradInt)clearInterval(prevGradInt);},5000);};
+let prevGradInt=null;
+c1.onchange=()=>{cP1.style.background=c1.value;};c2.onchange=()=>{cP2.style.background=c2.value;};
+// Audio engine
+let shofarBuf=null,shofarNode=null;
+function playShofar(vol,loop){const ctx=gCtx();if(shofarNode){try{shofarNode.stop();}catch(e){}}shofarNode=ctx.createBufferSource();shofarNode.buffer=shofarBuf;shofarNode.loop=!!loop;const g=ctx.createGain();g.gain.value=vol;shofarNode.connect(g);g.connect(ctx.destination);shofarNode._gain=g;shofarNode.start();}
+function stopShofar(){if(shofarNode){try{shofarNode.stop();}catch(e){}shofarNode=null;}}
+function gCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}
+function prevTone(id){playT(gCtx(),gCtx().currentTime,vS.value/100,2,id);}
+function playT(x,t,v,d,id){if(id==='tone_gentle')[523,659,784,1047].forEach((f,i)=>{const o=x.createOscillator(),g=x.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.4);g.gain.linearRampToValueAtTime(v*.3,t+i*.4+.1);g.gain.linearRampToValueAtTime(0,t+i*.4+.8);o.connect(g);g.connect(x.destination);o.start(t+i*.4);o.stop(t+i*.4+1);});else if(id==='tone_chimes')[880,1109,1319,1568,1319,1109].forEach((f,i)=>{const o=x.createOscillator(),g=x.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.25);g.gain.linearRampToValueAtTime(v*.25,t+i*.25+.05);g.gain.exponentialRampToValueAtTime(.001,t+i*.25+.6);o.connect(g);g.connect(x.destination);o.start(t+i*.25);o.stop(t+i*.25+.7);});else if(id==='tone_shofar'){const bq=175,flt=x.createBiquadFilter();flt.type='lowpass';flt.frequency.value=600;flt.Q.value=2;flt.connect(x.destination);function tk(st,dur,vol){const o=x.createOscillator(),g=x.createGain(),n=x.createOscillator(),ng=x.createGain();o.type='sawtooth';o.frequency.setValueAtTime(bq,st);o.frequency.linearRampToValueAtTime(bq*1.05,st+.15);o.frequency.setValueAtTime(bq*1.02,st+.15);o.frequency.linearRampToValueAtTime(bq*1.08,st+dur-.3);const vib=x.createOscillator(),vg=x.createGain();vib.frequency.value=4.5;vg.gain.value=4;vib.connect(vg);vg.connect(o.frequency);n.type='sawtooth';n.frequency.value=bq*2.01;ng.gain.value=vol*.06;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(vol*.18,st+.08);g.gain.setValueAtTime(vol*.15,st+dur*.3);g.gain.linearRampToValueAtTime(vol*.12,st+dur-.2);g.gain.linearRampToValueAtTime(0,st+dur);o.connect(g);n.connect(ng);ng.connect(g);g.connect(flt);vib.start(st);o.start(st);n.start(st);o.stop(st+dur);n.stop(st+dur);vib.stop(st+dur);}let ct=t;tk(ct,1.8,v);ct+=2.0;for(let i=0;i<3;i++){tk(ct,.45,v);ct+=.55;}ct+=.15;for(let i=0;i<9;i++){tk(ct,.12,v*.9);ct+=.17;}ct+=.1;tk(ct,2.2,v);}else if(id==='tone_harp')[262,294,330,392,440,523,587,659].forEach((f,i)=>{const nd=d/8,o=x.createOscillator(),g=x.createGain();o.type='sine';o.frequency.value=f;const s=t+i*nd;g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v*.3,s+.02);g.gain.exponentialRampToValueAtTime(.001,s+nd*1.5);o.connect(g);g.connect(x.destination);o.start(s);o.stop(s+nd*2);});else if(id==='tone_birds')for(let i=0;i<d*2.5;i++){const s=t+i*(d/(d*2.5))+Math.random()*.1,bf=1800+Math.random()*1200,o=x.createOscillator(),g=x.createGain();o.type='sine';o.frequency.setValueAtTime(bf,s);o.frequency.linearRampToValueAtTime(bf+500,s+.05);o.frequency.linearRampToValueAtTime(bf-200,s+.12);g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v*.15,s+.02);g.gain.exponentialRampToValueAtTime(.001,s+.18);o.connect(g);g.connect(x.destination);o.start(s);o.stop(s+.2);}}
+function alarmLoop(id,v){const x=gCtx(),cd=3;function cy(){if(!actRing)return;playT(x,x.currentTime,actRing.cv||v,cd,id);}cy();const lp=setInterval(()=>{if(!actRing){clearInterval(lp);return;}cy();},cd*1e3);return lp;}
+// Alarm CRUD
+sAB.addEventListener('click',()=>{const wt=updWake();if(!wt)return;const dur=Math.max(10,parseInt(dI.value)||60),days=selDays.size>0?[...selDays]:[new Date().getDay()];const tef=timeMode==='tefillah'?selTef:'fixed';const prep=timeMode==='tefillah'?(parseInt(pT.value)||15):0;const tefBefore=parseInt($('tefBeforeNetz').value)||30;alarms.push({id:++aIdC,time:wt,dur,days,song:selSong,c1:c1.value,c2:c2.value,vol:vS.value/100,on:true,cust:selSong==='custom'?custFile:null,tef,prep,tm:timeMode,tefBefore});rAlarms();save();});
+function calcAlarmTime(a){
+if(a.tef==='fixed')return a.time;
+const tefBefore=a.tefBefore||30;
+if(a.tef==='vatikin'){
+let srH,srM;if(hebcalOnline&&hebcalData&&hebcalData.sunrise){const t=hcTime(hebcalData.sunrise);srH=t.h;srM=t.m;}else if(curSR){srH=curSR.h;srM=curSR.m;}else return a.time;
+const pr=a.prep||15;let vm=srH*60+srM-tefBefore-pr;if(vm<0)vm+=1440;return P(Math.floor(vm/60))+':'+P(vm%60);}
+if(a.tef==='shmaGra'){let h,m;if(hebcalOnline&&hebcalData&&hebcalData.sofZmanShma){const t=hcTime(hebcalData.sofZmanShma);h=t.h;m=t.m;}else{const sh=calcShmaLocal(curCity,new Date());if(sh){h=sh.shmaGra.h;m=sh.shmaGra.m;}}if(h==null)return a.time;const pr=a.prep||15;let vm=h*60+m-pr;if(vm<0)vm+=1440;return P(Math.floor(vm/60))+':'+P(vm%60);}
+if(a.tef==='shmaMga'){let h,m;if(hebcalOnline&&hebcalData&&hebcalData.sofZmanShmaMGA){const t=hcTime(hebcalData.sofZmanShmaMGA);h=t.h;m=t.m;}else{const sh=calcShmaLocal(curCity,new Date());if(sh){h=sh.shmaMga.h;m=sh.shmaMga.m;}}if(h==null)return a.time;const pr=a.prep||15;let vm=h*60+m-pr;if(vm<0)vm+=1440;return P(Math.floor(vm/60))+':'+P(vm%60);}
+if(a.tef==='t0700'){const pr=a.prep||15;let m=420-pr;return P(Math.floor(m/60))+':'+P(m%60);}
+if(a.tef==='t0800'){const pr=a.prep||15;let m=480-pr;return P(Math.floor(m/60))+':'+P(m%60);}
+if(a.tef==='t0900'){const pr=a.prep||15;let m=540-pr;return P(Math.floor(m/60))+':'+P(m%60);}
+if(a.tef==='custom')return a.time;return a.time;}
+const TEF_NAMES={vatikin:'ותיקין',t0700:'מניין 07:00',t0800:'מניין 08:00',t0900:'מניין 09:00',shmaGra:'ק״ש גר״א',shmaMga:'ק״ש מג״א',custom:'מותאם',fixed:''};
+function rAlarms(){if(!alarms.length){eS.style.display='block';aL.innerHTML='';aL.appendChild(eS);return;}eS.style.display='none';aL.innerHTML='';alarms.forEach(a=>{const e=document.createElement('div');e.className='ae'+(actRing&&actRing.aid===a.id?' ring':'');const dynTime=calcAlarmTime(a);const tefLabel=a.tef&&a.tef!=='fixed'?(' \u00B7 '+(TEF_NAMES[a.tef]||'')):'';e.innerHTML='<div class="atd">'+dynTime+'</div><div class="ain"><div class="add">'+a.days.sort().map(d=>HDS[d]).join(' ')+' \u00B7 '+a.dur+'שנ׳'+tefLabel+'</div><div class="asd">'+(SONGS.find(s=>s.id===a.song)||{name:'מותאם'}).name+'</div></div><div class="ato'+(a.on?' on':'')+'" data-id="'+a.id+'"></div><button class="adl" data-id="'+a.id+'">&#x2715;</button>';e.querySelector('.ato').onclick=()=>{a.on=!a.on;rAlarms();save();};e.querySelector('.adl').onclick=()=>{alarms=alarms.filter(x=>x.id!==a.id);rAlarms();save();};aL.appendChild(e);});}
+function chkAlarms(n){if(actRing)return;const dow=n.getDay(),ct=P(n.getHours())+':'+P(n.getMinutes()),mk=n.getHours()*60+n.getMinutes();if(mk===lastTrig)return;for(const a of alarms){if(!a.on)continue;const at=calcAlarmTime(a);if(at!==ct||!a.days.includes(dow))continue;lastTrig=mk;trigger(a);break;}}
+function trigger(a){actRing={aid:a.id,dur:a.dur,rem:a.dur,cv:gradVolEnabled?0:a.vol,tv:a.vol,lp:null};rAlarms();reqWL();fov.classList.add('act');let fs=false;flInt=setInterval(()=>{fs=!fs;const hex2rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];const[r1,g1,b1]=hex2rgb(a.c1),[r2,g2,b2]=hex2rgb(a.c2);fov.style.backgroundColor=fs?`rgba(${r1},${g1},${b1},.25)`:`rgba(${r2},${g2},${b2},.25)`;},600);if(gradVolEnabled){const vi=setInterval(()=>{if(!actRing){clearInterval(vi);return;}actRing.cv=Math.min(actRing.cv+a.vol/10,a.vol);if(actRing.cv>=a.vol)clearInterval(vi);},1e3);}actRing.lp=alarmLoop(a.song,gradVolEnabled?.05:a.vol);cov.classList.add('act');cnum.textContent=a.dur;cdInt=setInterval(()=>{if(!actRing)return;actRing.rem--;cnum.textContent=actRing.rem;if(isLocked){$('lockCountdown').style.display='block';$('lockCountdown').textContent='\u{1F514} מצלצל! '+actRing.rem+' שניות נותרו';}if(actRing.rem<=0)stopRing();},1e3);setTimeout(()=>{if(actRing&&actRing.aid===a.id)stopRing();},(a.dur+2)*1e3);}
+function stopRing(){if(!actRing)return;if(actRing.lp)clearInterval(actRing.lp);stopShofar();aA.pause();aA.currentTime=0;clearInterval(flInt);fov.classList.remove('act');fov.style.backgroundColor='';clearInterval(cdInt);cov.classList.remove('act');actRing=null;relWL();rAlarms();$('lockCountdown').style.display='none';}
+cstop.onclick=stopRing;
+async function reqWL(){try{if('wakeLock' in navigator)wkLock=await navigator.wakeLock.request('screen');}catch(e){}}
+function relWL(){if(wkLock){wkLock.release().catch(()=>{});wkLock=null;}}
+function save(){try{localStorage.setItem('sa4',JSON.stringify({alarms:alarms.map(a=>({...a,cust:null})),city:curCity,gps:gpsEnabled,autoLock:autoLockEnabled,gradVol:gradVolEnabled}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem('sa4'));if(d){if(d.alarms){alarms=d.alarms;aIdC=alarms.reduce((m,a)=>Math.max(m,a.id),0);}if(d.city&&d.city!=='auto_gps'&&CT[d.city]){curCity=d.city;cSel.value=d.city;}if(d.gps===false){gpsEnabled=false;$('gpsToggle').classList.remove('on');$('gpsLabel').textContent='כבוי';}if(d.autoLock===true){autoLockEnabled=true;$('autoLockToggle').classList.add('on');$('autoLockLabel').textContent='נעילה אוטומטית בכניסת שבת';}if(d.gradVol===false){gradVolEnabled=false;$('gradVolToggle').classList.remove('on');$('gradVolLabel').textContent='כבוי';}}}catch(e){}}
+load();rAlarms();
+const mf={name:"מעורר לשבת",short_name:"מעורר",start_url:location.href,display:"standalone",background_color:"#0a0e1a",theme_color:"#0a0e1a",dir:"rtl",lang:"he",icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>",sizes:"any",type:"image/svg+xml"}]};
+$('mLink').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+// Vibrate
+let vibEnabled=false;
+const vibToggle=$('vibToggle'),vibLabel=$('vibLabel');
+vibToggle.onclick=()=>{vibEnabled=!vibEnabled;vibToggle.classList.toggle('on',vibEnabled);vibLabel.textContent=vibEnabled?'פעיל':'כבוי';if(vibEnabled&&navigator.vibrate)navigator.vibrate(100);save();};
+function doVibrate(){if(!vibEnabled||!navigator.vibrate)return;navigator.vibrate([300,200,300,200,500]);}
+function stopVibrate(){if(navigator.vibrate)navigator.vibrate(0);}
+// Gradual volume toggle
+let gradVolEnabled=true;
+const gradVolToggle=$('gradVolToggle'),gradVolLabel=$('gradVolLabel');
+gradVolToggle.onclick=()=>{gradVolEnabled=!gradVolEnabled;gradVolToggle.classList.toggle('on',gradVolEnabled);gradVolLabel.textContent=gradVolEnabled?'פעיל':'כבוי';save();};
+// GPS Toggle
+let gpsEnabled=true;
+const gpsToggle=$('gpsToggle'),gpsLabel=$('gpsLabel');
+gpsToggle.onclick=()=>{gpsEnabled=!gpsEnabled;gpsToggle.classList.toggle('on',gpsEnabled);gpsLabel.textContent=gpsEnabled?'פעיל':'כבוי';
+if(gpsEnabled){cSel.value='auto_gps';initGPS();}else{if(curCity==='auto_gps'){curCity='telaviv';cSel.value='telaviv';lI.textContent='תל אביב';lastDK='';hebcalData=null;hebcalDate='';tick();fetchHebcalForCity();}}save();};
+// Auto-lock toggle
+let autoLockEnabled=false,autoLockTriggeredThisWeek=false;
+const autoLockToggle=$('autoLockToggle'),autoLockLabel=$('autoLockLabel');
+autoLockToggle.onclick=()=>{autoLockEnabled=!autoLockEnabled;autoLockToggle.classList.toggle('on',autoLockEnabled);autoLockLabel.textContent=autoLockEnabled?'נעילה אוטומטית בכניסת שבת':'נעילה אוטומטית כבויה';save();};
+function checkAutoLock(){if(!autoLockEnabled||isLocked)return;const n=new Date();if(n.getDay()!==5)return;// only Friday
+const sb=getShabbat(curCity,n),cn=CT[curCity];if(!sb||!cn||!sb.isFri)return;
+const[ch,cm]=sb.candle.split(':').map(Number);const candleMin=ch*60+cm;const nowMin=n.getHours()*60+n.getMinutes();
+const weekKey=n.getFullYear()+'-W'+Math.ceil(((n-new Date(n.getFullYear(),0,1))/864e5+1)/7);
+if(nowMin>=candleMin&&!autoLockTriggeredThisWeek){autoLockTriggeredThisWeek=true;activateLock();}}
+setInterval(checkAutoLock,30000);
+// Reset weekly trigger on Sunday
+setInterval(()=>{if(new Date().getDay()===0)autoLockTriggeredThisWeek=false;},3600000);
+// Lock Screen
+let isLocked=false,lockPressStart=0,lockPressTimer=null,lockStartTime=0,shakeEnabled=false,shavuaTovShown=false;
+const lockScreen=$('lockScreen'),lockTime=$('lockTime'),lockDate=$('lockDate'),lockShabbat=$('lockShabbat'),lockUnlockInner=$('lockUnlockInner'),lockConfirmOff=$('lockConfirmOff'),lockBtn=$('lockBtn'),lockOffBtn=$('lockOffBtn'),lockStatus=$('lockStatus');
+function activateLock(){isLocked=true;lockStartTime=Date.now();shakeEnabled=false;shavuaTovShown=false;$('lockShakeHint').style.display='none';lockScreen.classList.add('act');lockBtn.style.display='none';lockOffBtn.style.display='inline-block';lockStatus.textContent='נעילה פעילה';reqWL();updateLockClock();closeDrawer();}
+function deactivateLock(){isLocked=false;lockScreen.classList.remove('act');lockBtn.style.display='inline-block';lockOffBtn.style.display='none';lockStatus.textContent='';lockPressStart=0;clearInterval(lockPressTimer);lockUnlockInner.style.display='none';$('lockProgress').style.display='none';$('lockProgressBar').style.width='0';}
+function updateLockClock(){if(!isLocked)return;const n=new Date(),h=n.getHours(),h12=h===0?12:h>12?h-12:h;lockTime.textContent=h12+':'+P(n.getMinutes());const hd=hebDate(n);if(hd)lockDate.textContent=hd;const sb=getShabbat(curCity,n),cn=CT[curCity];const lockTitle=$('lockTitle');const nowMin=h*60+n.getMinutes();
+if(sb&&cn){if(sb.isFri){const[ch,cm]=sb.candle.split(':').map(Number);const candleMin=ch*60+cm;lockTitle.textContent='\u{1F56F}\uFE0F שבת שלום';if(nowMin<candleMin){lockShabbat.innerHTML='הדלקת נרות: <strong style="color:var(--ac)">'+sb.candle+'</strong><br>מוצאי שבת: '+sb.havdalah;}else{lockShabbat.innerHTML='מוצאי שבת: <strong style="color:#34d399">'+sb.havdalah+'</strong>';}}
+else if(sb.isShab){lockTitle.textContent='\u{1F56F}\uFE0F שבת שלום';lockShabbat.innerHTML='מוצאי שבת: <strong style="color:#34d399">'+sb.havdalah+'</strong>';}
+else{lockTitle.textContent='\u{1F512} המסך נעול';lockShabbat.textContent='';}}
+else{lockTitle.textContent='\u{1F512} המסך נעול';lockShabbat.textContent='';}
+const lockNA=$('lockNextAlarm');const now2=n.getDay();let nearest=null,nearLabel='',nearDur=0;for(const a of alarms){if(!a.on)continue;const at=calcAlarmTime(a);if(!at)continue;const[ah,am]=at.split(':').map(Number);const aMin=ah*60+am;for(let d=0;d<7;d++){const checkDay=(now2+d)%7;if(!a.days.includes(checkDay))continue;const diff=d*1440+(aMin-nowMin);if(diff<=0&&d===0)continue;if(nearest===null||diff<nearest){nearest=diff;const dayLabel=d===0?'היום':d===1?'מחר':HDS[checkDay];const tefL=a.tef&&a.tef!=='fixed'?(TEF_NAMES[a.tef]||''):'';nearLabel='\u23F0 השכמה הבאה: '+at+' ('+dayLabel+')'+(tefL?' · '+tefL:'');nearDur=a.dur;}break;}}lockNA.textContent=nearLabel;$('lockAlarmDur').textContent=nearDur?'משך צלצול: '+nearDur+' שניות':'';
+if(actRing){$('lockCountdown').style.display='block';$('lockCountdown').textContent='\u{1F514} מצלצל! '+actRing.rem+' שניות נותרו';}else{$('lockCountdown').style.display='none';}}
+setInterval(updateLockClock,30000);
+lockBtn.onclick=activateLock;lockOffBtn.onclick=deactivateLock;
+function lockPressEnd(){clearInterval(lockPressTimer);lockPressStart=0;$('lockProgress').style.display='none';$('lockProgressBar').style.width='0';$('lockProgressText').textContent='';}
+lockScreen.addEventListener('mousedown',lockPressBegin);lockScreen.addEventListener('touchstart',lockPressBegin,{passive:true});
+lockScreen.addEventListener('mouseup',lockPressEnd);lockScreen.addEventListener('touchend',lockPressEnd);lockScreen.addEventListener('mouseleave',lockPressEnd);
+function lockPressBegin(e){if(e.target===lockConfirmOff)return;lockPressStart=Date.now();$('lockProgress').style.display='none';$('lockProgressBar').style.width='0';lockPressTimer=setInterval(()=>{const elapsed=Date.now()-lockPressStart;if(elapsed<2000)return;$('lockProgress').style.display='block';const vis=elapsed-2000;const pct=Math.min(vis/3000*100,100);$('lockProgressBar').style.width=pct+'%';$('lockProgressText').textContent=Math.ceil((5000-elapsed)/1000)+' שניות...';if(elapsed>=5000){clearInterval(lockPressTimer);$('lockProgressText').textContent='';lockUnlockInner.style.display='block';}},100);}
+lockConfirmOff.onclick=e=>{e.stopPropagation();deactivateLock();};
+lockScreen.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+let lastShake=0;if(window.DeviceMotionEvent){window.addEventListener('devicemotion',e=>{if(!isLocked||!shakeEnabled)return;const a=e.accelerationIncludingGravity;if(!a)return;const f=Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z);if(f>35&&Date.now()-lastShake>1000){lastShake=Date.now();lockUnlockInner.style.display='block';}});}
+setInterval(()=>{if(isLocked&&!shakeEnabled&&Date.now()-lockStartTime>30000){shakeEnabled=true;$('lockShakeHint').style.display='block';}},5000);
+function checkAutoUnlock(){if(!isLocked)return;const n=new Date();const sb=getShabbat(curCity,n),cn=CT[curCity];if(!sb||!cn)return;if(sb.isShab){const[hh,mm]=sb.havdalah.split(':').map(Number);const now=n.getHours()*60+n.getMinutes();const hav=hh*60+mm;if(now>=hav&&!shavuaTovShown){shavuaTovShown=true;showShavuaTov(sb,cn);}}}
+function showShavuaTov(sb,cn){lockScreen.innerHTML='<div style="text-align:center;padding:30px 20px"><div style="font-size:2.5rem;margin-bottom:10px">🕊️</div><div style="font-family:Frank Ruhl Libre,serif;font-size:2rem;color:var(--ac);margin-bottom:6px">שבוע טוב!</div><div style="font-size:.85rem;color:var(--t2);margin-bottom:20px">הבדלה: '+sb.havdalah+' ('+cn.n+')</div><button onclick="deactivateLock()" style="font-family:Rubik,sans-serif;font-size:.9rem;padding:10px 28px;border-radius:8px;border:2px solid var(--ac);background:var(--gl);color:var(--ac);cursor:pointer;font-weight:600">המשך לאפליקציה ←</button></div>';}
+setInterval(checkAutoUnlock,30000);
+// Patch vibrate into trigger
+const origTrigger=trigger;
+trigger=function(a){origTrigger(a);doVibrate();if(vibEnabled){const vInt=setInterval(()=>{if(!actRing){clearInterval(vInt);stopVibrate();return;}doVibrate();},2000);actRing._vInt=vInt;}};
+const origStop=stopRing;
+stopRing=function(){if(actRing&&actRing._vInt)clearInterval(actRing._vInt);stopVibrate();origStop();};
+cstop.onclick=stopRing;
+// Re-fetch hebcal daily
+setInterval(()=>{const ds=new Date();const s=ds.getFullYear()+'-'+P(ds.getMonth()+1)+'-'+P(ds.getDate());if(s!==hebcalDate)fetchHebcalForCity();},60000);
+// Simulation buttons
+$('simShabbat').onclick=()=>{closeDrawer();activateLock();};
+$('simMotzash').onclick=()=>{closeDrawer();const sb=getShabbat(curCity,new Date()),cn=CT[curCity];if(sb&&cn){activateLock();setTimeout(()=>{showShavuaTov(sb,cn);},500);}else{activateLock();}};
+// Init
+initGPS();
 </script>
-<script>
-/* טוען את כל קבצי ה-JS עם מספר הגרסה (APP_VER מוגדר למעלה ב-head).
-   async=false שומר על סדר הרצה זהה לתגים סטטיים. */
-(function(){
-  var av=document.getElementById('appver'); if(av) av.textContent=APP_VER;
-  var files=['01-config','02-ui-helpers','03-halacha','04-data','05-ranking','06-api','07-engine','08-ui-cards','09-ui-panel','10-main'];
-  for(var i=0;i<files.length;i++){
-    var s=document.createElement('script');
-    s.src='js/'+files[i]+'.js?v='+APP_VER;
-    s.async=false;
-    document.body.appendChild(s);
-  }
-})();
-</script>
-</body>
-</html>
+</body></html>
