@@ -336,6 +336,7 @@ function _onAct(act,v){
     }
     return;
   }
+  else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
     const out=document.getElementById('out');
