@@ -31,6 +31,7 @@ function applyIntent(I){
   const _valid=['threeweeks','ninedays','tisha','omer','fast','beinhazmanim','chanuka','purim','cholhamoed','lag'];
   if((I.avoidPeriods&&I.avoidPeriods.length)||(I.preferPeriods&&I.preferPeriods.length)){
     if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs();
+    if(!STATE._periodPrefsBase) STATE._periodPrefsBase=JSON.parse(JSON.stringify(STATE.periodPrefs)); // צילום הבסיס הידני
     for(const k of (I.avoidPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='hide'; }
     for(const k of (I.preferPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='prefer'; }
   }
@@ -383,9 +384,9 @@ function _onAct(act,v){
   else if(act==='stops')STATE.includeStops=!STATE.includeStops;
   else if(act==='maxstops'){ STATE.maxStops=+v; STATE.includeStops=(+v>0); if(LAST&&LAST.allWindows){ LAST.ranked=rankedWindows(LAST.allWindows); } paintResults(); return; }
   else if(act==='moremonths'){ STATE.monthsShown=(STATE.monthsShown||6)+6; renderPanel(); return; }
-  else if(act==='periodmode'){ const [k,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode=m; }
-  else if(act==='periodscope'){ const [k,s]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].scope=s; }
-  else if(act==='periodall'){ const [g,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); TUNE_PERIODS.filter(p=>p.grp===g).forEach(p=>{ if(!STATE.periodPrefs[p.key])STATE.periodPrefs[p.key]={mode:'normal',scope:'travel'}; STATE.periodPrefs[p.key].mode=m; }); }
+  else if(act==='periodmode'){ STATE._periodPrefsBase=null; const [k,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode=m; }
+  else if(act==='periodscope'){ STATE._periodPrefsBase=null; const [k,s]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].scope=s; }
+  else if(act==='periodall'){ STATE._periodPrefsBase=null; const [g,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); TUNE_PERIODS.filter(p=>p.grp===g).forEach(p=>{ if(!STATE.periodPrefs[p.key])STATE.periodPrefs[p.key]={mode:'normal',scope:'travel'}; STATE.periodPrefs[p.key].mode=m; }); }
   else if(act==='datemode')STATE.dateMode=v;
   else if(act==='flexdays')STATE.flexDays=+v;
   else if(act==='allowshab')STATE.allowShabbat=!STATE.allowShabbat;
