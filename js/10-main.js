@@ -351,7 +351,7 @@ async function translateAndRun(){
   else{
     // נותנים לבחור: טיסות או תאריכים בלבד — במקום לרוץ אוטומטית
     const out=document.getElementById('out');
-    out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:12px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div><button class="sgo" data-act="go">🔍 חפש טיסות</button> <button class="sgo ghost" data-act="goplan" style="margin-inline-start:8px">📅 תאריכים בלבד</button></div>`;
+    out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:14px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div><div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="sgo" data-act="go" style="border-radius:8px;font-size:15px;padding:10px 26px">🔍 חפש טיסות</button><button class="sgo ghost" data-act="goplan" style="border-radius:8px;font-size:15px;padding:10px 26px">📅 תאריכים בלבד</button></div></div>`;
   }
   btn.disabled=false;
 }
