@@ -128,10 +128,3 @@ async function fetchRates(){
 function _sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ===== calendar + sunset + envelope Shabbat lens (verified) ===== */
-
-// אורך שהייה: מספר בודד, 'any', או טווח "7-10" — מוחזר תמיד כ-[מינימום, מקסימום]
-function nightsRange(){ const v=STATE.flexNights;
-  if(v==='any') return [3,9];
-  if(typeof v==='string'&&v.indexOf('-')>0){ const a=v.split('-'); const lo=Math.max(1,+a[0]||3), hi=Math.max(lo,+a[1]||lo); return [lo,hi]; }
-  const n=Math.max(1,+v||7); return [n,n];
-}
