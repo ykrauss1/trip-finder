@@ -118,9 +118,9 @@ function buildPrompt(text){
 - origin: IATA מוצא (ברירת מחדל "TLV")
 - destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש/לא צוין יעד, או "SKI" אם הבקשה על סקי/גלישה
 - months: מערך "YYYY-MM" של כל החודשים הרלוונטיים. עונות: חורף=דצמבר+ינואר+פברואר, אביב=מרץ+אפריל+מאי, קיץ=יוני+יולי+אוגוסט, סתיו=ספטמבר+אוקטובר+נובמבר. אם לא צוין זמן — []
-- startDays: מערך ימי יציאה אפשריים כמספרים (ראשון=0, שני=1, שלישי=2, רביעי=3, חמישי=4, שישי=5, שבת=6). "מראשון"→[0], "יציאה בראשון"→[0]. אם לא צוין — []
+- startDays: מערך ימי יציאה אפשריים כמספרים (ראשון=0, שני=1, שלישי=2, רביעי=3, חמישי=4, שישי=5, שבת=6). "מראשון"→[0]. אם לא צוין — []
 - endDays: מערך ימי חזרה אפשריים באותו קידוד. "עד חמישי או שישי"→[4,5]. אם לא צוין — []
-- nights: מספר לילות ("5 לילות"→5, "שבוע"→7) או טווח כמחרוזת ("שבוע עד 10 ימים"→"7-10", "בין 5 ל-8 לילות"→"5-8"), אחרת null. אם צוינו ימי יציאה וחזרה בלבד — השאר null
+- nights: מספר לילות אם צוין במפורש ("5 לילות"→5, "שבוע"→7), אחרת null. אם צוינו ימי יציאה וחזרה — השאר null (הימים קובעים)
 - mode: "dates" אם מבקשים רק לבדוק תאריכים/מתי כדאי/בלי טיסות/תכנון מול חגים; אחרת "flights"
 - constraints: {"type":"airline","value":"IZ|LY|W4"} או {"type":"noShabbat"}
 - scorers: {"name":"price|novelty|comfort","w":1-5}
@@ -163,13 +163,12 @@ function translateLocal(text){
   const DAYS={"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6,"מוצ\"ש":6,"מוצאי שבת":6};
   let lastList=null;
   for(const [he,d] of Object.entries(DAYS)){
-    if(t.includes("מיום "+he)||t.includes("מ"+he)||t.includes("יציאה ב"+he)||t.includes("יציאה ביום "+he)||t.includes("יוצאים ב"+he)||t.includes("לצאת ב"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
-    if(t.includes("עד יום "+he)||t.includes("עד "+he)||t.includes("ל"+he)||t.includes("חזרה ב"+he)||t.includes("לחזור ב"+he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; }
+    if(t.includes("מיום "+he)||t.includes("מ"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
+    if(t.includes("עד יום "+he)||t.includes("עד "+he)||t.includes("ל"+he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; }
   }
   for(const [he,d] of Object.entries(DAYS)){ if(t.includes("או "+he)&&lastList&&!lastList.includes(d)) lastList.push(d); }
   I.startDays.sort(); I.endDays.sort();
-  const nr=t.match(/(\d+)\s*(?:עד|-|–)\s*(\d+)\s*(?:לילות|ימים)/); const nm=t.match(/(\d+)\s*לילות/);
-  if(nr)I.nights=nr[1]+"-"+nr[2]; else if(has("שבוע עד עשרה ימים")||has("שבוע עד 10"))I.nights="7-10"; else if(nm)I.nights=+nm[1]; else if(has("שבוע")&&!has("שבועיים"))I.nights=7; else if(has("שבועיים"))I.nights=14;
+  const nm=t.match(/(\d+)\s*לילות/); if(nm)I.nights=+nm[1]; else if(has("שבוע")&&!has("שבועיים"))I.nights=7; else if(has("שבועיים"))I.nights=14;
   if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות");
   if(!I.scorers.length)I.scorers.push({name:"price",w:3});
   return I;
