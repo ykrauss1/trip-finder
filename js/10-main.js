@@ -123,8 +123,7 @@ async function runPlanner(){
         windows.push({start:sat,ret:STATE.toDate,nights:nts+1,TS:windowShabbat(sat,STATE.toDate),price:null,_motzei:true});
       }
     }else{
-      const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
-      const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
+      const [nMin,nMax]=nightsRange();
       const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
       const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
       if(STATE.dateMode==='month'){
@@ -216,8 +215,7 @@ async function run(){
           }
         }
       }else{
-        const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
-        const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
+        const [nMin,nMax]=nightsRange();
         const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
         const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
         if(STATE.dateMode==='month'){
