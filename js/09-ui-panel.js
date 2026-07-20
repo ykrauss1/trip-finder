@@ -25,16 +25,8 @@ function applyIntent(I){
   if(I.months&&I.months.length){ STATE.dateMode='month'; STATE.months=I.months.slice().sort(); }
   if(I.startDays&&I.startDays.length){ STATE.flexStartDows=I.startDays.slice().sort(); STATE.flexStartDow=null; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   if(I.endDays&&I.endDays.length){ STATE.flexEndDows=I.endDays.slice().sort(); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
-  if(I.nights!=null&&/^\d+\s*[-–]\s*\d+$/.test(String(I.nights))){ const a=String(I.nights).split(/[-–]/); const lo=Math.max(1,Math.min(30,+a[0])); const hi=Math.max(lo,Math.min(30,+a[1])); STATE.flexNights=lo+'-'+hi; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
-  else if(I.nights!=null&&isFinite(+I.nights)&&+I.nights>0){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  if(I.nights!=null&&isFinite(+I.nights)){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   else if((I.startDays&&I.startDays.length)||(I.endDays&&I.endDays.length)){ STATE.flexNights='any'; }
-  const _valid=['threeweeks','ninedays','tisha','omer','fast','beinhazmanim','chanuka','purim','cholhamoed','lag'];
-  if((I.avoidPeriods&&I.avoidPeriods.length)||(I.preferPeriods&&I.preferPeriods.length)){
-    if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs();
-    if(!STATE._periodPrefsBase) STATE._periodPrefsBase=JSON.parse(JSON.stringify(STATE.periodPrefs)); // צילום הבסיס הידני
-    for(const k of (I.avoidPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='hide'; }
-    for(const k of (I.preferPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='prefer'; }
-  }
   STATE.noShabbat=(I.constraints||[]).some(c=>c.type==="noShabbat");
   const al=(I.constraints||[]).find(c=>c.type==="airline"); STATE.airline=al?al.value:null;
   STATE.scorers={price:0,novelty:0,comfort:0};
@@ -156,9 +148,7 @@ function lenRowHtml(){
   const S=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
   return `<div class="t" style="margin-top:8px">אורך · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fshab',S,STATE.flexShabbat)}</div>`
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
-    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
-    +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
-    +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
 }
 function datePopBody(){
   if(STATE.tripType==='oneway'){
@@ -227,9 +217,7 @@ function renderPanel(){
   const adultsSel=selBox('adults',ADULTS_OPTS,STATE.adults);
   const lenRow=`<div class="t" style="margin-top:10px">אורך · יחס לשבת</div><div class="selrow">${nightsSel} ${shabSel}</div>`
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
-    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
-    +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
-    +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
   const flexChips=[['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
     .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
   let timeBody='';
@@ -349,8 +337,6 @@ function _onAct(act,v){
     return;
   }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
-  else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
-  else if(act==='hebdates'){ STATE.showHebDates=(v==='1'); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN&&STATE.planSort!==undefined) paintPlanner(null); if(typeof LAST!=='undefined'&&LAST&&LAST.ranked) paintResults(); }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
     const out=document.getElementById('out');
@@ -390,9 +376,9 @@ function _onAct(act,v){
   else if(act==='stops')STATE.includeStops=!STATE.includeStops;
   else if(act==='maxstops'){ STATE.maxStops=+v; STATE.includeStops=(+v>0); if(LAST&&LAST.allWindows){ LAST.ranked=rankedWindows(LAST.allWindows); } paintResults(); return; }
   else if(act==='moremonths'){ STATE.monthsShown=(STATE.monthsShown||6)+6; renderPanel(); return; }
-  else if(act==='periodmode'){ STATE._periodPrefsBase=null; const [k,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode=m; }
-  else if(act==='periodscope'){ STATE._periodPrefsBase=null; const [k,s]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].scope=s; }
-  else if(act==='periodall'){ STATE._periodPrefsBase=null; const [g,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); TUNE_PERIODS.filter(p=>p.grp===g).forEach(p=>{ if(!STATE.periodPrefs[p.key])STATE.periodPrefs[p.key]={mode:'normal',scope:'travel'}; STATE.periodPrefs[p.key].mode=m; }); }
+  else if(act==='periodmode'){ const [k,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode=m; }
+  else if(act==='periodscope'){ const [k,s]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].scope=s; }
+  else if(act==='periodall'){ const [g,m]=v.split('|'); if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs(); TUNE_PERIODS.filter(p=>p.grp===g).forEach(p=>{ if(!STATE.periodPrefs[p.key])STATE.periodPrefs[p.key]={mode:'normal',scope:'travel'}; STATE.periodPrefs[p.key].mode=m; }); }
   else if(act==='datemode')STATE.dateMode=v;
   else if(act==='flexdays')STATE.flexDays=+v;
   else if(act==='allowshab')STATE.allowShabbat=!STATE.allowShabbat;
