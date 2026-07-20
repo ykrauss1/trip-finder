@@ -116,6 +116,8 @@ async function runPlanner(){
   try{
     let windows;
     if(STATE.dateMode==='exact'){
+      const _tod=new Date().toISOString().slice(0,10);
+      if(STATE.toDate<_tod){ out.innerHTML='<div class="state">התאריכים שנבחרו כבר עברו ('+STATE.fromDate+' – '+STATE.toDate+').<br>בחר תאריכים עתידיים או עבור למצב חודשים.</div>'; return; }
       const nts=Math.max(1,Math.round((Date.parse(STATE.toDate)-Date.parse(STATE.fromDate))/864e5));
       windows=[{start:STATE.fromDate,ret:STATE.toDate,nights:nts,TS:windowShabbat(STATE.fromDate,STATE.toDate),price:null}];
       if(!STATE.allowShabbat && _dow(STATE.fromDate)===0){
@@ -348,6 +350,8 @@ async function translateAndRun(){
   try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
   STATE.flexStartDows=null; STATE.flexEndDows=null; STATE.flexStartDow=null; STATE.flexNights='any'; STATE.months=[];
+  STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
+  if(!(I.months&&I.months.length)){ const now=new Date(); const m1=now.toISOString().slice(0,7); now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7); I.months=[m1,m2]; if(I.summary)I.summary+=' · (לא צוין זמן — נבדקים החודשיים הקרובים)'; }
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
   applyIntent(I); renderPanel();
   if(I.mode==='dates'){ runPlanner(); }
