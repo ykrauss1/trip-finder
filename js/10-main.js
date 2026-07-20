@@ -155,7 +155,7 @@ async function runPlanner(){
   }catch(e){ out.innerHTML='<div class="state">שגיאה בתכנון התאריכים: '+e+'</div>'; }
 }
 function plannerCard(w,i){
-  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');return DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);};
+  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');const g=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);return STATE.showHebDates===false?g:g+' · '+hebDateStr(iso);};
   const headTags=[];
   if(w._motzei) headTags.push('<span class="rtg crit motzei">🌙 יציאה במוצאי שבת</span>');
   if(w._prefer) headTags.push('<span class="rtg crit prefer">⭐ מועדף</span>');
