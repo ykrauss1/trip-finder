@@ -123,7 +123,8 @@ async function runPlanner(){
         windows.push({start:sat,ret:STATE.toDate,nights:nts+1,TS:windowShabbat(sat,STATE.toDate),price:null,_motzei:true});
       }
     }else{
-      const [nMin,nMax]=nightsRange();
+      const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
+      const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
       const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
       const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
       if(STATE.dateMode==='month'){
@@ -167,33 +168,15 @@ function plannerCard(w,i){
     ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
   </div>`;
 }
-let LAST_PLAN=null;
-function _satsIn(w){ let n=0; let d=new Date(w.start+'T00:00:00Z'); const e=new Date((w.ret||w.start)+'T00:00:00Z'); while(d<=e){ if(d.getUTCDay()===6)n++; d=new Date(d.getTime()+864e5);} return n; }
-function planSortChips(){
-  const cur=STATE.planSort||'nights';
-  const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="plansort" data-v="${v}" style="padding:2px 10px;margin-inline-start:4px">${l}</span>`;
-  return ` · מיון: ${chip('nights','לפי אורך')}${chip('date','תאריך')}${chip('dow','יום יציאה')}${chip('shab','שבתות ביעד')}`;
-}
 function paintPlanner(ws){
   const out=document.getElementById('out');
-  if(ws) LAST_PLAN=ws; else ws=LAST_PLAN||[];
   if(!ws.length){
     out.innerHTML='<div class="state">לא נמצאו חלונות מתאימים בטווח שנבחר.<br>אפשר להרחיב את הטווח, להוסיף ימי יציאה/חזרה, או לרכך העדפות תקופה ב״כיוונון הלכתי״.</div>';
     return;
   }
-  const byDate=(a,b)=>((a._prefer?0:1)-(b._prefer?0:1))||(a.start<b.start?-1:(a.start>b.start?1:0));
-  const mode=STATE.planSort||'nights';
-  let body=''; let idx=0;
-  const groupOut=(title,list)=>{ if(!list.length)return; body+=`<div class="meta" style="margin-top:14px">${title} · ${list.length} חלונות</div>`+list.map(w=>plannerCard(w,idx++)).join(''); };
-  if(mode==='date'){ body=[...ws].sort(byDate).map((w,i)=>plannerCard(w,i)).join(''); }
-  else if(mode==='dow'){ const DN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-    for(let d=0;d<7;d++){ groupOut('יציאה ביום '+DN[d], ws.filter(w=>new Date(w.start+'T00:00:00Z').getUTCDay()===d).sort(byDate)); } }
-  else if(mode==='shab'){ const withN=ws.map(w=>({w,n:_satsIn(w)})); const ns=[...new Set(withN.map(x=>x.n))].sort((a,b)=>a-b);
-    for(const n of ns){ groupOut(n===0?'ללא שבת ביעד':(n===1?'🕯️ שבת אחת ביעד':'🕯️ '+n+' שבתות ביעד'), withN.filter(x=>x.n===n).map(x=>x.w).sort(byDate)); } }
-  else { const ns=[...new Set(ws.map(w=>w.nights))].sort((a,b)=>a-b);
-    for(const n of ns){ groupOut('🛏 '+n+' לילות', ws.filter(w=>w.nights===n).sort(byDate)); } }
-  out.innerHTML=`<div class="meta">📅 תכנון תאריכים בלבד — ${ws.length} חלונות · בלי חיפוש טיסות${planSortChips()}</div>`
-    + bandLegend() + body;
+  out.innerHTML=`<div class="meta">📅 תכנון תאריכים בלבד — ${ws.length} חלונות · מועדפים תחילה, אחר כך לפי תאריך · בלי חיפוש טיסות</div>`
+    + bandLegend()
+    + ws.map((w,i)=>plannerCard(w,i)).join('');
 }
 async function run(){
   const my=++runSeq;
@@ -233,7 +216,8 @@ async function run(){
           }
         }
       }else{
-        const [nMin,nMax]=nightsRange();
+        const nMin=STATE.flexNights==='any'?3:STATE.flexNights;
+        const nMax=STATE.flexNights==='any'?9:STATE.flexNights;
         const startDows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
         const endDows=(STATE.flexEndDows&&STATE.flexEndDows.length)?STATE.flexEndDows:null;
         if(STATE.dateMode==='month'){
@@ -347,12 +331,7 @@ async function translateAndRun(){
   let I;
   try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
   applyIntent(I); renderPanel();
-  if(I.mode==='dates'){ runPlanner(); }
-  else{
-    // נותנים לבחור: טיסות או תאריכים בלבד — במקום לרוץ אוטומטית
-    const out=document.getElementById('out');
-    out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:12px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div><button class="sgo" data-act="go">🔍 חפש טיסות</button> <button class="sgo ghost" data-act="goplan" style="margin-inline-start:8px">📅 תאריכים בלבד</button></div>`;
-  }
+  if(I.mode==='dates'){ runPlanner(); } else { run(); }
   btn.disabled=false;
 }
 document.getElementById('run').onclick=translateAndRun;
