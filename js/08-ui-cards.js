@@ -150,7 +150,7 @@ function translateLocal(text){
   if(has("נוח"))I.scorers.push({name:"comfort",w:2});
   if(has("בלי טיסות")||has("רק תאריכים")||has("תאריכים בלבד")||has("מתי כדאי")||has("מתי שווה"))I.mode="dates";
   const AV=[["fast",["צום","צומות","תענית"]],["threeweeks",["שלושת השבועות","שלשת השבועות","בין המצרים"]],["ninedays",["תשעת הימים"]],["tisha",["תשעה באב"]],["omer",["ספירת העומר","ספירה"]],["beinhazmanim",["בין הזמנים"]],["cholhamoed",["חול המועד","חוה\"מ"]],["chanuka",["חנוכה"]],["purim",["פורים"]],["lag",["ל\"ג בעומר"]]];
-  const _avoidCue=has("הימנע")||has("בלי ")||has("לא ב")||has("להימנע")||has("שלא יהיה");
+  const _avoidCue=has("ללא")||has("הימנע")||has("בלי ")||has("לא ב")||has("להימנע")||has("שלא יהיה");
   for(const [k,words] of AV){ for(const w of words){ if(has(w)){ if(has("דווקא ב"+w)||has("רוצים "+w)||has("כן "+w)){ if(!I.preferPeriods.includes(k))I.preferPeriods.push(k); } else if(_avoidCue){ if(!I.avoidPeriods.includes(k))I.avoidPeriods.push(k); } } } }
   for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
   if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
@@ -173,7 +173,10 @@ function translateLocal(text){
   }
   for(const [he,d] of Object.entries(DAYS)){ if(t.includes("או "+he)&&lastList&&!lastList.includes(d)) lastList.push(d); }
   I.startDays.sort(); I.endDays.sort();
-  const nr=t.match(/(\d+)\s*(?:עד|-|–)\s*(\d+)\s*(?:לילות|ימים)/); const nm=t.match(/(\d+)\s*לילות/);
+  // מספרי-מילים → ספרות (עותק לניתוח לילות בלבד)
+  let tn=t; const WORDNUM={"שלושה":"3","ארבעה":"4","חמישה":"5","שישה":"6","שבעה":"7","שמונה":"8","תשעה":"9","עשרה":"10","שבועיים":"14 לילות","שבוע":"7"};
+  for(const w in WORDNUM) tn=tn.split(w).join(WORDNUM[w]);
+  const nr=tn.match(/(\d+)\s*(?:עד|-|–|ל)\s*-?(\d+)\s*(?:לילות|ימים)/); const nm=tn.match(/(\d+)\s*(?:לילות|ימים)/);
   if(nr)I.nights=nr[1]+"-"+nr[2]; else if(has("שבוע עד עשרה ימים")||has("שבוע עד 10"))I.nights="7-10"; else if(nm)I.nights=+nm[1]; else if(has("שבוע")&&!has("שבועיים"))I.nights=7; else if(has("שבועיים"))I.nights=14;
   if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות");
   if(!I.scorers.length)I.scorers.push({name:"price",w:3});
