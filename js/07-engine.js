@@ -326,22 +326,35 @@ function dayStatus(day,data){
     if(inNine) return 'nine';
     if(inPrep) return 'prep';
     if(inThree) return 'three';
-    for(const f of (data.favorable||[])) if(f.start<=day&&day<=f.end) return (f.kind==='maybe'?'maybe':'good');
+    // שכבות הלוח היהודי גוברות על חופשה גנרית בצביעת היום
     if(inBein) return 'bein';
     if(inElul) return 'elul';
+    for(const f of (data.favorable||[])) if(f.start<=day&&day<=f.end){
+      if(/בין הזמנים/.test(f.label||'')) return 'bein'; // בין הזמנים דניסן/תשרי — צבע בין הזמנים, לא ירוק סתמי
+      return (f.kind==='maybe'?'maybe':'good');
+    }
     return 'normal';
   })();
   base=has;
+  // שכבה שנייה לחפיפה (פיצול צבע בתא): בין∩אלול, ושכבה הלכתית∩חופשה
+  let second=null;
+  {
+    let inElul2=false,inBein2=false;
+    for(const p of (data.periods||[])){ if(p.start<=day&&day<=p.end){ if(p.kind==='elul')inElul2=true; else if(p.kind==='beinhazmanim')inBein2=true; } }
+    const favGood=(data.favorable||[]).some(f=>f.start<=day&&day<=f.end&&!/בין הזמנים/.test(f.label||''));
+    if(base==='bein') second = inElul2?'elul':(favGood?'good':null);
+    else if(base==='elul'||base==='nine'||base==='three'||base==='prep') second = favGood?'good':null;
+  }
   // a standalone fast with no stronger backdrop shows as full fast colour
-  if(fast && base==='normal') return {base:'fast', fast:false};
-  return {base, fast};
+  if(fast && base==='normal') return {base:'fast', fast:false, second:null};
+  return {base, fast, second};
 }
 function tripBand(start,ret,data){
   const days=[]; let d=start;
   while(d<=ret && days.length<40){
     const isShabbat=new Date(d+'T00:00:00Z').getUTCDay()===6;
     const st=dayStatus(d,data);
-    days.push({date:d,cls:st.base,fast:st.fast,shabbat:isShabbat});
+    days.push({date:d,cls:st.base,cls2:st.second||null,fast:st.fast,shabbat:isShabbat});
     d=_jAddDays(d,1);
   }
   const counts={}; let shab=0, fasts=0;
@@ -354,9 +367,10 @@ function tripBand(start,ret,data){
 function bandHtml(band){
   if(!band||!band.days||!band.days.length) return '';
   const cells=band.days.map(d=>{
-    const title=`${d.date.slice(8)}.${+d.date.slice(5,7)} · ${DAY_HE[d.cls]}${(d.fast||d.cls==='fast')?' · צום':''}${d.shabbat?' · שבת':''}`;
+    const title=`${d.date.slice(8)}.${+d.date.slice(5,7)} · ${DAY_HE[d.cls]}${d.cls2?' + '+DAY_HE[d.cls2]:''}${(d.fast||d.cls==='fast')?' · צום':''}${d.shabbat?' · שבת':''}`;
     const split = d.fast ? `<span class="bc-fasthalf"></span>` : '';
-    return `<span class="bcell bc-${d.cls}${d.shabbat?' bc-shab':''}" style="flex:1 1 0" title="${title}">${split}</span>`;
+    const half = d.cls2 ? `<span class="bcell bc-${d.cls2}" style="position:absolute;left:0;right:0;bottom:0;top:auto;height:46%;width:auto;margin:0;border:0;flex:none"></span>` : '';
+    return `<span class="bcell bc-${d.cls}${d.shabbat?' bc-shab':''}" style="flex:1 1 0;position:relative;overflow:hidden" title="${title}">${half}${split}</span>`;
   }).join('');
   const order=['tisha','nine','three','prep','block','chm','elul','bein','good','normal'];
   const parts=order.filter(k=>band.counts[k]).map(k=>band.counts[k]+' '+DAY_HE[k]);
