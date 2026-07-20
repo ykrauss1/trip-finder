@@ -344,14 +344,14 @@ function bandHtml(band){
   const cells=band.days.map(d=>{
     const title=`${d.date.slice(8)}.${+d.date.slice(5,7)} · ${DAY_HE[d.cls]}${(d.fast||d.cls==='fast')?' · צום':''}${d.shabbat?' · שבת':''}`;
     const split = d.fast ? `<span class="bc-fasthalf"></span>` : '';
-    return `<span class="bcell bc-${d.cls}${d.shabbat?' bc-shab':''}" title="${title}">${split}</span>`;
+    return `<span class="bcell bc-${d.cls}${d.shabbat?' bc-shab':''}" style="flex:1 1 0" title="${title}">${split}</span>`;
   }).join('');
   const order=['tisha','nine','three','prep','block','chm','elul','bein','good','normal'];
   const parts=order.filter(k=>band.counts[k]).map(k=>band.counts[k]+' '+DAY_HE[k]);
   if(band.fasts) parts.push(band.fasts+' צום');
   if(band.hols&&band.hols.length) parts.push(...band.hols);
   if(band.shab) parts.push('🕯️ '+(band.shab>1?(band.shab+' שבתות'):'שבת'));
-  return `<div class="band">${cells}</div><div class="bandleg">${parts.join(' · ')}</div>`;
+  return `<div class="band" style="direction:rtl;width:100%">${cells}</div><div class="bandleg">${parts.join(' · ')}</div>`;
 }
 const TUNE_PERIODS=[
   {key:'threeweeks',label:'שלושת השבועות',grp:'m'},
