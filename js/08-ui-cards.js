@@ -44,7 +44,7 @@ function cleanCityName(code){
 }
 function windowCard(w,rank,dest){
   const c=CITY[dest]||{he:dest,cc:''};
-  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');return DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);};
+  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');const g=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);return STATE.showHebDates===false?g:g+' · '+hebDateStr(iso);};
   const _O=STATE.origin.toUpperCase();
   const oneway=w.oneway||!w.ret;
   const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
