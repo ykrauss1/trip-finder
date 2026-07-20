@@ -156,7 +156,9 @@ function lenRowHtml(){
   const S=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
   return `<div class="t" style="margin-top:8px">אורך · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fshab',S,STATE.flexShabbat)}</div>`
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
-    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
+    +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
+    +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
 }
 function datePopBody(){
   if(STATE.tripType==='oneway'){
@@ -225,7 +227,9 @@ function renderPanel(){
   const adultsSel=selBox('adults',ADULTS_OPTS,STATE.adults);
   const lenRow=`<div class="t" style="margin-top:10px">אורך · יחס לשבת</div><div class="selrow">${nightsSel} ${shabSel}</div>`
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
-    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`;
+    +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
+    +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
+    +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
   const flexChips=[['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
     .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
   let timeBody='';
@@ -345,6 +349,8 @@ function _onAct(act,v){
     return;
   }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
+  else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
+  else if(act==='hebdates'){ STATE.showHebDates=(v==='1'); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN&&STATE.planSort!==undefined) paintPlanner(null); if(typeof LAST!=='undefined'&&LAST&&LAST.ranked) paintResults(); }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
     const out=document.getElementById('out');
