@@ -27,6 +27,12 @@ function applyIntent(I){
   if(I.endDays&&I.endDays.length){ STATE.flexEndDows=I.endDays.slice().sort(); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   if(I.nights!=null&&isFinite(+I.nights)){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   else if((I.startDays&&I.startDays.length)||(I.endDays&&I.endDays.length)){ STATE.flexNights='any'; }
+  const _valid=['threeweeks','ninedays','tisha','omer','fast','beinhazmanim','chanuka','purim','cholhamoed','lag'];
+  if((I.avoidPeriods&&I.avoidPeriods.length)||(I.preferPeriods&&I.preferPeriods.length)){
+    if(!STATE.periodPrefs)STATE.periodPrefs=defaultPeriodPrefs();
+    for(const k of (I.avoidPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='hide'; }
+    for(const k of (I.preferPeriods||[])) if(_valid.includes(k)){ if(!STATE.periodPrefs[k])STATE.periodPrefs[k]={mode:'normal',scope:'travel'}; STATE.periodPrefs[k].mode='prefer'; }
+  }
   STATE.noShabbat=(I.constraints||[]).some(c=>c.type==="noShabbat");
   const al=(I.constraints||[]).find(c=>c.type==="airline"); STATE.airline=al?al.value:null;
   STATE.scorers={price:0,novelty:0,comfort:0};
