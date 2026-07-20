@@ -144,7 +144,7 @@ function dayChipsHtml(act,arr){
 }
 function lenRowHtml(){
   const sb=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
-  const N=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
+  const N=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות'],['4-5','4–5 לילות'],['5-7','5–7 לילות'],['7-10','7–10 לילות'],['10-14','10–14 לילות']];
   const S=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
   return `<div class="t" style="margin-top:8px">אורך · יחס לשבת</div><div class="selrow">${sb('fnights',N,STATE.flexNights)} ${sb('fshab',S,STATE.flexShabbat)}</div>`
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
@@ -203,7 +203,7 @@ function renderPanel(){
     ? `<div class="grp"><div class="t">עונה · אורך · התחלה</div><div class="chips"><span class="c anchor on">⛷️ ינו׳–פבר׳ 2027</span> ${nightsChips} ${fromChips}</div>
        <div class="t" style="margin-top:8px">התחלה בימי חול · שבוע עם שבת ביעד יורד למטה כאופציה · שבועות עומס מסומנים · מקור יעדים: ${SKI_SOURCE}</div></div>`
     : '';
-  const NIGHTS_OPTS=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות']];
+  const NIGHTS_OPTS=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות'],['4-5','4–5 לילות'],['5-7','5–7 לילות'],['7-10','7–10 לילות'],['10-14','10–14 לילות']];
   const SHAB_OPTS=[['any','לא משנה'],['none','בלי שבת'],['away','שבת ביעד']];
   const selBox=(act,opts,cur)=>`<select data-actsel="${act}" class="sel">${opts.map(([v,l])=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
   const modeBtns=[['month','חודשים'],['exact','תאריך מדויק'],['range','טווח + אורך']]
@@ -236,7 +236,7 @@ function renderPanel(){
   const _sd=_dowSel();
   const dowName = (!_sd?'כל יום':_sd.map(d=>DOW_FULL[d]).join('/'))+(STATE.flexEndDows&&STATE.flexEndDows.length?' ← '+STATE.flexEndDows.map(d=>DOW_FULL[d]).join('/'):'');
   const shabName = ({any:'שבת: לא משנה',none:'בלי שבת',away:'שבת ביעד'})[STATE.flexShabbat];
-  const lenName = STATE.flexNights==='any'?'כל אורך':STATE.flexNights+' לילות';
+  const lenName = STATE.flexNights==='any'?'כל אורך':String(STATE.flexNights).replace('-','–')+' לילות';
   let timeName='';
   if(ski) timeName='עונת סקי';
   else if(STATE.dateMode==='month') timeName=monthsDisplay()+` · ${lenName} · ${dowName}`;
@@ -321,7 +321,7 @@ function _onAct(act,v){
   else if(act==='month')STATE.departMonth=v;
   else if(act==='nights')STATE.skiNights=+v;
   else if(act==='from')STATE.skiFromISO=v;
-  else if(act==='fnights')STATE.flexNights=(v==='any'?'any':+v);
+  else if(act==='fnights')STATE.flexNights=(v==='any'?'any':(String(v).indexOf('-')>0?v:+v));
   else if(act==='fstartd'){ if(v===''){STATE.flexStartDows=null;} else {let a=(_dowSel()||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexStartDows=a.length?a:null;} STATE.flexStartDow=null; }
   else if(act==='fendd'){ if(v===''){STATE.flexEndDows=null;} else {let a=(STATE.flexEndDows||[]).slice(); const d=+v; a=a.includes(d)?a.filter(x=>x!==d):a.concat(d).sort(); STATE.flexEndDows=a.length?a:null;} }
   else if(act==='skisort'){
