@@ -25,7 +25,8 @@ function applyIntent(I){
   if(I.months&&I.months.length){ STATE.dateMode='month'; STATE.months=I.months.slice().sort(); }
   if(I.startDays&&I.startDays.length){ STATE.flexStartDows=I.startDays.slice().sort(); STATE.flexStartDow=null; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   if(I.endDays&&I.endDays.length){ STATE.flexEndDows=I.endDays.slice().sort(); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
-  if(I.nights!=null&&isFinite(+I.nights)){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  if(I.nights!=null&&/^\d+\s*[-–]\s*\d+$/.test(String(I.nights))){ const a=String(I.nights).split(/[-–]/); const lo=Math.max(1,Math.min(30,+a[0])); const hi=Math.max(lo,Math.min(30,+a[1])); STATE.flexNights=lo+'-'+hi; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
+  else if(I.nights!=null&&isFinite(+I.nights)&&+I.nights>0){ STATE.flexNights=Math.max(1,Math.min(30,+I.nights)); if(STATE.dateMode==='exact')STATE.dateMode='range'; }
   else if((I.startDays&&I.startDays.length)||(I.endDays&&I.endDays.length)){ STATE.flexNights='any'; }
   const _valid=['threeweeks','ninedays','tisha','omer','fast','beinhazmanim','chanuka','purim','cholhamoed','lag'];
   if((I.avoidPeriods&&I.avoidPeriods.length)||(I.preferPeriods&&I.preferPeriods.length)){
