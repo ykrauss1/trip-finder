@@ -44,7 +44,7 @@ function cleanCityName(code){
 }
 function windowCard(w,rank,dest){
   const c=CITY[dest]||{he:dest,cc:''};
-  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');const g=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);return STATE.showHebDates===false?g:g+' · '+hebDateStr(iso);};
+  const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');return DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);};
   const _O=STATE.origin.toUpperCase();
   const oneway=w.oneway||!w.ret;
   const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
@@ -122,15 +122,13 @@ function buildPrompt(text){
 - endDays: מערך ימי חזרה אפשריים באותו קידוד. "עד חמישי או שישי"→[4,5]. אם לא צוין — []
 - nights: מספר לילות ("5 לילות"→5, "שבוע"→7) או טווח כמחרוזת ("שבוע עד 10 ימים"→"7-10", "בין 5 ל-8 לילות"→"5-8"), אחרת null. אם צוינו ימי יציאה וחזרה בלבד — השאר null
 - mode: "dates" אם מבקשים רק לבדוק תאריכים/מתי כדאי/בלי טיסות/תכנון מול חגים; אחרת "flights"
-- avoidPeriods: מערך תקופות להימנע מהן, מתוך: threeweeks (שלושת השבועות/בין המצרים), ninedays (תשעת הימים), tisha (תשעה באב), omer (ספירת העומר), fast (צומות), beinhazmanim (בין הזמנים), chanuka, purim, cholhamoed (חול המועד), lag (ל"ג בעומר). "בלי צומות"→["fast"], "לא בבין הזמנים"→["beinhazmanim"]. אם לא צוין — []
-- preferPeriods: מערך תקופות שדווקא רוצים (אותם ערכים). "דווקא בחול המועד"→["cholhamoed"]. אם לא צוין — []
 - constraints: {"type":"airline","value":"IZ|LY|W4"} או {"type":"noShabbat"}
 - scorers: {"name":"price|novelty|comfort","w":1-5}
 - unsupported: קריטריונים בלי לבנה (חב״ד/ים/כשרות/מלון) — אל תמציא
 - summary: תקציר עברי קצר של מה שהובן
 יעדים: בוקרשט=BUH אתונה=ATH סלוניקי=SKG טביליסי=TBS ירוואן=EVN לרנקה=LCA בודפשט=BUD פראג=PRG ברצלונה=BCN "ניו יורק"=JFK מילאנו=MIL רומא=ROM פריז=PAR לונדון=LON.
 דוגמה — "מחפש חופשה מראשון עד חמישי במהלך חודשי החורף" ⇒ {"origin":"TLV","destination":"-","months":["2026-12","2027-01","2027-02"],"startDays":[0],"endDays":[4],"nights":null,"mode":"flights","constraints":[],"scorers":[{"name":"price","w":3}],"unsupported":[],"summary":"חופשה ראשון–חמישי בחורף, לפי מחיר"}
-פלט: {"origin":"TLV","destination":"-","months":[],"startDays":[],"endDays":[],"nights":null,"mode":"flights","avoidPeriods":[],"preferPeriods":[],"constraints":[],"scorers":[],"unsupported":[],"summary":""}
+פלט: {"origin":"TLV","destination":"-","months":[],"startDays":[],"endDays":[],"nights":null,"mode":"flights","constraints":[],"scorers":[],"unsupported":[],"summary":""}
 הבקשה: "${text}"`;
 }
 async function translateLive(text){
@@ -141,7 +139,7 @@ async function translateLive(text){
   t=t.replace(/```json/gi,"").replace(/```/g,"").trim(); return JSON.parse(t);
 }
 function translateLocal(text){
-  const t=text.toLowerCase(),I={origin:"TLV",destination:"-",months:[],startDays:[],endDays:[],nights:null,mode:"flights",avoidPeriods:[],preferPeriods:[],constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
+  const t=text.toLowerCase(),I={origin:"TLV",destination:"-",months:[],startDays:[],endDays:[],nights:null,mode:"flights",constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
   const has=w=>t.includes(w);
   if(has("ארקיע"))I.constraints.push({type:"airline",value:"IZ"});
   if(has("בלי שבת")||has("ימי חול"))I.constraints.push({type:"noShabbat"});
@@ -149,9 +147,6 @@ function translateLocal(text){
   if(has("זול")||has("מחיר"))I.scorers.push({name:"price",w:3});
   if(has("נוח"))I.scorers.push({name:"comfort",w:2});
   if(has("בלי טיסות")||has("רק תאריכים")||has("תאריכים בלבד")||has("מתי כדאי")||has("מתי שווה"))I.mode="dates";
-  const AV=[["fast",["צום","צומות","תענית"]],["threeweeks",["שלושת השבועות","שלשת השבועות","בין המצרים"]],["ninedays",["תשעת הימים"]],["tisha",["תשעה באב"]],["omer",["ספירת העומר","ספירה"]],["beinhazmanim",["בין הזמנים"]],["cholhamoed",["חול המועד","חוה\"מ"]],["chanuka",["חנוכה"]],["purim",["פורים"]],["lag",["ל\"ג בעומר"]]];
-  const _avoidCue=has("ללא")||has("הימנע")||has("בלי ")||has("לא ב")||has("להימנע")||has("שלא יהיה");
-  for(const [k,words] of AV){ for(const w of words){ if(has(w)){ if(has("דווקא ב"+w)||has("רוצים "+w)||has("כן "+w)){ if(!I.preferPeriods.includes(k))I.preferPeriods.push(k); } else if(_avoidCue){ if(!I.avoidPeriods.includes(k))I.avoidPeriods.push(k); } } } }
   for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
   if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
   // שנה מפורשת ("2027" / "שנת 2027") או "שנה הבאה" גוברות; אחרת — המופע העתידי הקרוב
@@ -173,10 +168,7 @@ function translateLocal(text){
   }
   for(const [he,d] of Object.entries(DAYS)){ if(t.includes("או "+he)&&lastList&&!lastList.includes(d)) lastList.push(d); }
   I.startDays.sort(); I.endDays.sort();
-  // מספרי-מילים → ספרות (עותק לניתוח לילות בלבד)
-  let tn=t; const WORDNUM={"שלושה":"3","ארבעה":"4","חמישה":"5","שישה":"6","שבעה":"7","שמונה":"8","תשעה":"9","עשרה":"10","שבועיים":"14 לילות","שבוע":"7"};
-  for(const w in WORDNUM) tn=tn.split(w).join(WORDNUM[w]);
-  const nr=tn.match(/(\d+)\s*(?:עד|-|–|ל)\s*-?(\d+)\s*(?:לילות|ימים)/); const nm=tn.match(/(\d+)\s*(?:לילות|ימים)/);
+  const nr=t.match(/(\d+)\s*(?:עד|-|–)\s*(\d+)\s*(?:לילות|ימים)/); const nm=t.match(/(\d+)\s*לילות/);
   if(nr)I.nights=nr[1]+"-"+nr[2]; else if(has("שבוע עד עשרה ימים")||has("שבוע עד 10"))I.nights="7-10"; else if(nm)I.nights=+nm[1]; else if(has("שבוע")&&!has("שבועיים"))I.nights=7; else if(has("שבועיים"))I.nights=14;
   if(has("חב"))I.unsupported.push('קרבה לחב"ד'); if(has("כשר"))I.unsupported.push("כשרות");
   if(!I.scorers.length)I.scorers.push({name:"price",w:3});
