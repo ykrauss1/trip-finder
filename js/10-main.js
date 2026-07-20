@@ -346,6 +346,9 @@ async function translateAndRun(){
   document.getElementById('panel').innerHTML='<div class="state"><div class="spin"></div>מתרגם את הבקשה לאינטנט…</div>';
   let I;
   try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
+  // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
+  STATE.flexStartDows=null; STATE.flexEndDows=null; STATE.flexStartDow=null; STATE.flexNights='any'; STATE.months=[];
+  if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
   applyIntent(I); renderPanel();
   if(I.mode==='dates'){ runPlanner(); }
   else{
