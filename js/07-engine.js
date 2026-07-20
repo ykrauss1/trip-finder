@@ -72,11 +72,7 @@ function deriveJewishPeriods(items,profile){
   const periods=[];
   if(tammuz&&tishaBav) periods.push({start:tammuz,end:tishaBav,label:"בין המצרים",kind:"threeweeks"});
   if(rcAv&&tishaBav) periods.push({start:rcAv,end:tishaBav,label:"תשעת הימים",kind:"ninedays"});
-  // בין הזמנים דקיץ — הגדרה מפורשת דרך מנוע הלוח: י' באב עד ל' באב ועד בכלל.
-  // הערת מנהגים: אב מלא תמיד, ולכן ר"ח אלול יומיים (ל' אב + א' אלול). יש החוזרים לישיבות
-  // בא' אלול (ביה"ז עד ל' אב — המיושם כאן), ויש החוזרים בל' אב (ביה"ז עד כ"ט אב).
-  if(tishaBav){ const _hy=hebFromISO(tishaBav).y; periods.push({start:hebToISO(_hy,5,10),end:hebToISO(_hy,5,30),label:"בין הזמנים",kind:"beinhazmanim",note:"מסתיים בל׳ אב (ועד בכלל); יש המסיימים בכ״ט אב"}); }
-  else if(rcElul) periods.push({start:null,end:rcElul,label:"בין הזמנים",kind:"beinhazmanim"});
+  if(tishaBav&&rcElul) periods.push({start:_jAddDays(tishaBav,1),end:_jAddDays(rcElul,-1),label:"בין הזמנים",kind:"beinhazmanim"});
   if(rcElul) periods.push({start:rcElul,end:roshHashana?_jAddDays(roshHashana,-1):_jAddDays(rcElul,28),label:"אלול",kind:"elul"});
   const holidays=items.filter(x=>x.yomtov===true).map(x=>({date:x.date,label:x.hebrew||x.title}));
   const cholHamoed=items.filter(x=>x.title&&x.title.indexOf("CH'M")>=0).map(x=>x.date);
@@ -102,24 +98,16 @@ function deriveJewishPeriods(items,profile){
   // Tishrei bein hazmanim: after Shmini Atzeret/Simchat Torah -> end of Tishrei
   const shminiAtzeret=firstWith("Shmini Atzeret");
   const rcCheshvan=firstWith("Rosh Chodesh Cheshvan");
-  // בין הזמנים תשרי — ממוצאי שמח"ת עד ל' תשרי ועד בכלל (תשרי מלא, ר"ח חשוון יומיים; יש המסיימים בכ"ט)
-  if(shminiAtzeret){ const _ty=hebFromISO(shminiAtzeret).y; favorable.push({start:_jAddDays(shminiAtzeret,1),end:hebToISO(_ty,7,30),label:"בין הזמנים תשרי",kind:"good",note:"מסתיים בל׳ תשרי (ועד בכלל); יש המסיימים בכ״ט"}); }
-  else if(rcCheshvan) favorable.push({start:null,end:rcCheshvan,label:"בין הזמנים תשרי",kind:"good"});
+  if(shminiAtzeret&&rcCheshvan) favorable.push({start:_jAddDays(shminiAtzeret,1),end:_jAddDays(rcCheshvan,-1),label:"בין הזמנים תשרי",kind:"good"});
   // Nisan bein hazmanim: before Pesach (minus last ~3 prep days) and after Pesach
   const rcNisan=firstWith("Rosh Chodesh Nisan");
   const pesachDates=items.filter(x=>x.title&&/^Pesach/.test(x.title)&&x.title.indexOf("Sheni")<0).map(x=>x.date).sort();
   const pesach=pesachDates[0], pesachEnd=pesachDates[pesachDates.length-1];
   const rcIyar=firstWith("Rosh Chodesh Iyyar");
-  if(pesach){
-    // שני חלונות ניסן, מעוגנים במנוע הלוח:
-    // א. לפני החג: מר"ח ניסן עד ערב תקופת ההכנות. שולי ההכנות מתכווננים (3–7 ימים, לוח בקרה).
-    // ב. אחרי החג: מאסרו חג (כ"ב ניסן) עד ל' ניסן ועד בכלל (ניסן מלא, ר"ח אייר יומיים; יש המסיימים בכ"ט).
-    const _ny=hebFromISO(pesach).y;
-    const _pd=Math.min(7,Math.max(3,+(STATE.pesachPrepDays||3)));
-    const prepStartD=15-_pd; // הכנות: מ-(ט"ו−ימים) עד י"ד ניסן
-    if(prepStartD>1) favorable.push({start:hebToISO(_ny,1,1),end:hebToISO(_ny,1,prepStartD-1),label:"בין הזמנים ניסן",kind:"good"});
-    periods.push({start:hebToISO(_ny,1,prepStartD),end:hebToISO(_ny,1,14),label:"הכנות לפסח",kind:"prep"});
-    favorable.push({start:hebToISO(_ny,1,22),end:hebToISO(_ny,1,30),label:"בין הזמנים ניסן — אחרי החג",kind:"good",note:"מאסרו חג עד ל׳ ניסן (ועד בכלל); יש המסיימים בכ״ט"});
+  if(rcNisan&&pesach){
+    const prep=_jAddDays(pesach,-3);
+    if(rcNisan< prep) favorable.push({start:rcNisan,end:_jAddDays(prep,-1),label:"בין הזמנים ניסן",kind:"good"});
+    periods.push({start:prep,end:_jAddDays(pesach,-1),label:"הכנות לפסח",kind:"prep"});
   }
   // Sefirat HaOmer: 16 Nisan (2nd day Pesach) for 49 days to Shavuot eve
   if(pesach) periods.push({start:_jAddDays(pesach,1),end:_jAddDays(pesach,49),label:"ספירת העומר",kind:"omer"});
