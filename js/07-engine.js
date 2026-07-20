@@ -72,7 +72,11 @@ function deriveJewishPeriods(items,profile){
   const periods=[];
   if(tammuz&&tishaBav) periods.push({start:tammuz,end:tishaBav,label:"בין המצרים",kind:"threeweeks"});
   if(rcAv&&tishaBav) periods.push({start:rcAv,end:tishaBav,label:"תשעת הימים",kind:"ninedays"});
-  if(tishaBav&&rcElul) periods.push({start:_jAddDays(tishaBav,1),end:_jAddDays(rcElul,-1),label:"בין הזמנים",kind:"beinhazmanim"});
+  // בין הזמנים דקיץ — הגדרה מפורשת דרך מנוע הלוח: י' באב עד ל' באב ועד בכלל.
+  // הערת מנהגים: אב מלא תמיד, ולכן ר"ח אלול יומיים (ל' אב + א' אלול). יש החוזרים לישיבות
+  // בא' אלול (ביה"ז עד ל' אב — המיושם כאן), ויש החוזרים בל' אב (ביה"ז עד כ"ט אב).
+  if(tishaBav){ const _hy=hebFromISO(tishaBav).y; periods.push({start:hebToISO(_hy,5,10),end:hebToISO(_hy,5,30),label:"בין הזמנים",kind:"beinhazmanim",note:"מסתיים בל׳ אב (ועד בכלל); יש הנוהגים עד כ״ט אב בלבד"}); }
+  else if(rcElul) periods.push({start:null,end:rcElul,label:"בין הזמנים",kind:"beinhazmanim"});
   if(rcElul) periods.push({start:rcElul,end:roshHashana?_jAddDays(roshHashana,-1):_jAddDays(rcElul,28),label:"אלול",kind:"elul"});
   const holidays=items.filter(x=>x.yomtov===true).map(x=>({date:x.date,label:x.hebrew||x.title}));
   const cholHamoed=items.filter(x=>x.title&&x.title.indexOf("CH'M")>=0).map(x=>x.date);
