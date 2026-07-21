@@ -220,7 +220,7 @@ const STATE={origin:"TLV",destination:"-",departMonth:"2026-07",noShabbat:false,
   skiNights:7, skiFromISO:"2027-01-01", flexNights:7, flexStartDow:null, flexShabbat:"any",
   fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"ILS", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false};
 const SAVE_KEY='tripfinder_saved_v1';
-const SAVE_FIELDS=['origin','destination','destLabel','tripType','dateMode','months','fromDate','toDate','flexNights','flexStartDow','flexShabbat','includeStops','maxStops','sortBy','adults','children','infants','altCurrency','jewishMode','profile','hideFasts','openJaw','outAirport','flexDays','allowShabbat','shabbatTime','marginBefore','marginAfter','candleMin','havdalah','friThreshold','periodPrefs'];
+const SAVE_FIELDS=['origin','destination','destLabel','tripType','dateMode','months','fromDate','toDate','flexNights','flexStartDow','flexShabbat','includeStops','maxStops','sortBy','adults','children','infants','altCurrency','jewishMode','profile','hideFasts','openJaw','outAirport','flexDays','allowShabbat','shabbatTime','marginBefore','marginAfter','candleMin','havdalah','friThreshold','periodPrefs','lastSummary','pesachPrepDays','showHebDates','flexStartDows','flexEndDows','winSort'];
 function loadSaved(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]'); }catch(e){ return []; } }
 function persistSaved(arr){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }catch(e){} }
 let SAVED=loadSaved();
@@ -300,6 +300,7 @@ async function liveSuggestOJ(q){
   OJAC.loading=false; renderOJResults();
 }
 function saveName(){
+  if(STATE.lastSummary) return STATE.lastSummary.slice(0,90); // שאילתה חופשית — שומרים את ה"הבנתי"
   const d=destDisplayName();
   const when=STATE.dateMode==='month'?STATE.months.map(m=>monthLabel(m)).join(','):STATE.dateMode==='exact'?STATE.fromDate:(STATE.fromDate+'–'+STATE.toDate);
   return d+' · '+when+(STATE.openJaw&&STATE.outAirport?(' →'+STATE.outAirport):'');
