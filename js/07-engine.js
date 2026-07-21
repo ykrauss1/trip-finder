@@ -77,7 +77,10 @@ function deriveJewishPeriods(items,profile){
   // בא' אלול (ביה"ז עד ל' אב — המיושם כאן), ויש החוזרים בל' אב (ביה"ז עד כ"ט אב).
   if(tishaBav){ const _hy=hebFromISO(tishaBav).y; periods.push({start:hebToISO(_hy,5,10),end:hebToISO(_hy,5,30),label:"בין הזמנים",kind:"beinhazmanim",note:"מסתיים בל׳ אב (ועד בכלל); יש המסיימים בכ״ט אב"}); }
   else if(rcElul) periods.push({start:null,end:rcElul,label:"בין הזמנים",kind:"beinhazmanim"});
-  if(rcElul) periods.push({start:rcElul,end:roshHashana?_jAddDays(roshHashana,-1):_jAddDays(rcElul,28),label:"אלול",kind:"elul"});
+  // אלול — מעוגן במנוע הלוח: מר"ח אלול (ל' אב, יום א' דר"ח) עד ערב ר"ה (כ"ט אלול).
+  // (עוקף מלכודת: חיפוש "Rosh Hashana" בכותרות Hebcal תפס את "Rosh Hashana LaBehemot" של א' אלול וקטע את התקופה ליום אחד.)
+  if(tishaBav){ const _ey=hebFromISO(tishaBav).y; periods.push({start:hebToISO(_ey,5,30),end:hebToISO(_ey,6,29),label:"אלול",kind:"elul"}); }
+  else if(rcElul){ const _ey2=hebFromISO(rcElul).y; periods.push({start:hebToISO(_ey2,5,30),end:hebToISO(_ey2,6,29),label:"אלול",kind:"elul"}); }
   const holidays=items.filter(x=>x.yomtov===true).map(x=>({date:x.date,label:x.hebrew||x.title}));
   const cholHamoed=items.filter(x=>x.title&&x.title.indexOf("CH'M")>=0).map(x=>x.date);
   // favorable windows
