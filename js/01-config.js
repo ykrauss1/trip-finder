@@ -7,6 +7,7 @@ let RAPID_URL=(FLIGHT_PROVIDER==='gf')?RAPID_GF_URL:RAPID_OLD_URL;
 function tfSyncProviderBtn(){const b=document.getElementById('provBtn');if(!b)return;const gf=(FLIGHT_PROVIDER==='gf');b.textContent=gf?'מקור: Google Flights ✈️':'מקור: Skyscanner (ישן)';b.style.background=gf?'#1f6f5c':'#3a3f55';}
 function tfToggleProvider(){FLIGHT_PROVIDER=(FLIGHT_PROVIDER==='gf')?'old':'gf';RAPID_URL=(FLIGHT_PROVIDER==='gf')?RAPID_GF_URL:RAPID_OLD_URL;localStorage.setItem('tf_provider',FLIGHT_PROVIDER);tfSyncProviderBtn();}
 if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded',tfSyncProviderBtn); } else { tfSyncProviderBtn(); }
+const TRANSLATE_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/tf-translate";
 const JCAL_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/jcal";
 let RAPID_DIAG="";
 let RANK_DIAG=null;
