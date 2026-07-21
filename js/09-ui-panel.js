@@ -189,8 +189,8 @@ function searchBarHtml(){
   const dtField=`<div class="sfield grow ${p==='dates'?'active':''}" data-act="sbpop" data-v="dates"><label>${STATE.tripType==='oneway'?'תאריך יציאה':'תאריכים'}</label><span class="sval"><bdi>${_dateFieldVal()}</bdi></span>${p==='dates'?`<div class="spop wide" onclick="event.stopPropagation()">${datePopBody()}</div>`:''}</div>`;
   // passengers
   const pxField=`<div class="sfield paxfld ${p==='pax'?'active':''}" data-act="sbpop" data-v="pax"><label>נוסעים</label><span class="sval"><bdi>${paxSummary()}</bdi></span>${p==='pax'?`<div class="spop" onclick="event.stopPropagation()">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="sbclose">סיום</div></div>`:''}</div>`;
-  const go=`<button class="sgo" data-act="go">🔍 חפש</button>`;
-  const plan=`<button class="sgo ghost" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות">📅 תאריכים בלבד</button>`;
+  const go=`<button class="sgo" data-act="go">🔍 חפש טיסות</button>`;
+  const plan=`<button class="sgo ghost" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות" style="line-height:1.25">📅 תאריכים בלבד<br><span style="font-size:10.5px;opacity:.7;font-weight:400">ללא טיסות</span></button>`;
   const reset=`<button class="sgo ghost" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺ חדש</button>`;
   return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${plan}${go}</div></div>
     <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div>`;
@@ -348,6 +348,7 @@ function _onAct(act,v){
     }
     return;
   }
+  else if(act==='winsort'){ STATE.winSort=v; paintResults(); return; }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
   else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
   else if(act==='hebdates'){ STATE.showHebDates=(v==='1'); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN&&STATE.planSort!==undefined) paintPlanner(null); if(typeof LAST!=='undefined'&&LAST&&LAST.ranked) paintResults(); }
