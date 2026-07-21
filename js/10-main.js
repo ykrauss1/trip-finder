@@ -176,6 +176,10 @@ function planSortChips(){
   const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="plansort" data-v="${v}" style="padding:2px 10px;margin-inline-start:4px">${l}</span>`;
   return ` · מיון: ${chip('nights','לפי אורך')}${chip('date','תאריך')}${chip('dow','יום יציאה')}${chip('shab','שבתות ביעד')}`;
 }
+function summaryStrip(){
+  if(!STATE.lastSummary) return '';
+  return `<div class="meta" style="opacity:.95">🗒️ ${STATE.lastSummaryLocal?'⚠️ ':''}הבנתי: ${STATE.lastSummary}</div>`;
+}
 function paintPlanner(ws){
   const out=document.getElementById('out');
   if(ws) LAST_PLAN=ws; else ws=LAST_PLAN||[];
@@ -194,7 +198,9 @@ function paintPlanner(ws){
     for(const n of ns){ groupOut(n===0?'ללא שבת ביעד':(n===1?'🕯️ שבת אחת ביעד':'🕯️ '+n+' שבתות ביעד'), withN.filter(x=>x.n===n).map(x=>x.w).sort(byDate)); } }
   else { const ns=[...new Set(ws.map(w=>w.nights))].sort((a,b)=>a-b);
     for(const n of ns){ groupOut('🛏 '+n+' לילות', ws.filter(w=>w.nights===n).sort(byDate)); } }
-  out.innerHTML=`<div class="meta">📅 תכנון תאריכים בלבד — ${ws.length} חלונות · בלי חיפוש טיסות${planSortChips()}</div>`
+  out.innerHTML=summaryStrip()
+    + `<div class="meta" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end"><button class="sgo" data-act="go" style="border-radius:8px;padding:8px 20px">🔍 הצג טיסות</button><button class="sgo ghost" data-act="save" style="border-radius:8px;padding:8px 20px">💾 שמור חיפוש</button></div>`
+    + `<div class="meta">📅 תכנון תאריכים בלבד — ${ws.length} חלונות · בלי חיפוש טיסות${planSortChips()}</div>`
     + bandLegend() + body;
 }
 async function run(){
@@ -321,7 +327,7 @@ async function run(){
       }
       const totalCount = specific && allWindows ? allWindows.length : ranked.length;
       const metaBase=`${totalCount} ${lbl}${note} · ${rankNote}${ojNote}${diagNote}${fltNote}`;
-      LAST={meta:`<div class="meta">${metaBase}${ski?skiSortChips():''}</div>`, metaBase:(ski?metaBase:null), baseRanked:(ski?ranked.slice():null), ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
+      LAST={meta:summaryStrip()+`<div class="meta">${metaBase}${ski?skiSortChips():''}</div>`, metaBase:(ski?metaBase:null), baseRanked:(ski?ranked.slice():null), ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
       paintResults();
       // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
     }
@@ -354,6 +360,7 @@ async function translateAndRun(){
   STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
   if(!(I.months&&I.months.length)){ const now=new Date(); const m1=now.toISOString().slice(0,7); now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7); I.months=[m1,m2]; if(I.summary)I.summary+=' · (לא צוין זמן — נבדקים החודשיים הקרובים)'; }
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
+  STATE.lastSummary=I.summary||''; STATE.lastSummaryLocal=!!I._fallback;
   applyIntent(I); renderPanel();
   if(I.mode==='dates'){ runPlanner(); }
   else{
