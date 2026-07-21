@@ -347,7 +347,8 @@ async function translateAndRun(){
   const btn=document.getElementById('run'); btn.disabled=true;
   document.getElementById('panel').innerHTML='<div class="state"><div class="spin"></div>מתרגם את הבקשה לאינטנט…</div>';
   let I;
-  try{ I=await translateLive(text); }catch(e){ I=translateLocal(text); }
+  try{ I=await translateLive(text); }
+  catch(e){ I=translateLocal(text); I._fallback=(typeof LAST_TRANSLATE_ERR!=='undefined'&&LAST_TRANSLATE_ERR)||String(e&&e.message||e); }
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
   STATE.flexStartDows=null; STATE.flexEndDows=null; STATE.flexStartDow=null; STATE.flexNights='any'; STATE.months=[];
   STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
@@ -358,7 +359,7 @@ async function translateAndRun(){
   else{
     // נותנים לבחור: טיסות או תאריכים בלבד — במקום לרוץ אוטומטית
     const out=document.getElementById('out');
-    out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:14px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div><div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="sgo" data-act="go" style="border-radius:8px;font-size:15px;padding:10px 26px">🔍 חפש טיסות</button><button class="sgo ghost" data-act="goplan" style="border-radius:8px;font-size:15px;padding:10px 26px">📅 תאריכים בלבד</button></div></div>`;
+    out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:14px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div>${I._fallback?`<div style="margin-bottom:12px;color:#f0b429;font-size:13px">⚠️ תרגום מקומי (מוגבל) — השירות החכם לא זמין כרגע<br><span style="opacity:.7;font-size:11px">${String(I._fallback).slice(0,120)}</span></div>`:''}<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="sgo" data-act="go" style="border-radius:8px;font-size:15px;padding:10px 26px">🔍 חפש טיסות</button><button class="sgo ghost" data-act="goplan" style="border-radius:8px;font-size:15px;padding:10px 26px">📅 תאריכים בלבד</button></div></div>`;
   }
   btn.disabled=false;
 }
