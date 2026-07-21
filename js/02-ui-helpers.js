@@ -56,17 +56,37 @@ function sidePanelHtml(){
     </div>
   </div>`;
 }
+// מיון החלונות עצמם (לא הטיסות בתוכם): התאמה / מחיר / תאריך / אורך
+function _winPrice(w){ const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:null); return p==null?Infinity:p; }
+function winSortChips(){
+  const cur=STATE.winSort||'rank';
+  const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="winsort" data-v="${v}">${l}</span>`;
+  return `<div class="sortbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">סדר החלונות: ${chip('rank','התאמה')}${chip('price','מחיר')}${chip('date','תאריך')}${chip('nights','אורך')}<span style="flex:1"></span><button class="sgo ghost" data-act="save" style="border-radius:8px;padding:6px 16px;font-size:13px">💾 שמור חיפוש</button></div>`;
+}
+function sortWindows(arr){
+  const mode=STATE.winSort||'rank';
+  if(mode==='rank') return arr;
+  const a=arr.slice();
+  if(mode==='price') a.sort((x,y)=>_winPrice(x)-_winPrice(y)||(x.start<y.start?-1:1));
+  else if(mode==='date') a.sort((x,y)=>(x.start<y.start?-1:(x.start>y.start?1:0))||((x.nights||0)-(y.nights||0)));
+  else if(mode==='nights') a.sort((x,y)=>((x.nights||0)-(y.nights||0))||_winPrice(x)-_winPrice(y));
+  return a;
+}
 function paintResults(){
   if(!LAST) return;
   const out=document.getElementById('out');
   let body='';
   if(LAST.specific){
-    body=LAST.ranked.map((w,i)=>{
+    const _list=sortWindows(LAST.ranked);
+    let _lastN=null;
+    body=_list.map((w,i)=>{
+      let head='';
+      if((STATE.winSort||'rank')==='nights' && w.nights!==_lastN){ _lastN=w.nights; head=`<div class="meta" style="margin-top:12px">🛏 ${w.nights} לילות</div>`; }
       const key=w.start+'|'+w.ret;
       let extra='';
       if(LAST.exitState && LAST.exitState[key]==='loading') extra='<div class="excmp exload"><div class="spin"></div> משווה שדות חזרה…</div>';
       else if(LAST.exitCmp && LAST.exitCmp[key]) extra=LAST.exitCmp[key];
-      return windowCard(w,i+1,LAST.dest)+(extra?`<div class="exwrap">${extra}</div>`:'');
+      return head+windowCard(w,i+1,LAST.dest)+(extra?`<div class="exwrap">${extra}</div>`:'');
     }).join('');
   } else {
     body=LAST.ranked.map((f,i)=>card(f,i+1)).join('');
@@ -78,7 +98,7 @@ function paintResults(){
     if(LAST.loadingMore) moreBtn='<div class="morewrap"><div class="state"><div class="spin"></div>מתמחר עוד…</div></div>';
     else if(remaining>0) moreBtn=`<div class="morewrap"><button class="morebtn" data-more="1">הצג עוד תוצאות · ${remaining} נותרו</button></div>`;
   }
-  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?sortBarHtml():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
+  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?winSortChips():''}${LAST.specific?sortBarHtml():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
 }
 // a fixed, always-on transparency note: no single flight source is exhaustive (small / low-cost
 // carriers like HiSky are sometimes missing), so point the user to the full list per result.
