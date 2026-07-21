@@ -133,12 +133,22 @@ function buildPrompt(text){
 פלט: {"origin":"TLV","destination":"-","months":[],"startDays":[],"endDays":[],"nights":null,"mode":"flights","avoidPeriods":[],"preferPeriods":[],"constraints":[],"scorers":[],"unsupported":[],"summary":""}
 הבקשה: "${text}"`;
 }
+// התרגום החכם עובר דרך פונקציית edge שמחזיקה את המפתח בצד השרת.
+// (בעבר נקרא כאן ה-API של אנתרופיק ישירות מהדפדפן — בלי מפתח ועם חסימת CORS,
+//  ולכן האתר החי נפל *תמיד* לתרגום המקומי.)
+let LAST_TRANSLATE_ERR=null;
 async function translateLive(text){
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,messages:[{role:"user",content:buildPrompt(text)}]})});
-  if(!r.ok)throw new Error("llm "+r.status);
-  const d=await r.json(); let t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
-  t=t.replace(/```json/gi,"").replace(/```/g,"").trim(); return JSON.parse(t);
+  LAST_TRANSLATE_ERR=null;
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),22000);
+  let r;
+  try{ r=await fetch(TRANSLATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({prompt:buildPrompt(text)}),signal:ctrl.signal}); }
+  finally{ clearTimeout(to); }
+  const d=await r.json().catch(()=>null);
+  if(!r.ok||!d||!d.ok){ LAST_TRANSLATE_ERR=(d&&(d.error||d.detail))||("http "+r.status); throw new Error(LAST_TRANSLATE_ERR); }
+  const I=d.intent;
+  if(I&&typeof I==="object"){ I.summary=(I.summary||text); }
+  return I;
 }
 function translateLocal(text){
   const t=text.toLowerCase(),I={origin:"TLV",destination:"-",months:[],startDays:[],endDays:[],nights:null,mode:"flights",avoidPeriods:[],preferPeriods:[],constraints:[],scorers:[],unsupported:[],summary:"(תרגום מקומי) "+text};
