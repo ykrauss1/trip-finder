@@ -11,7 +11,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '20';
+var APP_VER = '21';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 </script>
 </head>
@@ -32,7 +32,7 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
         <circle cx="36.5" cy="12" r="2.4" fill="#f2b257"/>
       </svg></span>
       <div class="brandtxt">
-        <h1>מנוע הנסיעות <span class="em">שלי</span><span class="live"><span class="dot"></span>מחירי אמת</span></h1>
+        <h1>מנוע הנסיעות <span class="em">שלי</span></h1>
         <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
       </div>
     </div>
@@ -56,14 +56,34 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
   </footer>
 </div>
 
-<button id="toTop" title="חזרה לראש העמוד" style="display:none;position:fixed;bottom:18px;left:18px;z-index:999;width:44px;height:44px;border-radius:50%;border:1px solid #2f3d73;background:#1b2547;color:#cfe3ff;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45)">↑</button>
+<button id="toTop" title="חזרה לראש העמוד" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9999;padding:11px 18px;border-radius:24px;border:1px solid #3a4a86;background:#243161;color:#e6f0ff;font-size:14px;font-weight:600;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.55)">↑ לראש העמוד</button>
 <script>
-/* כפתור צף לחזרה לראש העמוד — מופיע אחרי גלילה של 400px */
+/* כפתור צף לחזרה לראש העמוד.
+   מאזין ב-capture כדי לתפוס גם גלילה בתוך מכולה פנימית (ולא רק גלילת החלון),
+   שם window.scrollY נשאר 0 והכפתור לא היה מופיע. */
 (function(){
   var b=document.getElementById('toTop');
-  function chk(){ var y=window.scrollY||document.documentElement.scrollTop||0; b.style.display=y>400?'block':'none'; }
-  window.addEventListener('scroll',chk); chk();
-  b.onclick=function(){ try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); } };
+  function scrollers(){
+    var out=[document.scrollingElement||document.documentElement, document.body];
+    var el=document.getElementById('out'); if(el) out.push(el);
+    var all=document.querySelectorAll('.rescol,.wrap,main');
+    for(var i=0;i<all.length;i++) out.push(all[i]);
+    return out;
+  }
+  function y(){
+    var m=window.scrollY||0;
+    var ss=scrollers();
+    for(var i=0;i<ss.length;i++){ if(ss[i]&&ss[i].scrollTop>m) m=ss[i].scrollTop; }
+    return m;
+  }
+  function chk(){ b.style.display=y()>300?'block':'none'; }
+  document.addEventListener('scroll',chk,true); window.addEventListener('scroll',chk);
+  setInterval(chk,700); chk();
+  b.onclick=function(){
+    try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+    var ss=scrollers();
+    for(var i=0;i<ss.length;i++){ if(ss[i]) try{ ss[i].scrollTop=0; }catch(e){} }
+  };
 })();
 </script>
 <script>
