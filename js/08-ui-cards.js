@@ -113,7 +113,7 @@ function windowCard(w,rank,dest){
 function buildPrompt(text){
   const today=new Date().toISOString().slice(0,10);
   return `תרגם בקשת חיפוש טיסות/תכנון חופשה חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
-התאריך היום: ${today}. כשמזוהה חודש/עונה בלי שנה — בחר את המופע העתידי הקרוב. אם צוינה שנה מפורשת ("2027", "שנת 2027") או "שנה הבאה" — החל אותה על כל החודשים.
+התאריך היום: ${today}. כשמזוהה חודש/עונה בלי שנה — בחר את המופע העתידי הקרוב. אם צוינה שנה מפורשת ("2027", "שנת 2027") או "שנה הבאה", וגם שנה דו-ספרתית ("אוגוסט 27"→2027) — החל אותה על כל החודשים.
 שדות:
 - origin: IATA מוצא (ברירת מחדל "TLV")
 - destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש/לא צוין יעד, או "SKI" אם הבקשה על סקי/גלישה
@@ -156,6 +156,11 @@ function translateLocal(text){
   if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
   // שנה מפורשת ("2027" / "שנת 2027") או "שנה הבאה" גוברות; אחרת — המופע העתידי הקרוב
   const _yrM=t.match(/20\d\d/); let _forcedY=_yrM?+_yrM[0]:null;
+  if(!_forcedY){ // שנה דו-ספרתית: "אוגוסט 27" / "אוגוסט, 27" / "שנת 27" / "קיץ 27" — לא "ב-27 ליולי" (יום בחודש)
+    const _y2=t.match(/שנת\s*(2[5-9])\b/)
+      ||t.match(/(?:ינואר|פברואר|מרץ|אפריל|מאי|יוני|יולי|אוגוסט|ספטמבר|אוקטובר|נובמבר|דצמבר|קיץ|חורף|אביב|סתיו)[\s,]+(2[5-9])\b/)
+      ||t.match(/(?<![בלהמ]־?-?\s?\d?)\b(2[5-9])\s*(?:,|$)/);
+    if(_y2)_forcedY=2000+ +_y2[1]; }
   if(!_forcedY&&(has("שנה הבאה")||has("בשנה הבאה")))_forcedY=new Date().getFullYear()+1;
   if(_forcedY&&_forcedY<new Date().getFullYear())_forcedY=null;
   const _futureYM=mm=>{const now=new Date();const y=now.getFullYear();if(_forcedY)return _forcedY+"-"+String(mm).padStart(2,"0");return (mm>=now.getMonth()+1?y:y+1)+"-"+String(mm).padStart(2,"0");};
@@ -168,10 +173,11 @@ function translateLocal(text){
   const DAYS={"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6,"מוצ\"ש":6,"מוצאי שבת":6};
   let lastList=null;
   for(const [he,d] of Object.entries(DAYS)){
-    if(t.includes("מיום "+he)||t.includes("מ"+he)||t.includes("יציאה ב"+he)||t.includes("יציאה ביום "+he)||t.includes("יוצאים ב"+he)||t.includes("לצאת ב"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
+    if(t.includes("מיום "+he)||t.includes("מ"+he)||t.includes("יציאה ב"+he)||t.includes("יציאה ביום "+he)||t.includes("יציאה "+he)||t.includes("יוצאים ב"+he)||t.includes("יוצאים "+he)||t.includes("לצאת ב"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
     if(t.includes("עד יום "+he)||t.includes("עד "+he)||t.includes("ל"+he)||t.includes("חזרה ב"+he)||t.includes("לחזור ב"+he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; }
   }
-  for(const [he,d] of Object.entries(DAYS)){ if(t.includes("או "+he)&&lastList&&!lastList.includes(d)) lastList.push(d); }
+  // המשך רשימה: "ראשון שני או שלישי" — כל יום שמופיע ברצף אחרי היום הראשון שזוהה
+  if(lastList) for(const [he,d] of Object.entries(DAYS)){ if((t.includes("או "+he)||t.includes(", "+he)||t.includes(" "+he+" ")||t.includes(" "+he+",")||t.endsWith(" "+he))&&!lastList.includes(d)&&(I.startDays.length||I.endDays.length)) lastList.push(d); }
   I.startDays.sort(); I.endDays.sort();
   // מספרי-מילים → ספרות (עותק לניתוח לילות בלבד)
   let tn=t; const WORDNUM={"שלושה":"3","ארבעה":"4","חמישה":"5","שישה":"6","שבעה":"7","שמונה":"8","תשעה":"9","עשרה":"10","שבועיים":"14 לילות","שבוע":"7"};
