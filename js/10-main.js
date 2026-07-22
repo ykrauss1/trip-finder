@@ -317,9 +317,11 @@ async function run(){
       if(shabAware() && windows.length){
         const zs=windows.reduce((a,w)=>w.start<a?w.start:a,windows[0].start);
         const ze=windows.reduce((a,w)=>{const e=w.ret||w.start; return e>a?e:a;},windows[0].ret||windows[0].start);
+        // מקבילים: זמני שבת במוצא + גיאוקוד היעד — בלתי-תלויים זה בזה
+        const _geoP=geocodeDest(I.destination, STATE.destLabel).catch(()=>null);
         zt=await fetchShabbatTimes(zs,ze); if(my!==runSeq)return;
         _selZT=zt;
-        try{ dgeo=await geocodeDest(I.destination, STATE.destLabel); if(my!==runSeq)return; if(dgeo){ dzt=await fetchShabbatTimes(zs,ze,dgeo); if(my!==runSeq)return; } }catch(e){}
+        try{ dgeo=await _geoP; if(my!==runSeq)return; if(dgeo){ dzt=await fetchShabbatTimes(zs,ze,dgeo); if(my!==runSeq)return; } }catch(e){}
       }
       const first=windows.filter(w=>!w._priced).slice(0,6);
       const progressCb=(done,total)=>{ if(my!==runSeq)return; const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } };
