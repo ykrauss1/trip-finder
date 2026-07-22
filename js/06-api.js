@@ -44,6 +44,18 @@ async function _oneway(from,to,date,adults,includeStops){
     const j=await r.json(); return (j&&j.ok)?(j.leg||null):null;
   }catch(e){ return null; }
 }
+// לוח מחירים: מחיר-לכל-יום-יציאה על פני טווח, בקריאה אחת. בסיס לשכבת ה-💡 "יום זול יותר".
+async function fetchPriceCalendar(origin,dest,fromISO,toISO,nights){
+  try{
+    const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({priceCalendar:true,origin,destination:dest,from:fromISO,to:toISO,nights})});
+    if(!r.ok) return null;
+    const j=await r.json();
+    if(!j||!j.ok||!Array.isArray(j.days)) return null;
+    const map={}; for(const d of j.days){ if(d&&d.date&&d.price!=null) map[d.date]=d.price; }
+    return map; // { "YYYY-MM-DD": price }
+  }catch(e){ return null; }
+}
 async function _drivingDist(a,b){
   try{
     const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dist:true,a,b})});
