@@ -41,6 +41,7 @@
   .ttmenu{position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:45;background:var(--panel);border:1px solid var(--clear-line);border-radius:12px;padding:6px;min-width:190px;box-shadow:0 14px 34px rgba(0,0,0,.4)}
   /* ===== results + side tuning column ===== */
   .resultsgrid{display:flex;gap:18px;align-items:flex-start;margin-top:16px}
+  .sidecol.collapsed{flex:0 0 auto;width:auto;min-width:0}
   .sidecol{flex:0 0 232px;position:sticky;top:14px}
   .rescol{flex:1 1 auto;min-width:0}
   .sidecard{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px 13px}
