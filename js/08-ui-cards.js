@@ -101,6 +101,7 @@ function windowCard(w,rank,dest){
       ${headTags.length?`<div class="rcrit wghtags">${headTags.join('')}</div>`:''}
     </div>
     ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
+    <div class="wgtip" data-tipkey="${w.start}|${w.ret||''}"></div>
     <div class="wgflights">${cards}</div>
     ${hiddenLine}
     <div class="wgfoot">
