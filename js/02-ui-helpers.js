@@ -29,8 +29,9 @@ function carrierFilterHtml(){
 }
 function sidePanelHtml(){
   const ck=(act,opts,cur,attr)=>opts.map(o=>`<span class="c ${String(cur)===String(o[0])?'on':''}" data-act="${act}"${attr?` data-v="${o[0]}"`:''}>${o[1]}</span>`).join('');
+  if(STATE.sideCollapsed) return `<div class="sidecard" style="padding:8px"><div class="sidettl" style="margin:0;cursor:pointer" data-act="sidetoggle" title="הצג כיוונון">⚙ ▸</div></div>`;
   return `<div class="sidecard">
-    <div class="sidettl">⚙ כיוונון אונליין</div>
+    <div class="sidettl" style="display:flex;justify-content:space-between;align-items:center">⚙ כיוונון אונליין<span class="c" data-act="sidetoggle" title="צמצם" style="padding:1px 9px">▾ צמצם</span></div>
     <div class="sgrp"><div class="st">זמני שבת</div>
       <div class="chips"><span class="c hard ${STATE.shabbatTime?'on':''}" data-act="shabtime">${STATE.shabbatTime?'בדיקת זמנים ✓':'בדיקת זמנים'}</span></div>
       ${STATE.shabbatTime?`
@@ -98,7 +99,7 @@ function paintResults(){
     if(LAST.loadingMore) moreBtn='<div class="morewrap"><div class="state"><div class="spin"></div>מתמחר עוד…</div></div>';
     else if(remaining>0) moreBtn=`<div class="morewrap"><button class="morebtn" data-more="1">הצג עוד תוצאות · ${remaining} נותרו</button></div>`;
   }
-  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?winSortChips():''}${LAST.specific?sortBarHtml():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
+  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol${STATE.sideCollapsed?' collapsed':''}">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?winSortChips():''}${LAST.specific?sortBarHtml():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
 }
 // a fixed, always-on transparency note: no single flight source is exhaustive (small / low-cost
 // carriers like HiSky are sometimes missing), so point the user to the full list per result.
