@@ -229,6 +229,7 @@ async function enrichCheaperDays(seq){
     if(cur==null) continue;
     let best=null;
     for(const iso in cal){
+      if(iso==='_ret' || typeof cal[iso]!=='number') continue; // דילוג על שדות-עזר
       if(iso===w.start) continue;
       const gap=Math.abs((Date.parse(iso)-Date.parse(w.start))/864e5);
       // חלון השוואה: עד אורך-נסיעה מלא לכל צד (כך שגם יציאות-ראשון-בלבד, שמרוחקות 7 ימים, נכללות)
@@ -240,9 +241,18 @@ async function enrichCheaperDays(seq){
     const slot=document.querySelector(`.wgtip[data-tipkey="${w.start}|${w.ret||''}"]`);
     if(slot && best){
       const save=Math.round(cur-best.price);
-      const dt=new Date(best.date+"T00:00:00Z");
+      // החזרה בלוח שומרת על אורך הנסיעה (getPriceGraph מחזיר return תואם דרך nights)
+      const bestRet=cal._ret&&cal._ret[best.date] ? cal._ret[best.date]
+        : new Date(Date.parse(best.date)+(w.nights||7)*864e5).toISOString().slice(0,10);
+      const dt=new Date(best.date+"T00:00:00Z"), rt=new Date(bestRet+"T00:00:00Z");
       const lbl=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);
-      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> זולה ב-<b>€${save}</b> (€${best.price} במקום €${cur})</div>`;
+      const rlbl=DOW_FULL[rt.getUTCDay()]+' '+rt.getUTCDate()+'.'+(rt.getUTCMonth()+1);
+      const _O=(STATE.origin||'TLV').toUpperCase();
+      const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
+      const _iata=/^[A-Z]{3}$/.test(_book)?_book:((/^[A-Z]{3}$/.test(dest.toUpperCase()))?dest.toUpperCase():null);
+      const bookUrl=_iata?`https://www.kayak.com/flights/${_O}-${_iata}/${best.date}/${bestRet}`
+        :`https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+((STATE.destLabel||dest).split(' · ')[0])+' on '+best.date+' returning '+bestRet)}`;
+      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl}) זולה ב-<b>€${save}</b> — €${best.price} במקום €${cur}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
     }
   }
 }
