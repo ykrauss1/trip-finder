@@ -7,6 +7,20 @@ function skiSortChips(){
 async function skiLivePrice(f){
   const dep=new Date(f.depUTC).toISOString().slice(0,10);
   const ret=f.retUTC?new Date(f.retUTC).toISOString().slice(0,10):null;
+  const nights=(dep&&ret)?Math.round((Date.parse(ret)-Date.parse(dep))/864e5):7;
+  // לוח מחירים לחודש כולו: מחזיר גם לואו-קוסט (וויז וכו') שהמטמון מפספס,
+  // ומאתר את היום הזול ביותר סביב התאריך במקום תאריך בודד.
+  const mFrom=dep.slice(0,7)+'-01';
+  const [yy,mm]=mFrom.split('-').map(Number);
+  const mTo=new Date(Date.UTC(yy,mm,0)).toISOString().slice(0,10);
+  const cal=await fetchPriceCalendar(STATE.origin||'TLV',f.to,mFrom,mTo,nights);
+  if(cal){
+    // מדויק ליום שנבחר, אחרת הזול ביותר בחודש
+    if(cal[dep]!=null) return {price:cal[dep], _cal:true, date:dep, ret:(cal._ret&&cal._ret[dep])||ret};
+    let best=null; for(const k in cal){ if(k==='_ret'||typeof cal[k]!=='number')continue; if(!best||cal[k]<best.price)best={date:k,price:cal[k],ret:(cal._ret&&cal._ret[k])||null}; }
+    if(best) return {price:best.price, _cal:true, date:best.date, ret:best.ret, _shifted:true};
+  }
+  // גיבוי: תמחור נקודתי כמו קודם
   const m=await fetchRapidPrices(STATE.origin||'TLV',f.to,[{departureDate:dep,returnDate:ret}],null,STATE.includeStops,STATE.adults,STATE.children,STATE.infants);
   return m[dep+'|'+ret]||null;
 }
@@ -30,7 +44,10 @@ async function skiAutoLive(list,seq){
         found++;
         const per=Math.round(live.price/Math.max(1,STATE.adults));
         if(vEl)vEl.textContent='€'+per;
-        if(kEl)kEl.textContent=(STATE.adults>1?`לאחד · סה״כ €${live.price} · חי ✓`:'מחיר חי ✓');
+        let tag = live._cal ? 'מחיר חי (לוח) ✓' : 'מחיר חי ✓';
+        if(STATE.adults>1) tag=`לאחד · סה״כ €${live.price} · ${tag}`;
+        if(live._shifted && live.date){ const d=new Date(live.date+'T00:00:00Z'); tag+=` · הזול ביותר: ${d.getUTCDate()}.${d.getUTCMonth()+1}`; }
+        if(kEl)kEl.textContent=tag;
       }else if(kEl){ kEl.textContent='מטמון · אימות חי לא נמצא'; }
     }catch(e){ const box=document.querySelector(sel); const kEl=box&&box.querySelector('.k'); if(kEl)kEl.textContent='מטמון · אימות חי נכשל'; }
     done++; upd();
@@ -221,7 +238,9 @@ async function enrichCheaperDays(seq){
   const starts=LAST.ranked.map(w=>w.start).sort();
   const fromISO=starts[0], toISO=starts[starts.length-1];
   const nightsMode=(()=>{ const c={}; LAST.ranked.forEach(w=>{c[w.nights]=(c[w.nights]||0)+1;}); return +Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||7; })();
-  const cal=await fetchPriceCalendar(STATE.origin,dest,fromISO,toISO,nightsMode);
+  let cal;
+  if(STATE._calCache && STATE._calCache.dest===dest){ cal=STATE._calCache.map; } // שימוש חוזר בלוח מנדבך 2
+  else { cal=await fetchPriceCalendar(STATE.origin,dest,fromISO,toISO,nightsMode); }
   if(seq!==runSeq||!cal) return;
   // לכל חלון: מצא יום-יציאה מותר וזול יותר בטווח ±6 ימים
   for(const w of LAST.ranked){
@@ -247,12 +266,14 @@ async function enrichCheaperDays(seq){
       const dt=new Date(best.date+"T00:00:00Z"), rt=new Date(bestRet+"T00:00:00Z");
       const lbl=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);
       const rlbl=DOW_FULL[rt.getUTCDay()]+' '+rt.getUTCDate()+'.'+(rt.getUTCMonth()+1);
+      const bestNights=Math.round((Date.parse(bestRet)-Date.parse(best.date))/864e5);
+      const nightsNote=(bestNights && bestNights!==w.nights)?` · <b>${bestNights} לילות</b> (במקום ${w.nights})`:'';
       const _O=(STATE.origin||'TLV').toUpperCase();
       const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
       const _iata=/^[A-Z]{3}$/.test(_book)?_book:((/^[A-Z]{3}$/.test(dest.toUpperCase()))?dest.toUpperCase():null);
       const bookUrl=_iata?`https://www.kayak.com/flights/${_O}-${_iata}/${best.date}/${bestRet}`
         :`https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+((STATE.destLabel||dest).split(' · ')[0])+' on '+best.date+' returning '+bestRet)}`;
-      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl}) זולה ב-<b>€${save}</b> — €${best.price} במקום €${cur}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
+      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl})${nightsNote} זולה ב-<b>€${save}</b> — €${best.price} במקום €${cur}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
     }
   }
 }
@@ -333,7 +354,34 @@ async function run(){
         _selZT=zt;
         try{ dgeo=await _geoP; if(my!==runSeq)return; if(dgeo){ dzt=await fetchShabbatTimes(zs,ze,dgeo); if(my!==runSeq)return; } }catch(e){}
       }
-      const first=windows.filter(w=>!w._priced).slice(0,6);
+      // === נדבך 2: דירוג מקדים בלוח מחירים ===
+      // קריאת לוח אחת (או אחת לכל חודש) מדרגת את כל החלונות לפי מחיר, כדי שהתמחור
+      // המלא — היקר — ירוץ רק על החלונות שבאמת מובילים, לא על 6 המוקדמים כרונולוגית.
+      if(windows.length>8 && I.destination && I.destination!=='-' && !useOJ && STATE.tripType!=='oneway'){
+        const txt0=document.getElementById('pbartxt'); if(txt0)txt0.textContent='סורק לוח מחירים…';
+        const nMode=(()=>{ const c={}; windows.forEach(w=>{c[w.nights]=(c[w.nights]||0)+1;}); return +Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||7; })();
+        const months=[...new Set(windows.map(w=>w.start.slice(0,7)))].sort();
+        const calAll={};
+        for(const m of months){
+          const [yy,mm]=m.split('-').map(Number);
+          const mFrom=m+'-01', mTo=new Date(Date.UTC(yy,mm,0)).toISOString().slice(0,10);
+          const cal=await fetchPriceCalendar(STATE.origin,I.destination,mFrom,mTo,nMode);
+          if(my!==runSeq)return;
+          if(cal) for(const k in cal){ if(k!=='_ret'&&typeof cal[k]==='number') calAll[k]=cal[k]; }
+        }
+        if(Object.keys(calAll).length){
+          STATE._calCache={dest:I.destination, map:calAll}; // שמירה ל-💡 כדי לא למשוך את הלוח פעמיים
+          // דירוג: מחיר-לוח ליום היציאה; מועדפים עדיין קודמים; מי שאין לו מחיר-לוח יורד לסוף אך נשמר
+          windows.forEach(w=>{ w._calPrice=(calAll[w.start]!=null)?calAll[w.start]:null; });
+          windows.sort((a,b)=>{
+            if((a._prefer?0:1)!==(b._prefer?0:1)) return (a._prefer?0:1)-(b._prefer?0:1);
+            const pa=a._calPrice==null?Infinity:a._calPrice, pb=b._calPrice==null?Infinity:b._calPrice;
+            if(pa!==pb) return pa-pb;
+            return a.start<b.start?-1:1;
+          });
+        }
+      }
+      const first=windows.filter(w=>!w._priced).slice(0,8); // דורג לפי לוח — 8 המובילים מתומחרים במלואם
       const progressCb=(done,total)=>{ if(my!==runSeq)return; const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } };
       const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
       if(my!==runSeq)return;
