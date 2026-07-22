@@ -204,6 +204,48 @@ function paintPlanner(ws){
     + bandLegend() + body;
   out.innerHTML=`<div class="resultsgrid"><aside class="sidecol${STATE.sideCollapsed?' collapsed':''}">${sidePanelHtml()}</aside><div class="rescol">${inner}</div></div>`;
 }
+/* ===== שכבת ה-💡 "יום זול יותר" — לוח מחירים משלים חיפוש חלונות ===== */
+function _dowOf(iso){ return new Date(iso+"T00:00:00Z").getUTCDay(); }
+function _allowedStart(iso){
+  // מכבד את מסנני ימי היציאה שנבחרו
+  const dows=(STATE.flexStartDows&&STATE.flexStartDows.length)?STATE.flexStartDows:(STATE.flexStartDow==null?null:[STATE.flexStartDow]);
+  if(dows&&!dows.includes(_dowOf(iso))) return false;
+  if(!STATE.allowShabbat){ const d=_dowOf(iso); if(d===6) return false; } // אין יציאה בשבת
+  const today=new Date().toISOString().slice(0,10); if(iso<today) return false;
+  return true;
+}
+async function enrichCheaperDays(seq){
+  if(!LAST||!LAST.specific||!LAST.ranked||!LAST.ranked.length) return;
+  const dest=LAST.dest; if(!dest) return;
+  // טווח הסריקה: מהחלון המוקדם ביותר עד המאוחר, לפי אורך הלילות השכיח
+  const starts=LAST.ranked.map(w=>w.start).sort();
+  const fromISO=starts[0], toISO=starts[starts.length-1];
+  const nightsMode=(()=>{ const c={}; LAST.ranked.forEach(w=>{c[w.nights]=(c[w.nights]||0)+1;}); return +Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||7; })();
+  const cal=await fetchPriceCalendar(STATE.origin,dest,fromISO,toISO,nightsMode);
+  if(seq!==runSeq||!cal) return;
+  // לכל חלון: מצא יום-יציאה מותר וזול יותר בטווח ±6 ימים
+  for(const w of LAST.ranked){
+    const cur=(w.info&&w.info.price!=null)?w.info.price:(cal[w.start]!=null?cal[w.start]:null);
+    if(cur==null) continue;
+    let best=null;
+    for(const iso in cal){
+      if(iso===w.start) continue;
+      const gap=Math.abs((Date.parse(iso)-Date.parse(w.start))/864e5);
+      // חלון השוואה: עד אורך-נסיעה מלא לכל צד (כך שגם יציאות-ראשון-בלבד, שמרוחקות 7 ימים, נכללות)
+      if(gap>Math.max(8,(w.nights||7)+1)) continue;
+      if(!_allowedStart(iso)) continue;   // מכבד ימי-יציאה ושבת
+      const p=cal[iso];
+      if(p!=null && p < cur-25 && (!best||p<best.price)) best={date:iso,price:p};
+    }
+    const slot=document.querySelector(`.wgtip[data-tipkey="${w.start}|${w.ret||''}"]`);
+    if(slot && best){
+      const save=Math.round(cur-best.price);
+      const dt=new Date(best.date+"T00:00:00Z");
+      const lbl=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);
+      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> זולה ב-<b>€${save}</b> (€${best.price} במקום €${cur})</div>`;
+    }
+  }
+}
 async function run(){
   const my=++runSeq;
   _lastRunSig=searchSig(); // results about to reflect the current params — clear staleness
@@ -330,6 +372,7 @@ async function run(){
       const metaBase=`${totalCount} ${lbl}${note} · ${rankNote}${ojNote}${diagNote}${fltNote}`;
       LAST={meta:summaryStrip()+`<div class="meta">${metaBase}${ski?skiSortChips():''}</div>`, metaBase:(ski?metaBase:null), baseRanked:(ski?ranked.slice():null), ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
       paintResults();
+      if(specific && !ski && I.destination && I.destination!=='-'){ const _sq=runSeq; setTimeout(()=>enrichCheaperDays(_sq),300); } // 💡 שכבת יום-זול-יותר
       // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
     }
   }catch(e){
