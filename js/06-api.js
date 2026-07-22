@@ -52,8 +52,8 @@ async function fetchPriceCalendar(origin,dest,fromISO,toISO,nights){
     if(!r.ok) return null;
     const j=await r.json();
     if(!j||!j.ok||!Array.isArray(j.days)) return null;
-    const map={}; for(const d of j.days){ if(d&&d.date&&d.price!=null) map[d.date]=d.price; }
-    return map; // { "YYYY-MM-DD": price }
+    const map={_ret:{}}; for(const d of j.days){ if(d&&d.date&&d.price!=null){ map[d.date]=d.price; if(d.ret) map._ret[d.date]=d.ret; } }
+    return map; // { "YYYY-MM-DD": price, _ret:{date:returnDate} }
   }catch(e){ return null; }
 }
 async function _drivingDist(a,b){
