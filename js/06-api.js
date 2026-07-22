@@ -316,7 +316,7 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
   }
   // step 2: price windows, 3 at a time (faster, but gentle on the rate limit)
   let done=0;
-  const LIMIT=3; // window concurrency. Each window fans out to 2 legs × (1-2 airports) in the edge,
+  const LIMIT=5; // window concurrency (raised 3→5 for speed; edge fans out per leg, PRO tier absorbs it)
                  // all parallel; 3 windows keeps the concurrent-call burst reasonable on the Pro tier.
   async function worker(queue){
     while(queue.length){
