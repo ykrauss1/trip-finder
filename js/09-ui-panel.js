@@ -305,7 +305,7 @@ function onAct(act,v){
     paintResults();
     clearTimeout(_liveT);
     if(CHEAP_TUNE.has(act)) _liveT=setTimeout(()=>retune(),250);
-    else _liveT=setTimeout(()=>{ if(typeof run==='function') run(); },350);
+    else _liveT=setTimeout(()=>{ if(typeof run==='function' && !RUN_BUSY) run(); },600); // לא מפעיל חיפוש נוסף בזמן שאחד רץ
   }
 }
 function _onAct(act,v){
