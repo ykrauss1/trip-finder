@@ -349,6 +349,7 @@ function _onAct(act,v){
     return;
   }
   else if(act==='sidetoggle'){ STATE.sideCollapsed=!STATE.sideCollapsed; if(typeof LAST!=='undefined'&&LAST&&LAST.ranked)paintResults(); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN)paintPlanner(null); return; }
+  else if(act==='priceone'){ priceOneWindow(v); return; }
   else if(act==='winsort'){ STATE.winSort=v; paintResults(); return; }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
   else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
