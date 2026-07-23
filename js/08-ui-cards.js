@@ -88,7 +88,15 @@ function windowCard(w,rank,dest){
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">🇮🇱 אין טיסה ישראלית מלאה בחלון זה</div><div style="margin-top:7px"><span class="c on" data-act="onlyisraeli" style="font-size:11px;padding:3px 11px">הצג גם לא-ישראליות</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
   } else {
     const fallbackV = w.shabV ? `<div class="rcrit"><span class="rtg crit shabv-${w.shabV.cls}">🕯️ ${w.shabV.t}</span></div>` : (w.TS?`<div class="fc-times" style="color:var(--mut-2)">${w.TS.t}</div>`:'');
+    if(!w._priced){
+      // חלון שטרם תומחר במלואו — מוצג עם הערכת מחיר מלוח המחירים, וכפתור לתמחור מדויק
+      const hasEst=(w._calPrice!=null);
+      const per=hasEst?Math.round(w._calPrice/Math.max(1,STATE.adults||1)):null;
+      const msg=hasEst?'הערכה מלוח המחירים — לחץ לתמחור מדויק (חברות, שעות, שבת)':'טרם תומחר — לחץ לבדיקת מחיר אמיתי';
+      cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">${msg}</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק</span></div></div><div class="fc-price"><div class="v" style="font-size:${hasEst?19:16}px${hasEst?'':';color:var(--mut-2)'}">${hasEst?('≈€'+per):'—'}</div><div class="k">${hasEst?'הערכה':'טרם תומחר'}</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
+    } else {
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
+    }
   }
   let hiddenLine='';
   if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
@@ -198,12 +206,27 @@ function translateLocal(text){
   // ימי שבוע: "מ<יום>" → יציאה, "עד <יום>" → חזרה, "או <יום>" מצטרף לאחרון שזוהה
   const DAYS={"ראשון":0,"שני":1,"שלישי":2,"רביעי":3,"חמישי":4,"שישי":5,"שבת":6,"מוצ\"ש":6,"מוצאי שבת":6};
   let lastList=null;
+  // מזהה שם יום עם או בלי ה' בסוף ("ראשון" / "ראשונה"). כשמוסיפים ה', נ' סופית → נ' רגילה
+  const _final={"ן":"נ","ם":"מ","ץ":"צ","ף":"פ","ך":"כ"};
+  const dayHit=(phrase,he)=>{
+    const heH=he.slice(0,-1)+(_final[he.slice(-1)]||he.slice(-1))+"ה"; // "ראשון"→"ראשונה"
+    return t.includes(phrase+he+" ")||t.includes(phrase+he+",")||t.endsWith(phrase+he)
+      ||t.includes(phrase+heH+" ")||t.includes(phrase+heH+",")||t.endsWith(phrase+heH)||t.includes(phrase+heH+"ת");
+  };
+  // יציאה נבדקת ראשונה וגוברת — כדי שיום לא ידלוף גם לחזרה
+  const startPhr=["יציאה ב","יציאה ביום ","יציאה ","יוצאים ב","יוצאים ","לצאת ב","מיום ","מ"];
+  const endPhr=["עד יום ","עד ","חזרה ב","חזרה ","לחזור ב","ל"];
   for(const [he,d] of Object.entries(DAYS)){
-    if(t.includes("מיום "+he)||t.includes("מ"+he)||t.includes("יציאה ב"+he)||t.includes("יציאה ביום "+he)||t.includes("יציאה "+he)||t.includes("יוצאים ב"+he)||t.includes("יוצאים "+he)||t.includes("לצאת ב"+he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; }
-    if(t.includes("עד יום "+he)||t.includes("עד "+he)||t.includes("ל"+he)||t.includes("חזרה ב"+he)||t.includes("לחזור ב"+he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; }
+    let claimed=false;
+    for(const ph of startPhr){ if(dayHit(ph,he)){ if(!I.startDays.includes(d))I.startDays.push(d); lastList=I.startDays; claimed=true; break; } }
+    if(claimed) continue;
+    for(const ph of endPhr){ if(dayHit(ph,he)){ if(!I.endDays.includes(d))I.endDays.push(d); lastList=I.endDays; break; } }
   }
-  // המשך רשימה: "ראשון שני או שלישי" — כל יום שמופיע ברצף אחרי היום הראשון שזוהה
-  if(lastList) for(const [he,d] of Object.entries(DAYS)){ if((t.includes("או "+he)||t.includes(", "+he)||t.includes(" "+he+" ")||t.includes(" "+he+",")||t.endsWith(" "+he))&&!lastList.includes(d)&&(I.startDays.length||I.endDays.length)) lastList.push(d); }
+  // המשך רשימה: "ראשון שני או שלישי" — ימים נוספים ברצף אחרי היום הראשון שזוהה (לא כפול ברשימה השנייה)
+  if(lastList) for(const [he,d] of Object.entries(DAYS)){
+    if(I.startDays.includes(d)||I.endDays.includes(d)) continue;
+    if((t.includes("או "+he)||t.includes(", "+he)||t.includes(" "+he+" ")||t.includes(" "+he+","))&&(I.startDays.length||I.endDays.length)) lastList.push(d);
+  }
   I.startDays.sort(); I.endDays.sort();
   // מספרי-מילים → ספרות (עותק לניתוח לילות בלבד)
   let tn=t; const WORDNUM={"שלושה":"3","ארבעה":"4","חמישה":"5","שישה":"6","שבעה":"7","שמונה":"8","תשעה":"9","עשרה":"10","שבועיים":"14 לילות","שבוע":"7"};
