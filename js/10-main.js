@@ -293,7 +293,10 @@ async function priceOneWindow(key){
   LAST.ranked=rankedWindows(LAST.allWindows);
   paintResults();
 }
-async function run(){
+let RUN_BUSY=false;
+// עטיפה: מסמנת שחיפוש רץ, כדי שהרצה אוטומטית מהכיוונון לא תתחיל חיפוש שני במקביל
+async function run(){ RUN_BUSY=true; try{ return await _runSearch(); } finally{ RUN_BUSY=false; } }
+async function _runSearch(){
   const my=++runSeq;
   _lastRunSig=searchSig(); // results about to reflect the current params — clear staleness
   const sb=document.getElementById('stalebar'); if(sb) sb.innerHTML='';
@@ -401,7 +404,10 @@ async function run(){
           });
         }
       }
-      const first=windows.filter(w=>!w._priced).slice(0,8); // דורג לפי לוח — 8 המובילים מתומחרים במלואם
+      // דורג לפי לוח. מתמחרים במלואם רק את 5 המובילים — השאר מוצגים מיד עם הערכת-לוח
+      // וכפתור תמחור לפי דרישה, כך שהחיפוש מהיר בלי לאבד אף תאריך מהתצוגה.
+      const _batch=(windows.some(w=>w._calPrice!=null))?5:8;
+      const first=windows.filter(w=>!w._priced).slice(0,_batch);
       const progressCb=(done,total)=>{ if(my!==runSeq)return; const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } };
       const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
       if(my!==runSeq)return;
@@ -419,7 +425,9 @@ async function run(){
       const RD=RANK_DIAG;
       // Direct flights sometimes stream in only on a later poll. If we found priced flights but all
       // were dropped for having stops (and the user wants direct), auto-retry ONCE before giving up.
-      if(specific && RD && RD.withPrice>0 && RD.droppedStops>0 && RD.kept===0 && _directRetrySig!==searchSig()){
+      // ריצה חוזרת רק אם המקור הוא הישן שמזרים תוצאות בהדרגה; google-flights2 מחזיר סט מלא
+      // בקריאה אחת, ולכן סבב שני רק מכפיל את זמן החיפוש בלי להוסיף דבר.
+      if(specific && FLIGHT_PROVIDER!=='gf' && RD && RD.withPrice>0 && RD.droppedStops>0 && RD.kept===0 && _directRetrySig!==searchSig()){
         _directRetrySig=searchSig();
         out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt">מאתר טיסות ישירות…</div></div>';
         setTimeout(()=>{ if(my===runSeq) run(); }, 150);
@@ -434,7 +442,8 @@ async function run(){
       if(specific && RD) why+=`<br><span class="note" style="opacity:.65;font-size:10px">אבחון: חלונות מתומחרים ${RD.total} · עם מחיר ${RD.withPrice} · נפלו עצירות ${RD.droppedStops} · נפלו שבת ${RD.droppedShab}${FLT_DIAG&&FLT_DIAG.max?` · edge: עד ${FLT_DIAG.max} טיסות/חלון${FLT_DIAG.hasOptions?' · edge חדש ✓':' · ⚠ edge ישן (טרם עודכן)'}`:''}${_carrierDiag()}</span>`;
       // store the priced windows even on the "empty" screen, so the show-with-stops / show-shabbat buttons can re-rank and reveal them
       if(specific && allWindows) LAST={meta:'', ranked:[], specific, dest:I.destination, oj:(STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
-      out.innerHTML=`<div class="err">אין נתון מתאים לחיפוש הזה כרגע.<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div></div>`;
+      const _foundN=(windows&&windows.filter(w=>w.price!=null).length)||0;
+      out.innerHTML=`<div class="err">${_foundN?`נמצאו ${_foundN} אפשרויות — אך כולן נפסלו לפי המסננים הנוכחיים.`:'אין נתון מתאים לחיפוש הזה כרגע.'}<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div>${(!ski&&I.destination&&I.destination!=='-'&&windows&&windows.length)?airlineDirectLinks(I.destination,windows[0].start,windows[0].ret):''}</div>`;
     }else{
       const lbl=ski?'יעדי סקי':specific?'חלונות תאריך':(I.destination==='-')?'יעדים':'אופציות';
       const note=ski?` · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
