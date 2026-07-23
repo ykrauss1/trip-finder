@@ -42,6 +42,19 @@ function cleanCityName(code){
   if(pre) return pre[1];
   return (o&&o.he)||code;
 }
+// קישורים ישירים לאתרי לואו-קוסט: חלק מהמלאי (בעיקר מחלקות יקרות) נמכר רק שם
+// ואינו מוחזר ע"י מנועי המטא — לכן בדיקה ידנית מהירה שווה.
+function airlineDirectLinks(dest,startISO,retISO){
+  const O=(STATE.origin||'TLV').toUpperCase();
+  const D=String(dest||'').toUpperCase();
+  if(!/^[A-Z]{3}$/.test(D)||!startISO) return '';
+  const pax=Math.max(1,STATE.adults||1);
+  const L=[];
+  L.push(['וויזאייר',`https://wizzair.com/en-gb#/booking/select-flight/${O}/${D}/${startISO}${retISO?'/'+retISO:''}`]);
+  L.push(['אל על',`https://www.elal.com/he/Israel/Pages/default.aspx`]);
+  L.push(['ריינאייר',`https://www.ryanair.com/gb/en/trip/flights/select?adults=${pax}&dateOut=${startISO}${retISO?'&dateIn='+retISO:''}&originIata=${O}&destinationIata=${D}`]);
+  return `<div style="margin-top:12px;font-size:12.5px;color:var(--mut)">🔎 חלק מהמלאי של חברות הלואו-קוסט נמכר <b>רק באתר שלהן</b> ואינו מופיע במנועי החיפוש. בדיקה ישירה:<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${L.map(x=>`<a class="book" href="${x[1]}" target="_blank" rel="noopener" style="font-size:11.5px;padding:4px 12px">${x[0]} ←</a>`).join('')}</div></div>`;
+}
 function windowCard(w,rank,dest){
   const c=CITY[dest]||{he:dest,cc:''};
   const fmt=iso=>{const dt=new Date(iso+'T00:00:00Z');const g=DOW_FULL[dt.getUTCDay()]+' '+dt.getUTCDate()+'.'+(dt.getUTCMonth()+1);return STATE.showHebDates===false?g:g+' · '+hebDateStr(iso);};
