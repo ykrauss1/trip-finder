@@ -26,7 +26,9 @@ let LAST_DZT=null; // destination-side Shabbat times for the current result set
 const shabAware=()=>STATE.shabbatTime||STATE.jewishMode!=='off';
 function maxStopsVal(){ return STATE.maxStops==null ? (STATE.includeStops?2:0) : +STATE.maxStops; }
 function rankedWindows(windows){
-  let priced=windows.filter(w=>w._priced);
+  // כל החלונות בטווח מוצגים: מתומחרים במלואם, ואלה שטרם תומחרו (עם או בלי הערכת-לוח)
+  // — כדי שאפשר יהיה למיין ולאתר תאריך מסוים בלי להמתין לתמחור של הכל.
+  let priced=windows.slice();
   const total=priced.length;
   const withPrice=priced.filter(w=>w.price!=null).length;
   const ms=maxStopsVal();
