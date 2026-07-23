@@ -58,7 +58,7 @@ function sidePanelHtml(){
   </div>`;
 }
 // מיון החלונות עצמם (לא הטיסות בתוכם): התאמה / מחיר / תאריך / אורך
-function _winPrice(w){ const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:null); return p==null?Infinity:p; }
+function _winPrice(w){ const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:(w._calPrice!=null?w._calPrice:null)); return p==null?Infinity:p; }
 function winSortChips(){
   const cur=STATE.winSort||'rank';
   const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="winsort" data-v="${v}">${l}</span>`;
