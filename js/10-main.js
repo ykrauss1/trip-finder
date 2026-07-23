@@ -277,6 +277,22 @@ async function enrichCheaperDays(seq){
     }
   }
 }
+// תמחור מדויק של חלון בודד לפי דרישה (מכרטיס-הערכה)
+async function priceOneWindow(key){
+  if(!LAST||!LAST.allWindows) return;
+  const [st,rt]=String(key).split('|');
+  const w=LAST.allWindows.find(x=>x.start===st&&(x.ret||'')===rt);
+  if(!w||w._priced) return;
+  const slot=document.querySelector(`.wgtip[data-tipkey="${st}|${rt}"]`);
+  if(slot) slot.innerHTML='<div class="tipbox">⏳ מתמחר…</div>';
+  const priceMap=await fetchPricesFor([{departureDate:w.start,returnDate:w.ret}], LAST.priceParams, null);
+  w._priced=true;
+  const m=priceMap[w.start+'|'+w.ret];
+  if(m){ w.price=m.price; w.info=m; }
+  if(LAST.zt&&w.info) w.shabV=shabbatVerdict(w,LAST.zt);
+  LAST.ranked=rankedWindows(LAST.allWindows);
+  paintResults();
+}
 async function run(){
   const my=++runSeq;
   _lastRunSig=searchSig(); // results about to reflect the current params — clear staleness
@@ -362,9 +378,13 @@ async function run(){
         const nMode=(()=>{ const c={}; windows.forEach(w=>{c[w.nights]=(c[w.nights]||0)+1;}); return +Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||7; })();
         const months=[...new Set(windows.map(w=>w.start.slice(0,7)))].sort();
         const calAll={};
+        const _tomorrow=new Date(Date.now()+864e5).toISOString().slice(0,10);
         for(const m of months){
           const [yy,mm]=m.split('-').map(Number);
-          const mFrom=m+'-01', mTo=new Date(Date.UTC(yy,mm,0)).toISOString().slice(0,10);
+          // תחילת הטווח לא יכולה להיות בעבר — ה-API מחזיר ריק לתאריך שחלף (וכך כל החודש הנוכחי אבד)
+          let mFrom=m+'-01'; if(mFrom<_tomorrow) mFrom=_tomorrow;
+          const mTo=new Date(Date.UTC(yy,mm,0)).toISOString().slice(0,10);
+          if(mFrom>mTo) continue;
           const cal=await fetchPriceCalendar(STATE.origin,I.destination,mFrom,mTo,nMode);
           if(my!==runSeq)return;
           if(cal) for(const k in cal){ if(k!=='_ret'&&typeof cal[k]==='number') calAll[k]=cal[k]; }
