@@ -74,28 +74,49 @@ function rangeCalendarHtml(){
     ? `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`
     : `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="arr">←</span><span class="drlab">חזרה</span><b>${_fmtHe(STATE.toDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`;
   if(!STATE.calOpen) return range;
-  const view=STATE.calView||(STATE.fromDate?STATE.fromDate.slice(0,7):todayISO.slice(0,7));
-  const y=+view.slice(0,4), m=+view.slice(5,7);
-  const first=new Date(Date.UTC(y,m-1,1)), dim=new Date(Date.UTC(y,m,0)).getUTCDate(), startDow=first.getUTCDay();
-  let cells='';
-  for(let i=0;i<startDow;i++) cells+='<span class="calday empty"></span>';
-  for(let d=1;d<=dim;d++){
-    const iso=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const past=iso<todayISO;
-    let cls='';
+  const heb=!!STATE.calHeb;
+  const toggle=`<div class="calmode"><span class="c ${heb?'':'on'}" data-cal="greg">לועזי</span><span class="c ${heb?'on':''}" data-cal="heb">עברי ✡︎</span></div>`;
+  const hint = oneway ? 'בחר תאריך יציאה' : ((STATE.calPick==='end'?'בחר תאריך חזרה':'בחר תאריך יציאה') + ' · ' + (STATE.fromDate&&STATE.toDate?_nightsBetween(STATE.fromDate,STATE.toDate)+' לילות':''));
+  const dayCell=(iso,label)=>{
+    const past=iso<todayISO; let cls='';
     if(iso===STATE.fromDate) cls+=' selstart';
     if(!oneway && iso===STATE.toDate) cls+=' selend';
     if(!oneway && STATE.fromDate&&STATE.toDate&&iso>STATE.fromDate&&iso<STATE.toDate) cls+=' inrange';
     if(past) cls+=' past';
-    cells+=`<span class="calday${cls}" ${past?'':`data-calday="${iso}"`}>${d}</span>`;
+    return `<span class="calday${cls}" ${past?'':`data-calday="${iso}"`}>${label}</span>`;
+  };
+  let cal;
+  if(heb){
+    // תצוגה עברית: החודש נגזר מ-calHView {hy,hm}. הימים ממוספרים א׳,ב׳… והרשת עדיין ראשון-ראשון
+    if(!STATE.calHView){ const h=hebFromISO(STATE.fromDate||todayISO); STATE.calHView={hy:h.y,hm:h.m}; }
+    const {hy,hm}=STATE.calHView;
+    const dim=hebMonthLen(hy,hm);
+    const firstISO=hebToISO(hy,hm,1);
+    const startDow=new Date(firstISO+'T00:00:00Z').getUTCDay();
+    let cells='';
+    for(let i=0;i<startDow;i++) cells+='<span class="calday empty"></span>';
+    for(let d=1;d<=dim;d++){ cells+=dayCell(hebToISO(hy,hm,d), hebNumeral(d)); }
+    const title=HEB_MONTH_NAMES(hy)[hm]+' '+hebNumeral(hy%1000);
+    const prevDis=(hebToISO(hy,hm,1)<=todayISO.slice(0,8)+'01' && hebToISO(hy,hm,dim)<todayISO);
+    cal=`<div class="calwrap">${toggle}
+      <div class="calhead"><button class="calnav" data-cal="hprev">‹</button><span class="caltitle">${title}</span><button class="calnav" data-cal="hnext">›</button></div>
+      <div class="calgrid">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span class="caldow">${x}</span>`).join('')}${cells}</div>
+      <div class="calhint">${hint}</div>
+    </div>`;
+  } else {
+    const view=STATE.calView||(STATE.fromDate?STATE.fromDate.slice(0,7):todayISO.slice(0,7));
+    const y=+view.slice(0,4), m=+view.slice(5,7);
+    const first=new Date(Date.UTC(y,m-1,1)), dim=new Date(Date.UTC(y,m,0)).getUTCDate(), startDow=first.getUTCDay();
+    let cells='';
+    for(let i=0;i<startDow;i++) cells+='<span class="calday empty"></span>';
+    for(let d=1;d<=dim;d++){ cells+=dayCell(`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`, d); }
+    const prevDis = (view<=todayISO.slice(0,7));
+    cal=`<div class="calwrap">${toggle}
+      <div class="calhead"><button class="calnav" ${prevDis?'disabled':'data-cal="prev"'}>‹</button><span class="caltitle">${HEB_MONTHS[m-1]} ${y}</span><button class="calnav" data-cal="next">›</button></div>
+      <div class="calgrid">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span class="caldow">${x}</span>`).join('')}${cells}</div>
+      <div class="calhint">${hint}</div>
+    </div>`;
   }
-  const prevDis = (view<=todayISO.slice(0,7));
-  const hint = oneway ? 'בחר תאריך יציאה' : ((STATE.calPick==='end'?'בחר תאריך חזרה':'בחר תאריך יציאה') + ' · ' + (STATE.fromDate&&STATE.toDate?_nightsBetween(STATE.fromDate,STATE.toDate)+' לילות':''));
-  const cal=`<div class="calwrap">
-    <div class="calhead"><button class="calnav" ${prevDis?'disabled':'data-cal="prev"'}>‹</button><span class="caltitle">${HEB_MONTHS[m-1]} ${y}</span><button class="calnav" data-cal="next">›</button></div>
-    <div class="calgrid">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span class="caldow">${x}</span>`).join('')}${cells}</div>
-    <div class="calhint">${hint}</div>
-  </div>`;
   return range+cal;
 }
 function _nightsBetween(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/864e5); }
@@ -417,6 +438,10 @@ function _onAct(act,v){
   else if(act==='pax_dec'){ const flo={adults:1,children:0,infants:0}; STATE[v]=Math.max(flo[v],(+STATE[v])-1); if(+STATE.infants>+STATE.adults)STATE.infants=+STATE.adults; renderPanel(); return; }
   else if(act==='cal_prev'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)-1; if(m<1){m=12;y--;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
   else if(act==='cal_next'){ const v=STATE.calView; let y=+v.slice(0,4),m=+v.slice(5,7)+1; if(m>12){m=1;y++;} STATE.calView=y+'-'+String(m).padStart(2,'0'); renderPanel(); return; }
+  else if(act==='cal_heb'){ STATE.calHeb=true; const h=hebFromISO(STATE.fromDate||new Date().toISOString().slice(0,10)); STATE.calHView={hy:h.y,hm:h.m}; renderPanel(); return; }
+  else if(act==='cal_greg'){ STATE.calHeb=false; STATE.calView=(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7); renderPanel(); return; }
+  else if(act==='cal_hprev'){ STATE.calHView=_hebPrevMonth(STATE.calHView); renderPanel(); return; }
+  else if(act==='cal_hnext'){ STATE.calHView=_hebNextMonth(STATE.calHView); renderPanel(); return; }
   else if(act==='calpick'){ calPickDay(v); if(!STATE.calOpen && STATE.sbarPop==='dates' && (STATE.tripType==='oneway' || STATE.dateMode==='exact')){ STATE.sbarPop='pax'; } renderPanel(); return; }
   else if(act==='air')STATE.airline=v||null;
   else if(act==='shab')STATE.noShabbat=!STATE.noShabbat;
