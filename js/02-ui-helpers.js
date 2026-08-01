@@ -2,12 +2,30 @@ function bandLegend(){
   const items=[['normal','רגיל'],['three','שלושת השבועות'],['nine','תשעת הימים'],['tisha','תשעה באב'],['fast','צום'],['good','חופשה/חג'],['bein','בין הזמנים'],['chm','חוה״מ'],['elul','אלול']];
   return '<div class="bandkey">'+items.map(it=>`<span class="ki"><span class="ks bc-${it[0]}"></span>${it[1]}</span>`).join('')+'<span class="ki"><span class="ks bc-normal bc-shab"></span>שבת</span></div>';
 }
+// מיפוי מפתח-כיוונון → kind(s) בפלט המנוע, לצורך הצגת התאריכים
+const _PKINDS={ threeweeks:['threeweeks'], ninedays:['ninedays'], tisha:['tisha'], omer:['omer'],
+  fast:['fast'], beinhazmanim:['beinhazmanim'], chanuka:['chanuka'], purim:['purim'],
+  cholhamoed:['cholhamoed'], lag:['lag'] };
+function _fmtHeb2(iso){ const dt=new Date(iso+'T00:00:00Z'); const g=dt.getUTCDate()+'.'+(dt.getUTCMonth()+1); return (typeof hebDateStr==='function'?hebDateStr(iso):'')+' · '+g; }
+// מאתר את התקופה בפלט המנוע השמור (STATE._panelPeriods) לפי label/kind
+function _periodDates(p){
+  const pp=STATE._panelPeriods; if(!pp) return null;
+  const all=pp; const lab=p.label;
+  const kinds=_PKINDS[p.key]||[];
+  // התאמה לפי kind (מדויק — כפי שהמנוע פולט), עם נפילה לתווית
+  let hit=all.find(x=>kinds.includes(x.kind))
+    || all.find(x=>x.label===lab)
+    || all.find(x=>x.label&&lab&&x.label.indexOf(lab)>=0);
+  return hit&&hit.start&&hit.end?hit:null;
+}
 function periodsTuneHtml(){
   const row=(p)=>{
     const pr=(STATE.periodPrefs&&STATE.periodPrefs[p.key])||{mode:'normal',scope:'travel'};
     const modes=[['hide','🚫'],['normal','⚪'],['prefer','⭐']].map(m=>`<span class="c pmode ${pr.mode===m[0]?'on':''}" data-act="periodmode" data-v="${p.key}|${m[0]}">${m[1]}</span>`).join('');
     const scope = pr.mode!=='normal' ? `<div class="chips pscope">${[['travel','ביום טיסה'],['trip','גם בחופשה']].map(s=>`<span class="c ${pr.scope===s[0]?'on':''}" data-act="periodscope" data-v="${p.key}|${s[0]}">${s[1]}</span>`).join('')}</div>` : '';
-    return `<div class="prow"><span class="plabel2">${p.label}</span><span class="chips pmodes">${modes}</span></div>${scope}`;
+    const dr=_periodDates(p);
+    const dates = dr ? `<div class="pdates">${dr.start===dr.end?_fmtHeb2(dr.start):(_fmtHeb2(dr.start)+' – '+_fmtHeb2(dr.end))}${dr.note?`<span class="pnote" title="${dr.note.replace(/"/g,'&quot;')}"> ⓘ</span>`:''}</div>` : '';
+    return `<div class="prow"><span class="plabel2">${p.label}${dates}</span><span class="chips pmodes">${modes}</span></div>${scope}`;
   };
   const m=TUNE_PERIODS.filter(p=>p.grp==='m').map(row).join('');
   const o=TUNE_PERIODS.filter(p=>p.grp==='o').map(row).join('');
