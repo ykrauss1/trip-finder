@@ -503,6 +503,9 @@ async function translateAndRun(){
   const btn=document.getElementById('run'); btn.disabled=true;
   document.getElementById('panel').innerHTML='<div class="state"><div class="spin"></div>מתרגם את הבקשה לאינטנט…</div>';
   let I;
+  // זיהוי תאריך עברי מפורש ("מר\"ח אב עד ט\"ו בו") — עוקף את נתיב החודשים ומגדיר טווח מדויק
+  let hebRange=null;
+  try{ hebRange=parseHebrewDateRange(text); }catch(e){}
   try{ I=await translateLive(text); }
   catch(e){ I=translateLocal(text); I._fallback=(typeof LAST_TRANSLATE_ERR!=='undefined'&&LAST_TRANSLATE_ERR)||String(e&&e.message||e); }
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
@@ -510,6 +513,13 @@ async function translateAndRun(){
   STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
   if(!(I.months&&I.months.length)){ const now=new Date(); const m1=now.toISOString().slice(0,7); now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7); I.months=[m1,m2]; if(I.summary)I.summary+=' · (לא צוין זמן — נבדקים החודשיים הקרובים)'; }
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
+  if(hebRange){
+    // טווח תאריך עברי מדויק גובר על נתיב החודשים
+    STATE.dateMode='range'; STATE.fromDate=hebRange.start; STATE.toDate=hebRange.end; STATE.months=[];
+    const hs=hebDateStr(hebRange.start), he=hebDateStr(hebRange.end);
+    const gs=hebRange.start.slice(8)+'.'+(+hebRange.start.slice(5,7)), ge=hebRange.end.slice(8)+'.'+(+hebRange.end.slice(5,7));
+    I.summary=`תאריך עברי: ${hs} – ${he} (${gs}–${ge})`;
+  }
   STATE.lastSummary=I.summary||''; STATE.lastSummaryLocal=!!I._fallback;
   applyIntent(I); renderPanel();
   if(I.mode==='dates'){ runPlanner(); }
