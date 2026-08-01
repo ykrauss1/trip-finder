@@ -295,6 +295,17 @@ async function priceOneWindow(key){
 }
 let RUN_BUSY=false;
 // עטיפה: מסמנת שחיפוש רץ, כדי שהרצה אוטומטית מהכיוונון לא תתחיל חיפוש שני במקביל
+// טוען את תקופות הלוח העברי לשנה הנוכחית עבור לוח התקופות בפאנל הכיוונון
+async function loadPanelPeriods(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const to=new Date(Date.now()+400*864e5).toISOString().slice(0,10); // כשנה קדימה — לתפוס את כל התקופות
+    const jdata=await fetchJewishData(today,to,STATE.profile);
+    const all=[...(jdata.periods||[]), ...(jdata.favorable||[])];
+    STATE._panelPeriods=all;
+    renderPanel();
+  }catch(e){ /* אם נכשל — הפאנל פשוט יציג בלי תאריכים */ }
+}
 async function run(){ RUN_BUSY=true; try{ return await _runSearch(); } finally{ RUN_BUSY=false; } }
 async function _runSearch(){
   const my=++runSeq;
@@ -443,7 +454,13 @@ async function _runSearch(){
       // store the priced windows even on the "empty" screen, so the show-with-stops / show-shabbat buttons can re-rank and reveal them
       if(specific && allWindows) LAST={meta:'', ranked:[], specific, dest:I.destination, oj:(STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
       const _foundN=(allWindows&&allWindows.filter(w=>w.price!=null).length)||0;
-      out.innerHTML=`<div class="err">${_foundN?`נמצאו ${_foundN} אפשרויות — אך כולן נפסלו לפי המסננים הנוכחיים.`:'אין נתון מתאים לחיפוש הזה כרגע.'}<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div>${(!ski&&I.destination&&I.destination!=='-'&&allWindows&&allWindows.length)?airlineDirectLinks(I.destination,allWindows[0].start,allWindows[0].ret):''}</div>`;
+      // המלצת החלפת מקור: Google Flights ריק לגמרי + התאריך רחוק (>~4 חודשים) → כנראה אופק מכירה; לסקייסקנר יש אופק ארוך יותר
+      const _farISO=(allWindows&&allWindows.length)?allWindows.map(w=>w.start).sort()[0]:null;
+      const _far=_farISO && (Date.parse(_farISO)-Date.now())/864e5 > 120;
+      const _switchTip=(FLIGHT_PROVIDER==='gf' && _foundN===0 && _far)
+        ? `<div style="margin-top:12px;padding:9px 13px;border-radius:9px;background:rgba(120,160,255,.1);border:1px solid rgba(120,160,255,.3);font-size:12.5px;color:var(--mut)">📅 התאריך רחוק יחסית, ו-Google Flights לרוב עדיין לא מוכר כה מראש. <b>סקייסקנר</b> מחזיק אופק ארוך יותר —<span class="c on" data-act="switchsky" style="margin-inline-start:8px;padding:4px 13px">עבור לסקייסקנר וחפש שוב ←</span></div>`
+        : '';
+      out.innerHTML=`<div class="err">${_foundN?`נמצאו ${_foundN} אפשרויות — אך כולן נפסלו לפי המסננים הנוכחיים.`:'אין נתון מתאים לחיפוש הזה כרגע.'}<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div>${_switchTip}${(!ski&&I.destination&&I.destination!=='-'&&allWindows&&allWindows.length)?airlineDirectLinks(I.destination,allWindows[0].start,allWindows[0].ret):''}</div>`;
     }else{
       const lbl=ski?'יעדי סקי':specific?'חלונות תאריך':(I.destination==='-')?'יעדים':'אופציות';
       const note=ski?` · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
