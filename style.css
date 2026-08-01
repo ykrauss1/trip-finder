@@ -338,3 +338,6 @@
   .prow .plabel2{display:flex;flex-direction:column;gap:1px}
   .pdates{font-size:10px;color:var(--mut-2);opacity:.85;font-weight:400;direction:rtl}
   .pnote{cursor:help;color:var(--gold);opacity:.9}
+  .calmode{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+  .calmode .c{font-size:11px;padding:3px 12px}
+  .calwrap .calday{font-size:13px}
