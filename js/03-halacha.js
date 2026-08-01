@@ -135,3 +135,69 @@ function hebDateStr(iso,withYear){
   const h=hebFromISO(iso); if(!h)return'';
   return hebNumeral(h.d)+' ב'+HEB_MONTH_NAMES(h.y)[h.m]+(withYear?(' '+hebNumeral(h.y%1000)):'');
 }
+
+
+/* ===== ניתוח קלט של תאריך עברי חופשי → ISO ===== */
+function hebParseNumeral(str){
+  if(!str) return null;
+  const V={'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
+  let sum=0,had=false; for(const ch of str){ if(V[ch]!=null){ sum+=V[ch]; had=true; } }
+  return had?sum:null;
+}
+const _HMON={'ניסן':1,'אייר':2,'סיון':3,'סיוון':3,'תמוז':4,'מנחם אב':5,'אב':5,'אלול':6,'תשרי':7,'מרחשוון':8,'מרחשון':8,'חשוון':8,'חשון':8,'כסלו':9,'כסליו':9,'טבת':10,'שבט':11,'אדר ראשון':12,'אדר שני':13,'אדר א':12,'אדר ב':13,'אדר':12};
+function _findHMonth(t){
+  const names=Object.keys(_HMON).sort((a,b)=>b.length-a.length);
+  for(const nm of names){ const i=t.indexOf(nm); if(i>=0) return {m:_HMON[nm],name:nm,idx:i,end:i+nm.length}; }
+  return null;
+}
+function _extractHebYear(t){
+  const m=t.match(/ה?['"]?ת[קרש][א-ת]{0,2}['"]?[א-ת]?/);
+  if(m){ const n=hebParseNumeral(m[0].replace(/['"ה]/g,'')); if(n>=700&&n<=999) return {y:5000+n, clean:t.replace(m[0],' ')}; }
+  return {y:null,clean:t};
+}
+function _parseHebSide(seg,carryMonth,year,y0){
+  seg=seg.replace(/ר['"]?ח\s+/g,'א ').replace(/ראש\s+חודש\s+/g,'א ');
+  seg=seg.replace(/יו['"]?ד/g,'י'); // "יו״ד" הוא איות של האות י=10, לא י+ו+ד
+  const mon=_findHMonth(seg);
+  const m=mon?mon.m:carryMonth; if(!m) return null;
+  let dayPart = mon ? seg.slice(0,mon.idx) : seg;
+  dayPart = dayPart.replace(/בחודש|יום|של|מ|עד|ועד|בו/g,' ');
+  // הסר ב'/ה' פותחות בלבד (לא אותיות גימטריה)
+  dayPart = dayPart.replace(/(^|\s)[בהל]/g,' ').trim();
+  let d=hebParseNumeral(dayPart);
+  if(d==null && (/בו|בחודש/.test(seg) || !dayPart)) d=1;
+  if(d==null||d<1||d>30) return null;
+  let y=year;
+  if(!y){ const today=new Date().toISOString().slice(0,10); for(const yy of [y0,y0+1]){ if(hebToISO(yy,m,d)>=today){ y=yy; break; } } if(!y) y=y0+1; }
+  return {y,m,d,iso:hebToISO(y,m,d)};
+}
+function parseHebrewDateRange(text){
+  if(!text) return null;
+  let t=String(text).replace(/[\u2018\u2019\u02BC\u05F3\u2032]/g,"'").replace(/[\u05F4\u2033]/g,'"').replace(/[־–—]/g,'-');
+  const yr=_extractHebYear(t); t=yr.clean;
+  if(!_findHMonth(t)) return null;
+  const y0=hebFromISO(new Date().toISOString().slice(0,10)).y;
+  const sep=t.match(/(.*?)\s+(?:עד|ועד|-)\s+(.*)/);
+  if(sep){
+    const bRefsSame=/בו|בחודש/.test(sep[2]) && !_findHMonth(sep[2]);
+    let a,b;
+    if(bRefsSame){
+      // "עד ט״ו בו" — הצד השני יורש את חודש ההתחלה: נתח קודם את א׳
+      a=_parseHebSide(sep[1],null,yr.y,y0); if(!a) return null;
+      b=_parseHebSide(sep[2],a.m,yr.y||a.y,y0); if(!b) return null;
+    } else {
+      b=_parseHebSide(sep[2],null,yr.y,y0); if(!b) return null;
+      a=_parseHebSide(sep[1],b.m,yr.y||b.y,y0); if(!a) return null;
+    }
+    let end=b; if(a.iso>b.iso){ end={...b,y:b.y+1,iso:hebToISO(b.y+1,b.m,b.d)}; }
+    return {start:a.iso,end:end.iso,startHeb:a,endHeb:end};
+  }
+  const one=_parseHebSide(t,null,yr.y,y0); if(!one) return null;
+  return {start:one.iso,end:one.iso,startHeb:one,endHeb:one};
+}
+
+// ניווט חודשים עברי לפי הסדר הכרונולוגי (תשרi→…→אלול), כולל אדר ב׳ בשנה מעוברת
+function hebMonthCount(y){ return hebLeap(y)?13:12; }
+function _hebMonthOrder(y){ const o=[7,8,9,10,11,12]; if(hebLeap(y)) o.push(13); return o.concat([1,2,3,4,5,6]); }
+function _hebNextMonth(v){ const ord=_hebMonthOrder(v.hy); const i=ord.indexOf(v.hm); if(i<ord.length-1) return {hy:v.hy,hm:ord[i+1]}; const no=_hebMonthOrder(v.hy+1); return {hy:v.hy+1,hm:no[0]}; }
+function _hebPrevMonth(v){ const ord=_hebMonthOrder(v.hy); const i=ord.indexOf(v.hm); if(i>0) return {hy:v.hy,hm:ord[i-1]}; const po=_hebMonthOrder(v.hy-1); return {hy:v.hy-1,hm:po[po.length-1]}; }
