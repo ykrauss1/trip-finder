@@ -350,6 +350,7 @@ function _onAct(act,v){
   }
   else if(act==='sidetoggle'){ STATE.sideCollapsed=!STATE.sideCollapsed; if(typeof LAST!=='undefined'&&LAST&&LAST.ranked)paintResults(); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN)paintPlanner(null); return; }
   else if(act==='priceone'){ priceOneWindow(v); return; }
+  else if(act==='switchsky'){ if(typeof tfToggleProvider==='function'&&FLIGHT_PROVIDER==='gf')tfToggleProvider(); if(typeof run==='function')run(); return; }
   else if(act==='winsort'){ STATE.winSort=v; paintResults(); return; }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
   else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
@@ -388,7 +389,7 @@ function _onAct(act,v){
   else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; paintResults(); return; }
   else if(act==='rerun'){ if(typeof run==='function') run(); return; }
   else if(act==='toggle'){ STATE.panelOpen=!STATE.panelOpen; renderPanel(); return; }
-  else if(act==='advtoggle'){ STATE.advOpen=!STATE.advOpen; renderPanel(); return; }
+  else if(act==='advtoggle'){ STATE.advOpen=!STATE.advOpen; renderPanel(); if(STATE.advOpen && !STATE._panelPeriods) loadPanelPeriods(); return; }
   else if(act==='adults')STATE.adults=+v;
   else if(act==='stops')STATE.includeStops=!STATE.includeStops;
   else if(act==='maxstops'){ STATE.maxStops=+v; STATE.includeStops=(+v>0); if(LAST&&LAST.allWindows){ LAST.ranked=rankedWindows(LAST.allWindows); } paintResults(); return; }
