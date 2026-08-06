@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>מנוע הנסיעות שלי</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,8 +14,18 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '33';
+var APP_VER = '34';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
+// בדיקת-גרסה: אם נטענה גרסה מהמטמון בעוד שבשרת יש חדשה יותר — טען מחדש פעם אחת (עם עוקף-מטמון)
+(function(){ try{
+  fetch('index.html?_=' + Date.now(), {cache:'no-store'}).then(function(r){return r.text();}).then(function(h){
+    var m = h.match(/APP_VER\s*=\s*'(\d+)'/);
+    if(m && (+m[1]) > (+APP_VER)){
+      var k = 'tf_reload_' + m[1];
+      if(!sessionStorage.getItem(k)){ sessionStorage.setItem(k,'1'); location.href = location.pathname + '?v=' + m[1]; }
+    }
+  }).catch(function(){});
+}catch(e){} })();
 </script>
 </head>
 <body>
