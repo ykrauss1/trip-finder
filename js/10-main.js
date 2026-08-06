@@ -497,6 +497,41 @@ const EXAMPLES=[
 document.getElementById('exs').innerHTML=EXAMPLES.map((e,i)=>`<span class="ex" data-i="${i}">${e.length>38?e.slice(0,38)+'…':e}</span>`).join('');
 document.querySelectorAll('.ex').forEach(el=>el.onclick=()=>{document.getElementById('q').value=EXAMPLES[+el.dataset.i];});
 
+// מפענח ביטוי-תקופה ראשי ("בין הזמנים שאחרי סוכות", "תשעת הימים", "חול המועד פסח")
+// לטווח התאריכים האמיתי מהמנוע — כדי שהחיפוש ייצמד לתקופה ולא יתפזר על חודשיים.
+async function resolvePrimaryPeriod(text){
+  const t=String(text||'');
+  // זיהוי תקופה + עוגן-עונה, לפי סדר ספציפיות
+  const cues=[
+    {kinds:['beinhazmanim'],season:'tishrei',re:/בין\s*הזמנים.*(סוכות|תשרי|שמח[ת״"]?ת|שמחת תורה)/},
+    {kinds:['beinhazmanim'],season:'nisan',re:/בין\s*הזמנים.*(פסח|ניסן)/},
+    {kinds:['beinhazmanim'],season:'av',re:/בין\s*הזמנים.*(אב|תשעה באב|ט[״"]?ב)/},
+    {kinds:['beinhazmanim'],season:null,re:/בין\s*הזמנים/},
+    {kinds:['ninedays'],season:null,re:/תשעת\s*הימים/},
+    {kinds:['threeweeks'],season:null,re:/שלוש[ת]?\s*השבועות|בין\s*המצרים/},
+    {kinds:['cholhamoed'],season:'nisan',re:/חול\s*המועד\s*פסח|חוה[״"]?מ\s*פסח/},
+    {kinds:['cholhamoed'],season:'tishrei',re:/חול\s*המועד\s*סוכות|חוה[״"]?מ\s*סוכות/},
+    {kinds:['chanuka'],season:null,re:/חנוכה/},
+    {kinds:['purim'],season:null,re:/פורים/},
+  ];
+  let hit=null; for(const c of cues){ if(c.re.test(t)){ hit=c; break; } }
+  if(!hit) return null;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const to=new Date(Date.now()+500*864e5).toISOString().slice(0,10);
+    const jd=await fetchJewishData(today,to,STATE.profile);
+    const all=[...(jd.periods||[]),...(jd.favorable||[])].filter(p=>p.start&&p.end&&p.end>=today);
+    // התאמה: לפי kind; אם יש עוגן-עונה, בורר את המופע בחודש העברי המתאים
+    let cands=all.filter(p=>hit.kinds.includes(p.kind));
+    if(hit.season && cands.length>1){
+      const monOf={tishrei:7,nisan:1,av:5};
+      const wantM=monOf[hit.season];
+      cands=cands.filter(p=>{ const h=hebFromISO(p.start); return h && (h.m===wantM || Math.abs(h.m-wantM)<=1); });
+    }
+    cands.sort((a,b)=>a.start<b.start?-1:1);
+    return cands[0]||null;
+  }catch(e){ return null; }
+}
 async function translateAndRun(){
   const text=document.getElementById('q').value.trim();
   if(!text){document.getElementById('q').focus();return;}
@@ -506,6 +541,8 @@ async function translateAndRun(){
   // זיהוי תאריך עברי מפורש ("מר\"ח אב עד ט\"ו בו") — עוקף את נתיב החודשים ומגדיר טווח מדויק
   let hebRange=null;
   try{ hebRange=parseHebrewDateRange(text); }catch(e){}
+  let periodRange=null;
+  if(!hebRange){ try{ periodRange=await resolvePrimaryPeriod(text); }catch(e){} }
   try{ I=await translateLive(text); }
   catch(e){ I=translateLocal(text); I._fallback=(typeof LAST_TRANSLATE_ERR!=='undefined'&&LAST_TRANSLATE_ERR)||String(e&&e.message||e); }
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
@@ -519,6 +556,12 @@ async function translateAndRun(){
     const hs=hebDateStr(hebRange.start), he=hebDateStr(hebRange.end);
     const gs=hebRange.start.slice(8)+'.'+(+hebRange.start.slice(5,7)), ge=hebRange.end.slice(8)+'.'+(+hebRange.end.slice(5,7));
     I.summary=`תאריך עברי: ${hs} – ${he} (${gs}–${ge})`;
+  } else if(periodRange){
+    // תקופה מזוהה → צמצום החיפוש לטווח האמיתי שלה (במקום חודשיים רחבים)
+    STATE.dateMode='range'; STATE.fromDate=periodRange.start; STATE.toDate=periodRange.end; STATE.months=[];
+    const hs=hebDateStr(periodRange.start), he=hebDateStr(periodRange.end);
+    const gs=periodRange.start.slice(8)+'.'+(+periodRange.start.slice(5,7)), ge=periodRange.end.slice(8)+'.'+(+periodRange.end.slice(5,7));
+    I.summary=`${periodRange.label}: ${hs} – ${he} (${gs}–${ge})`;
   }
   STATE.lastSummary=I.summary||''; STATE.lastSummaryLocal=!!I._fallback;
   applyIntent(I); renderPanel();
