@@ -151,7 +151,7 @@ async function fetchOpenJawPrices(origin,inAirport,outAirport,trips,onProgress,i
       let res=await priceOne(trip, includeStops);
       if(!res && !includeStops){ res=await priceOne(trip, true); }
       if(res) map[res.departureDate+'|'+res.returnDate]=res;
-      done++; if(onProgress) onProgress(done,trips.length);
+      done++; if(onProgress) onProgress(done,trips.length,res);
     }
   }
   const queue=trips.slice();
@@ -324,7 +324,7 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
       let res=await priceOne(trip, includeStops);
       if(!res && !includeStops){ res=await priceOne(trip, true); } // fill empties with a connecting flight
       if(res) map[res.departureDate+'|'+res.returnDate]=res;
-      done++; if(onProgress) onProgress(done,trips.length);
+      done++; if(onProgress) onProgress(done,trips.length,res);
     }
   }
   const queue=trips.slice();
