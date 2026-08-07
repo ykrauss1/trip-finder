@@ -71,7 +71,7 @@ function sidePanelHtml(){
     </div>
     <div class="sgrp"><div class="st">פרופיל · מטבע</div>
       <div class="chips">${[['teacher','הוראה'],['yeshiva','ישיבה'],['general','כללי']].map(o=>`<span class="c ${STATE.profile===o[0]?'on':''}" data-act="prof" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
-      <div class="chips" style="margin-top:5px">${[['ILS','₪'],['USD','$'],['','€']].map(o=>`<span class="c ${STATE.altCurrency===o[0]?'on':''}" data-act="cur" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
+      <div class="chips" style="margin-top:5px">${[['','$'],['ILS','₪'],['EUR','€']].map(o=>`<span class="c ${STATE.altCurrency===o[0]?'on':''}" data-act="cur" data-v="${o[0]}">${o[1]}</span>`).join('')}</div>
     </div>
   </div>`;
 }
@@ -91,6 +91,15 @@ function sortWindows(arr){
   else if(mode==='nights') a.sort((x,y)=>((x.nights||0)-(y.nights||0))||_winPrice(x)-_winPrice(y));
   return a;
 }
+// עיצוב מחיר: הסכומים מגיעים בדולר (מטבע המקור). המטבע הנבחר ראשי; אם אינו הבסיס — מציג גם ≈$ כמקור
+function curFmt(base){
+  if(base==null) return '';
+  const c=STATE.altCurrency; // '' = בסיס (USD), אחרת 'ILS'/'EUR'
+  const sym = c ? ({ILS:'₪',EUR:'€'}[c]||BASE_SYM) : BASE_SYM;
+  const rate = (c&&RATES[c])?RATES[c]:1;
+  return sym+(Math.round(base*rate)).toLocaleString();
+}
+function curRef(base){ return (STATE.altCurrency&&base!=null)?` ≈ ${BASE_SYM}${base}`:''; }
 function paintResults(){
   if(!LAST) return;
   const out=document.getElementById('out');
@@ -156,12 +165,12 @@ function sortBarHtml(){
 async function fetchRates(){
   // try Frankfurter (ECB), then fawazahmed0 CDN as a backup
   try{
-    const r=await fetch('https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD,ILS');
-    if(r.ok){ const j=await r.json(); if(j&&j.rates&&j.rates.ILS){ RATES=j.rates; RATES_LIVE=true; return; } }
+    const r=await fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=ILS,EUR');
+    if(r.ok){ const j=await r.json(); if(j&&j.rates&&j.rates.ILS){ RATES={ILS:j.rates.ILS, EUR:j.rates.EUR}; RATES_LIVE=true; return; } }
   }catch(e){}
   try{
-    const r=await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json');
-    if(r.ok){ const j=await r.json(); if(j&&j.eur){ RATES={USD:j.eur.usd, ILS:j.eur.ils}; RATES_LIVE=true; } }
+    const r=await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+    if(r.ok){ const j=await r.json(); if(j&&j.usd){ RATES={ILS:j.usd.ils, EUR:j.usd.eur}; RATES_LIVE=true; } }
   }catch(e){}
 }
 function _sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
