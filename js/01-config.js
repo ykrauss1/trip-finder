@@ -11,7 +11,8 @@ const TRANSLATE_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/tf-trans
 const JCAL_URL="https://cdgqodtbdhsqkvcgcdlm.functions.supabase.co/jcal";
 let RAPID_DIAG="";
 let RANK_DIAG=null;
-let RATES={USD:1.08, ILS:3.9}; // sensible fallback so a conversion always shows; refreshed live below
+const BASE_CUR='USD', BASE_SYM='$'; // מטבע המקור (מה שה-edge מחזיר)
+let RATES={ILS:3.6, EUR:0.92}; // המרה מ-USD; ברירת מחדל סבירה עד שנטענים שערים חיים
 let RATES_LIVE=false;
 let LAST=null;
 const _expandedWins=new Set(); // windows the user expanded to show all flights
