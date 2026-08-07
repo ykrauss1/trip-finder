@@ -289,7 +289,7 @@ function renderPanel(){
     ${ski?'':searchBarHtml()}
     <div class="barhead">
       <div class="barsum">${summaryLine}</div>
-      <div class="baract"><button class="adjust" data-act="toggle">${STATE.panelOpen?'סגור כוונון ▲':'⚙ כוונון הלכתי ▾'}</button></div>
+      <div class="baract"><button class="savebtn" data-act="save" title="שמור את החיפוש הזה לגישה מהירה">💾 שמור חיפוש</button><button class="adjust" data-act="toggle">${STATE.panelOpen?'סגור כוונון ▲':'⚙ כוונון הלכתי ▾'}</button></div>
     </div>
     ${STATE.panelOpen?`<div class="detail">
       ${STATE.summary?`<div class="summary">${STATE.summary}</div>`:''}
