@@ -349,10 +349,14 @@ function saveName(){
 function doSave(){
   const snap={name:saveName()};
   SAVE_FIELDS.forEach(f=>snap[f]=STATE[f]);
-  // persist the city mappings so entityId/_book/label survive a reload
   if(CITY[STATE.destination]) snap._destCity=CITY[STATE.destination];
   if(STATE.outAirport && CITY[STATE.outAirport]) snap._outCity=CITY[STATE.outAirport];
-  SAVED.push(snap); persistSaved(SAVED); renderPanel();
+  // מניעת כפילות: אם כבר קיים חיפוש זהה (יעד+תאריכים+מצב) — לא שומרים שוב
+  const sig=x=>[x.destination,x.dateMode,x.fromDate,x.toDate,(x.months||[]).join(','),x.tripType,x.name].join('|');
+  const mine=sig(snap);
+  const dup=SAVED.findIndex(x=>sig(x)===mine);
+  if(dup>=0){ STATE.savedOpen=true; renderPanel(); return; } // כבר שמור — פותח את הרשימה במקום כפילות
+  SAVED.push(snap); persistSaved(SAVED); STATE.savedOpen=true; renderPanel();
 }
 function loadSearch(i){
   const s=SAVED[i]; if(!s)return;
