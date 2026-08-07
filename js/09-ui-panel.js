@@ -179,6 +179,7 @@ function lenRowHtml(){
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
     +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
     +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
+    +`<div class="t" style="margin-top:8px">חזרה מאוחרת אחרי תקופה (ימים)</div><div class="chips">${[0,1,2,3,4,5].map(n=>`<span class="c ${((STATE.periodTailDays!=null?STATE.periodTailDays:3))===n?'on':''}" data-act="periodtail" data-v="${n}">${n}</span>`).join('')}</div>`
     +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
 }
 function datePopBody(){
@@ -250,6 +251,7 @@ function renderPanel(){
     +`<div class="t" style="margin-top:8px">ימי יציאה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fstartd',_dowSel())}</div>`
     +`<div class="t" style="margin-top:8px">ימי חזרה (אפשר כמה)</div><div class="chips">${dayChipsHtml('fendd',STATE.flexEndDows)}</div>`
     +`<div class="t" style="margin-top:8px">ימי הכנות לפסח (נגרעים מבין הזמנים)</div><div class="chips">${[3,4,5,6,7].map(n=>`<span class="c ${(+(STATE.pesachPrepDays||3))===n?'on':''}" data-act="pesachprep" data-v="${n}">${n}</span>`).join('')}</div>`
+    +`<div class="t" style="margin-top:8px">חזרה מאוחרת אחרי תקופה (ימים)</div><div class="chips">${[0,1,2,3,4,5].map(n=>`<span class="c ${((STATE.periodTailDays!=null?STATE.periodTailDays:3))===n?'on':''}" data-act="periodtail" data-v="${n}">${n}</span>`).join('')}</div>`
     +`<div class="t" style="margin-top:8px">תאריך עברי בתוצאות</div><div class="chips"><span class="c ${STATE.showHebDates!==false?'on':''}" data-act="hebdates" data-v="1">מוצג</span><span class="c ${STATE.showHebDates===false?'on':''}" data-act="hebdates" data-v="0">מוסתר</span></div>`;
   const flexChips=[['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
     .map(f=>`<span class="c ${STATE.flexDays==+f[0]?'on':''}" data-act="flexdays" data-v="${f[0]}">${f[1]}</span>`).join('');
@@ -298,7 +300,7 @@ function renderPanel(){
         <div class="t" style="margin-top:6px;color:var(--mut-2)">נחיתה בשישי חייבת להיות לפני כניסת שבת פחות המרווח · המראה במוצ״ש אחרי צאת שבת פלוס המרווח · אסור לסמוך על המינימום</div>`:''}</div>
       <div class="grp"><div class="t">ניקוד רך (משקל)</div><div class="chips">${sc}</div></div>
       <div class="grp"><div class="t">פרופיל (לחלונות מומלצים)</div><div class="chips">${[['teacher','עובד הוראה (קיץ)'],['yeshiva','ישיבה (בין הזמנים)'],['general','כללי']].map(([v,l])=>`<span class="c ${STATE.profile===v?'on':''}" data-act="prof" data-v="${v}">${l}</span>`).join('')}</div></div>
-      <div class="grp"><div class="t">מטבע להמרה (תצוגה מקורבת)</div><div class="chips">${[['ILS','₪ שקל'],['USD','$ דולר'],['','€ יורו בלבד']].map(([v,l])=>`<span class="c ${STATE.altCurrency===v?'on':''}" data-act="cur" data-v="${v}">${l}</span>`).join('')}</div></div>
+      <div class="grp"><div class="t">מטבע תצוגה</div><div class="chips">${[['','$ דולר'],['ILS','₪ שקל'],['EUR','€ יורו']].map(([v,l])=>`<span class="c ${STATE.altCurrency===v?'on':''}" data-act="cur" data-v="${v}">${l}</span>`).join('')}</div></div>
       `:''}
       ${uns}
       <div class="detailfoot"><button class="adjust" data-act="jdiag">בדיקת לוח</button><button class="save" data-act="save">שמור חיפוש · v92</button></div>
@@ -375,6 +377,7 @@ function _onAct(act,v){
   else if(act==='winsort'){ STATE.winSort=v; paintResults(); return; }
   else if(act==='plansort'){ STATE.planSort=v; if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN) paintPlanner(null); return; }
   else if(act==='pesachprep'){ STATE.pesachPrepDays=Math.min(7,Math.max(3,+v||3)); }
+  else if(act==='periodtail'){ STATE.periodTailDays=Math.min(5,Math.max(0,+v||0)); }
   else if(act==='hebdates'){ STATE.showHebDates=(v==='1'); if(typeof LAST_PLAN!=='undefined'&&LAST_PLAN&&STATE.planSort!==undefined) paintPlanner(null); if(typeof LAST!=='undefined'&&LAST&&LAST.ranked) paintResults(); }
   else if(act==='fshab')STATE.flexShabbat=v;
   else if(act==='jdiag'){
