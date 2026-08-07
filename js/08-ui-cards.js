@@ -253,7 +253,13 @@ function translateLocal(text){
 const STATE={origin:"TLV",destination:"-",departMonth:"2026-07",noShabbat:false,airline:null,
   scorers:{price:3,novelty:0,comfort:0},unsupported:[],summary:"",
   skiNights:7, skiFromISO:"2027-01-01", flexNights:7, flexStartDow:null, flexShabbat:"any",
-  fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"ILS", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false};
+  fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false};
+// ברירת מחדל דינמית לתאריכים: שבוע מהיום ליציאה, שבועיים לחזרה (לא תאריכים מקובעים שעברו)
+(function(){
+  const iso=d=>d.toISOString().slice(0,10);
+  const from=iso(new Date(Date.now()+21*864e5)), to=iso(new Date(Date.now()+26*864e5));
+  STATE.fromDate=from; STATE.toDate=to; STATE.departMonth=from.slice(0,7); STATE.months=[from.slice(0,7)];
+})();
 const SAVE_KEY='tripfinder_saved_v1';
 const SAVE_FIELDS=['origin','destination','destLabel','tripType','dateMode','months','fromDate','toDate','flexNights','flexStartDow','flexShabbat','includeStops','maxStops','sortBy','adults','children','infants','altCurrency','jewishMode','profile','hideFasts','openJaw','outAirport','flexDays','allowShabbat','shabbatTime','marginBefore','marginAfter','candleMin','havdalah','friThreshold','periodPrefs','lastSummary','pesachPrepDays','showHebDates','flexStartDows','flexEndDows','winSort'];
 function loadSaved(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]'); }catch(e){ return []; } }
