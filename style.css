@@ -346,3 +346,6 @@
     .sidecol{flex:1 1 auto;width:100%;max-width:100%;position:static;max-height:none;order:2}
     .rescol{order:1;width:100%}
   }
+  .baract{display:flex;gap:8px;align-items:center}
+  .savebtn{background:linear-gradient(180deg,var(--clear),#2f7d68);color:#04211a;border:none;border-radius:10px;padding:7px 15px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+  .savebtn:hover{filter:brightness(1.07)}
