@@ -415,16 +415,31 @@ async function _runSearch(){
           });
         }
       }
-      // דורג לפי לוח. מתמחרים במלואם רק את 5 המובילים — השאר מוצגים מיד עם הערכת-לוח
-      // וכפתור תמחור לפי דרישה, כך שהחיפוש מהיר בלי לאבד אף תאריך מהתצוגה.
+      // דורג לפי לוח. מתמחרים במלואם רק את 5 המובילים — השאר מוצגים מיד עם הערכת-לוח.
       const _batch=(windows.some(w=>w._calPrice!=null))?5:8;
       const first=windows.filter(w=>!w._priced).slice(0,_batch);
-      const progressCb=(done,total)=>{ if(my!==runSeq)return; const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } };
+      allWindows=windows; lastPriceParams=priceParams; LAST_DZT=dzt;
+      // מחיל פסק-דין שבת/יעד על חלון מתומחר
+      const _applyVerdicts=(w)=>{ if(zt&&w.info) w.shabV=shabbatVerdict(w,zt); if(dzt&&w.info){ w.destV=destVerdict(w,dzt); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},dzt); }); } };
+      // === זרימה: ציור מסך ראשון מיד מהערכות הלוח, לפני התמחור המלא ===
+      const _streaming=(windows.some(w=>w._calPrice!=null));
+      if(_streaming){
+        windows.forEach(w=>_applyVerdicts(w));
+        ranked=rankedWindows(windows);
+        LAST={meta:summaryStrip()+`<div class="meta">${windows.length} חלונות · טוען מחירים… 0/${first.length}</div>`, ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
+        paintResults(); // המסך הראשון מופיע כאן — מהר
+      }
+      // תמחור מלא; כל מחיר שחוזר נכנס לכרטיס שלו ומצייר מחדש (streaming)
+      const _applyPriced=(res)=>{ if(!res)return; const w=windows.find(x=>x.start===res.departureDate&&(x.ret||'')===(res.returnDate||'')); if(!w)return; w._priced=true; if(res.price!=null){ w.price=res.price; w.info=res; } _applyVerdicts(w); };
+      const progressCb=(done,total,res)=>{ if(my!==runSeq)return;
+        if(_streaming){ _applyPriced(res); LAST.ranked=rankedWindows(windows); LAST.meta=summaryStrip()+`<div class="meta">${windows.length} חלונות · טוען מחירים… ${done}/${total}</div>`; paintResults(); }
+        else { const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } }
+      };
       const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
       if(my!==runSeq)return;
-      first.forEach(w=>{ w._priced=true; const m=priceMap[w.start+'|'+w.ret]; if(m){ w.price=m.price; w.info=m; } if(zt&&w.info) w.shabV=shabbatVerdict(w,zt); if(dzt&&w.info){ w.destV=destVerdict(w,dzt); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},dzt); }); } });
+      // ביטחון: החל כל מחיר שאולי לא נתפס דרך ה-callback
+      first.forEach(w=>{ if(!w._priced){ const m=priceMap[w.start+'|'+w.ret]; w._priced=true; if(m){ w.price=m.price; w.info=m; } _applyVerdicts(w); } });
       ranked=rankedWindows(windows);
-      allWindows=windows; lastPriceParams=priceParams; LAST_DZT=dzt;
     }else{
       I.departMonth=STATE.dateMode==='month'?(STATE.months[0]||new Date().toISOString().slice(0,7)):(STATE.fromDate||new Date().toISOString().slice(0,10)).slice(0,7);
       const flights=await fetchLive(I);
