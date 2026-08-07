@@ -86,7 +86,7 @@ function exitCmpHtml(inAirport,opts,trip){
   const ad=STATE.adults||2; const O=STATE.origin.toUpperCase();
   const rows=sorted.map((o,idx)=>{
     const he=AIRPORT_HE[o.exit]||(CITY[o.exit]&&CITY[o.exit].he)||o.exit;
-    const price=o.price!=null?('€'+Math.round(o.price/ad)+' לאחד'):'<span style="color:var(--mut-2)">אין טיסה בתאריך זה</span>';
+    const price=o.price!=null?(curFmt(Math.round(o.price/ad))+(ad>1?' לאחד':'')):'<span style="color:var(--mut-2)">אין טיסה בתאריך זה</span>';
     const dir=o.price!=null?(o.baseline?'הלוך-חזור':(o.isDirect?'ישיר':'עם עצירה')):'';
     const drv=(o.km!=null&&o.km>0)?(o.km+' ק״מ · '+Math.floor(o.mins/60)+'ש׳'+(o.mins%60?(' '+(o.mins%60)+'ד׳'):'')+' נהיגה'):(o.km===0?'אותו שדה':'');
     const best=idx===0&&o.price!=null?' <span class="exbest">הכי זול</span>':'';
@@ -213,7 +213,7 @@ function _carrierDiag(){ return ''; /* carrier breakdown kept in EDGE_DIAG / FLT
 // flightCard expects). Used to build the full outbound×return cross-product for max coverage.
 function _combineLegs(o,i,trip){
   return {
-    departureDate:trip.departureDate, returnDate:trip.returnDate, currency:'EUR',
+    departureDate:trip.departureDate, returnDate:trip.returnDate, currency:BASE_CUR,
     price:(o.price!=null&&i.price!=null)?o.price+i.price:null,
     isDirect:!!(o.isDirect&&i.isDirect), altPrice:null,
     carrier:[o.carrier,i.carrier].filter(Boolean).join(' / ')||null, operatedBy:null,
