@@ -15,17 +15,15 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
   const _destTag = fl._destV ? `<span class="rtg crit destv destv-${fl._destV.cls}">📍 ${fl._destV.t}</span>` : '';
   const verdict = (_tlvTag||_destTag) ? `<div class="rcrit">${_tlvTag}${_destTag}</div>` : '';
   const perEuro = fl.price!=null ? Math.round(fl.price/STATE.adults) : null;
-  let conv='';
-  if(perEuro!=null && STATE.altCurrency && RATES[STATE.altCurrency]){ const sym={USD:'$',ILS:'₪'}[STATE.altCurrency]||''; conv=` ≈ ${sym}${Math.round(perEuro*RATES[STATE.altCurrency]).toLocaleString()}`; }
   const priceBlock = perEuro!=null
-    ? `<div class="v">€${perEuro}</div><div class="k">${STATE.adults>1?'לאחד':''}${conv.replace(/^ ≈ /,STATE.adults>1?' ≈ ':'≈ ')}${STATE.adults>1?` · סה״כ €${fl.price}`:''}</div>`
+    ? `<div class="v">${curFmt(perEuro)}</div><div class="k">${STATE.adults>1?'לאחד':''}${curRef(perEuro)}${STATE.adults>1?` · סה״כ ${curFmt(fl.price)}`:''}</div>`
     : `<div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div>`;
   return `<div class="fcard${isBest?' win':''}${fl._shabV&&fl._shabV.forbidden?' forb':''}">
     <div class="fc-main">
       <div class="fc-carrier">${carr}${stopTxt?` <span class="fc-stop">· ${stopTxt}</span>`:''}</div>
       ${times?`<div class="fc-times">${times}</div>`:''}
       ${detail?`<div class="fc-detail">${detail}</div>`:''}
-      ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: €${Math.round(fl.altPrice/STATE.adults)}${STATE.adults>1?' לאחד':''}</div>`:''}
+      ${fl.altPrice!=null?`<div class="ralt">זול יותר עם עצירה: ${curFmt(Math.round(fl.altPrice/STATE.adults))}${STATE.adults>1?' לאחד':''}</div>`:''}
       ${verdict}
     </div>
     <div class="fc-price">${priceBlock}<a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div>
@@ -106,7 +104,7 @@ function windowCard(w,rank,dest){
       const hasEst=(w._calPrice!=null);
       const per=hasEst?Math.round(w._calPrice/Math.max(1,STATE.adults||1)):null;
       const msg=hasEst?'הערכה מלוח המחירים — לחץ לתמחור מדויק (חברות, שעות, שבת)':'טרם תומחר — לחץ לבדיקת מחיר אמיתי';
-      cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">${msg}</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק</span></div></div><div class="fc-price"><div class="v" style="font-size:${hasEst?19:16}px${hasEst?'':';color:var(--mut-2)'}">${hasEst?('≈€'+per):'—'}</div><div class="k">${hasEst?'הערכה':'טרם תומחר'}</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
+      cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">${msg}</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק</span></div></div><div class="fc-price"><div class="v" style="font-size:${hasEst?19:16}px${hasEst?'':';color:var(--mut-2)'}">${hasEst?('≈ '+curFmt(per)):'—'}</div><div class="k">${hasEst?'הערכה':'טרם תומחר'}</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
     } else {
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
     }
