@@ -150,11 +150,17 @@ function destDisplayName(){
 }
 const POPULAR=[['BUH','בוקרשט'],['ATH','אתונה'],['SKG','סלוניקי'],['LCA','לרנקה'],['TBS','טביליסי'],['BCN','ברצלונה'],['BUD','בודפשט'],['JFK','ניו יורק'],['MXP','מילאנו'],['CDG','פריז'],['FCO','רומא'],['PRG','פראג']];
 function tripTypeLabel(){ return ({round:'⇄ הלוך-חזור',oneway:'→ כיוון אחד',openjaw:'↩ חזרה מעיר אחרת'})[STATE.openJaw?'openjaw':STATE.tripType]; }
+function _fmtHeShort(iso){ if(!iso)return '—'; const p=iso.split('-'); return (+p[2])+'.'+(+p[1]); } // בלי שנה
+function _datePair(sep){ // מציג שנה פעם אחת כששני התאריכים באותה שנה
+  const a=STATE.fromDate, b=STATE.toDate;
+  if(a&&b&&a.slice(0,4)===b.slice(0,4)) return `${_fmtHeShort(a)} ${sep} ${_fmtHe(b)}`;
+  return `${_fmtHe(a)} ${sep} ${_fmtHe(b)}`;
+}
 function _dateFieldVal(){
   if(STATE.tripType==='oneway') return _fmtHe(STATE.fromDate);
   if(STATE.dateMode==='month') return monthsDisplay();
-  if(STATE.dateMode==='range') return `${_fmtHe(STATE.fromDate)} – ${_fmtHe(STATE.toDate)}`;
-  return `${_fmtHe(STATE.fromDate)} ← ${_fmtHe(STATE.toDate)}`;
+  if(STATE.dateMode==='range') return _datePair('–');
+  return _datePair('←');
 }
 function flexChipsHtml(){
   return [['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
