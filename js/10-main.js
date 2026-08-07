@@ -387,7 +387,7 @@ async function _runSearch(){
       // === נדבך 2: דירוג מקדים בלוח מחירים ===
       // קריאת לוח אחת (או אחת לכל חודש) מדרגת את כל החלונות לפי מחיר, כדי שהתמחור
       // המלא — היקר — ירוץ רק על החלונות שבאמת מובילים, לא על 6 המוקדמים כרונולוגית.
-      if(windows.length>8 && I.destination && I.destination!=='-' && !useOJ && STATE.tripType!=='oneway'){
+      if(windows.length>3 && I.destination && I.destination!=='-' && !useOJ && STATE.tripType!=='oneway'){
         const txt0=document.getElementById('pbartxt'); if(txt0)txt0.textContent='סורק לוח מחירים…';
         const nMode=(()=>{ const c={}; windows.forEach(w=>{c[w.nights]=(c[w.nights]||0)+1;}); return +Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||7; })();
         const months=[...new Set(windows.map(w=>w.start.slice(0,7)))].sort();
@@ -416,13 +416,13 @@ async function _runSearch(){
         }
       }
       // דורג לפי לוח. מתמחרים במלואם רק את 5 המובילים — השאר מוצגים מיד עם הערכת-לוח.
-      const _batch=(windows.some(w=>w._calPrice!=null))?5:8;
+      const _batch=(windows.some(w=>w._calPrice!=null))?3:6;
       const first=windows.filter(w=>!w._priced).slice(0,_batch);
       allWindows=windows; lastPriceParams=priceParams; LAST_DZT=dzt;
       // מחיל פסק-דין שבת/יעד על חלון מתומחר
       const _applyVerdicts=(w)=>{ if(zt&&w.info) w.shabV=shabbatVerdict(w,zt); if(dzt&&w.info){ w.destV=destVerdict(w,dzt); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},dzt); }); } };
       // === זרימה: ציור מסך ראשון מיד מהערכות הלוח, לפני התמחור המלא ===
-      const _streaming=(windows.some(w=>w._calPrice!=null));
+      const _streaming=(specific && windows.length>0); // מסך ראשון מיד תמיד — עם הערכות אם יש, אחרת מבנה החלונות
       if(_streaming){
         windows.forEach(w=>_applyVerdicts(w));
         ranked=rankedWindows(windows);
