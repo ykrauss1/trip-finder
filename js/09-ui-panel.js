@@ -285,7 +285,10 @@ function renderPanel(){
   else timeName=`${STATE.fromDate}–${STATE.toDate} · ${lenName} · ${dowName}`;
   const summaryLine=`<b>${destName}</b> · ${STATE.tripType==='oneway'?'<bdi>'+_fmtHe(STATE.fromDate)+'</bdi> · כיוון אחד':timeName} · <bdi>${STATE.adults} נוסעים</bdi>${ski?'':' · '+shabName}${maxStopsVal()===0?' · ישיר':(maxStopsVal()===1?' · עד 1 עצירה':' · עד 2 עצירות')}`;
   document.getElementById('panel').innerHTML=`<div class="panel">
-    ${SAVED.length?`<div class="savedstrip">${SAVED.map((s,i)=>`<span class="savedchip"><span class="ld" data-act="load" data-v="${i}">${s.name}</span><span class="del" data-act="del" data-v="${i}">×</span></span>`).join('')}</div>`:''}
+    ${SAVED.length?`<div class="savedwrap">
+      <button class="savedtoggle" data-act="savedtoggle">📁 חיפושים שמורים (${SAVED.length}) ${STATE.savedOpen?'▲':'▼'}</button>
+      ${STATE.savedOpen?`<div class="savedlist">${SAVED.map((s,i)=>`<div class="saveditem"><span class="ld" data-act="load" data-v="${i}">${s.name}</span><span class="del" data-act="del" data-v="${i}" title="מחק">×</span></div>`).join('')}</div>`:''}
+    </div>`:''}
     ${ski?'':searchBarHtml()}
     <div class="barhead">
       <div class="barsum">${summaryLine}</div>
@@ -461,6 +464,7 @@ function _onAct(act,v){
   else if(act==='goplan'){ STATE.panelOpen=false; STATE.calOpen=false; STATE.sbarPop=null; STATE.paxOpen=false; renderPanel(); runPlanner(); return; }
   else if(act==='newsearch'){ newSearch(); return; }
   else if(act==='save'){ doSave(); return; }
+  else if(act==='savedtoggle'){ STATE.savedOpen=!STATE.savedOpen; renderPanel(); return; }
   renderPanel();
 }
 /* ===== live fetch + render results ===== */
