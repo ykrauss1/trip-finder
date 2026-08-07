@@ -62,7 +62,6 @@
   .pall{display:inline-flex;gap:3px;margin-inline-start:6px;vertical-align:middle}
   .pallc{font-size:9.5px;padding:2px 6px;opacity:.85}
   .pallc:hover{opacity:1;border-color:var(--gold)}
-  @media(max-width:760px){ .resultsgrid{flex-direction:column} .sidecol{position:static;flex:none;width:100%} }
   .ttopt{padding:9px 12px;border-radius:9px;cursor:pointer;font-size:14px}
   .ttopt:hover{background:var(--panel-2)}
   .ttopt.on{background:var(--clear-soft);color:var(--clear);font-weight:700}
@@ -342,3 +341,8 @@
   .calmode{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
   .calmode .c{font-size:11px;padding:3px 12px}
   .calwrap .calday{font-size:13px}
+  @media (max-width:760px){
+    .resultsgrid{flex-direction:column}
+    .sidecol{flex:1 1 auto;width:100%;max-width:100%;position:static;max-height:none;order:2}
+    .rescol{order:1;width:100%}
+  }
