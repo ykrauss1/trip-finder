@@ -349,3 +349,13 @@
   .baract{display:flex;gap:8px;align-items:center}
   .savebtn{background:linear-gradient(180deg,var(--clear),#2f7d68);color:#04211a;border:none;border-radius:10px;padding:7px 15px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
   .savebtn:hover{filter:brightness(1.07)}
+  .savedwrap{margin-bottom:10px}
+  .savedtoggle{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .savedtoggle:hover{border-color:var(--clear-line)}
+  .savedlist{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;background:var(--night);border:1px solid var(--line);border-radius:10px;padding:8px}
+  .saveditem{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+  .saveditem .ld{flex:1;cursor:pointer;font-size:13px;color:var(--ink)}
+  .saveditem .ld:hover{color:var(--clear)}
+  .saveditem .del{cursor:pointer;color:var(--mut-2);font-size:16px;padding:0 4px}
+  .saveditem .del:hover{color:#e57373}
+  .brandtag{font-size:13px;color:var(--gold);font-weight:600;margin-top:1px;letter-spacing:.2px}
