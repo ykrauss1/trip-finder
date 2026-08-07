@@ -43,9 +43,9 @@ async function skiAutoLive(list,seq){
       if(live&&live.price!=null){
         found++;
         const per=Math.round(live.price/Math.max(1,STATE.adults));
-        if(vEl)vEl.textContent='€'+per;
+        if(vEl)vEl.textContent=curFmt(per);
         let tag = live._cal ? 'מחיר חי (לוח) ✓' : 'מחיר חי ✓';
-        if(STATE.adults>1) tag=`לאחד · סה״כ €${live.price} · ${tag}`;
+        if(STATE.adults>1) tag=`לאחד · סה״כ ${curFmt(live.price)} · ${tag}`;
         if(live._shifted && live.date){ const d=new Date(live.date+'T00:00:00Z'); tag+=` · הזול ביותר: ${d.getUTCDate()}.${d.getUTCMonth()+1}`; }
         if(kEl)kEl.textContent=tag;
       }else if(kEl){ kEl.textContent='מטמון · אימות חי לא נמצא'; }
@@ -54,12 +54,12 @@ async function skiAutoLive(list,seq){
   }
 }
 async function fetchOne(origin,dest,month){
-  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&currency=eur`);
+  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&currency=usd`);
   if(!r.ok)throw new Error("func "+r.status);
   const d=await r.json(); return (d.flights||[]).map(adapt);
 }
 async function fetchCalOne(origin,dest,month,nights){
-  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&duration=${nights}&mode=cal&currency=eur`);
+  const r=await fetch(`${FUNC_URL}?from=${origin}&to=${dest}&depart=${month}&duration=${nights}&mode=cal&currency=usd`);
   if(!r.ok)throw new Error("cal "+r.status);
   const d=await r.json(); return (d.flights||[]).map(adapt);
 }
@@ -118,7 +118,7 @@ function card(f,rank){
     <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
     <div class="rtimes">${times}</div>
     <div class="rtags">${tags.join('')}</div></div>
-    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">€${f.price}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">הזמן ← סקייסקנר</a></div></div>`;
+    <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">${curFmt(f.price)}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">הזמן ← סקייסקנר</a></div></div>`;
 }
 let runSeq=0;
 let _directRetrySig=null; // ensures we auto-retry "no direct flights" at most once per unique search
@@ -273,7 +273,7 @@ async function enrichCheaperDays(seq){
       const _iata=/^[A-Z]{3}$/.test(_book)?_book:((/^[A-Z]{3}$/.test(dest.toUpperCase()))?dest.toUpperCase():null);
       const bookUrl=_iata?`https://www.kayak.com/flights/${_O}-${_iata}/${best.date}/${bestRet}`
         :`https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+((STATE.destLabel||dest).split(' · ')[0])+' on '+best.date+' returning '+bestRet)}`;
-      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl})${nightsNote} זולה ב-<b>€${save}</b> — €${best.price} במקום €${cur}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
+      slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl})${nightsNote} זולה ב-<b>${curFmt(save)}</b> — ${curFmt(best.price)} במקום ${curFmt(cur)}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
     }
   }
 }
@@ -499,14 +499,22 @@ document.querySelectorAll('.ex').forEach(el=>el.onclick=()=>{document.getElement
 
 // מפענח ביטוי-תקופה ראשי ("בין הזמנים שאחרי סוכות", "תשעת הימים", "חול המועד פסח")
 // לטווח התאריכים האמיתי מהמנוע — כדי שהחיפוש ייצמד לתקופה ולא יתפזר על חודשיים.
+function _maxNightsFromIntent(I){
+  const n=I&&I.nights; if(n==null) return null;
+  const m=String(n).match(/(\d+)\s*[-–]\s*(\d+)/); if(m) return Math.min(30,+m[2]);
+  if(isFinite(+n)&&+n>0) return Math.min(30,+n);
+  return null;
+}
+function _addDaysISO(iso,d){ return new Date(Date.parse(iso)+d*864e5).toISOString().slice(0,10); }
 async function resolvePrimaryPeriod(text){
   const t=String(text||'');
   // זיהוי תקופה + עוגן-עונה, לפי סדר ספציפיות
+  // labelHas: התאמה לפי תווית התקופה (כי בין הזמנים תשרי/ניסן נפלטים עם kind:"good", לא "beinhazmanim")
   const cues=[
-    {kinds:['beinhazmanim'],season:'tishrei',re:/בין\s*הזמנים.*(סוכות|תשרי|שמח[ת״"]?ת|שמחת תורה)/},
-    {kinds:['beinhazmanim'],season:'nisan',re:/בין\s*הזמנים.*(פסח|ניסן)/},
-    {kinds:['beinhazmanim'],season:'av',re:/בין\s*הזמנים.*(אב|תשעה באב|ט[״"]?ב)/},
-    {kinds:['beinhazmanim'],season:null,re:/בין\s*הזמנים/},
+    {labelHas:'בין הזמנים',season:'tishrei',re:/בין\s*הזמנים.*(סוכות|תשרי|שמח[ת״"]?ת|שמחת תורה)/},
+    {labelHas:'בין הזמנים',season:'nisan',re:/בין\s*הזמנים.*(פסח|ניסן|אסרו)/},
+    {labelHas:'בין הזמנים',season:'av',re:/בין\s*הזמנים.*(קיץ|אב|תשעה באב|ט[״"]?ב|אלול)/},
+    {labelHas:'בין הזמנים',season:null,re:/בין\s*הזמנים/},
     {kinds:['ninedays'],season:null,re:/תשעת\s*הימים/},
     {kinds:['threeweeks'],season:null,re:/שלוש[ת]?\s*השבועות|בין\s*המצרים/},
     {kinds:['cholhamoed'],season:'nisan',re:/חול\s*המועד\s*פסח|חוה[״"]?מ\s*פסח/},
@@ -521,12 +529,13 @@ async function resolvePrimaryPeriod(text){
     const to=new Date(Date.now()+500*864e5).toISOString().slice(0,10);
     const jd=await fetchJewishData(today,to,STATE.profile);
     const all=[...(jd.periods||[]),...(jd.favorable||[])].filter(p=>p.start&&p.end&&p.end>=today);
-    // התאמה: לפי kind; אם יש עוגן-עונה, בורר את המופע בחודש העברי המתאים
-    let cands=all.filter(p=>hit.kinds.includes(p.kind));
-    if(hit.season && cands.length>1){
+    // מועמדים: לפי תווית (בין הזמנים על כל וריאציותיו) או לפי kind
+    let cands=all.filter(p=> hit.labelHas ? (p.label&&p.label.indexOf(hit.labelHas)>=0) : (hit.kinds||[]).includes(p.kind) );
+    if(hit.season){
       const monOf={tishrei:7,nisan:1,av:5};
       const wantM=monOf[hit.season];
-      cands=cands.filter(p=>{ const h=hebFromISO(p.start); return h && (h.m===wantM || Math.abs(h.m-wantM)<=1); });
+      const seasonal=cands.filter(p=>{ const h=hebFromISO(p.start); return h && (h.m===wantM || (wantM===5&&h.m===6)); }); // אב כולל אלול
+      if(seasonal.length) cands=seasonal;
     }
     cands.sort((a,b)=>a.start<b.start?-1:1);
     return cands[0]||null;
@@ -552,16 +561,20 @@ async function translateAndRun(){
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
   if(hebRange){
     // טווח תאריך עברי מדויק גובר על נתיב החודשים
-    STATE.dateMode='range'; STATE.fromDate=hebRange.start; STATE.toDate=hebRange.end; STATE.months=[];
+    STATE.dateMode='range'; STATE.fromDate=hebRange.start; STATE.toDate=hebRange.end; STATE.months=[]; I.months=[]; I.departMonth=null;
     const hs=hebDateStr(hebRange.start), he=hebDateStr(hebRange.end);
     const gs=hebRange.start.slice(8)+'.'+(+hebRange.start.slice(5,7)), ge=hebRange.end.slice(8)+'.'+(+hebRange.end.slice(5,7));
     I.summary=`תאריך עברי: ${hs} – ${he} (${gs}–${ge})`;
   } else if(periodRange){
-    // תקופה מזוהה → צמצום החיפוש לטווח האמיתי שלה (במקום חודשיים רחבים)
-    STATE.dateMode='range'; STATE.fromDate=periodRange.start; STATE.toDate=periodRange.end; STATE.months=[];
+    // תקופה מזוהה → צמצום לטווח האמיתי שלה. מרחיבים את הסוף באורך הנסיעה
+    // כדי לכלול חופשות שמתחילות בתוך התקופה ומסתיימות יום-יומיים אחריה.
+    // היציאה בתוך התקופה; החזרה מותרת עד N ימים אחריה (ברירת מחדל 3 — מסגרת ישיבות/כוללים), לבחירה בלוח הבקרה
+    const tail=(STATE.periodTailDays!=null)?STATE.periodTailDays:3;
+    STATE.dateMode='range'; STATE.fromDate=periodRange.start; STATE.toDate=_addDaysISO(periodRange.end,tail);
+    STATE.months=[]; I.months=[]; I.departMonth=null; // מונע מ-applyIntent לחזור למצב חודשים
     const hs=hebDateStr(periodRange.start), he=hebDateStr(periodRange.end);
     const gs=periodRange.start.slice(8)+'.'+(+periodRange.start.slice(5,7)), ge=periodRange.end.slice(8)+'.'+(+periodRange.end.slice(5,7));
-    I.summary=`${periodRange.label}: ${hs} – ${he} (${gs}–${ge})`;
+    I.summary=`${periodRange.label}: ${hs} – ${he} (${gs}–${ge}) · יציאה בתקופה, חזרה עד ${tail} ימים אחריה`;
   }
   STATE.lastSummary=I.summary||''; STATE.lastSummaryLocal=!!I._fallback;
   applyIntent(I); renderPanel();
