@@ -72,7 +72,7 @@ function rangeCalendarHtml(){
   const todayISO=new Date().toISOString().slice(0,10);
   const range= oneway
     ? `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`
-    : `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="arr">←</span><span class="drlab">חזרה</span><b>${_fmtHe(STATE.toDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`;
+    : `<div class="daterange" data-cal="toggle"><span class="drlab">יציאה</span><b>${_fmtHe(STATE.fromDate)}</b><span class="arr">→</span><span class="drlab">חזרה</span><b>${_fmtHe(STATE.toDate)}</b><span class="caledit">📅 ${STATE.calOpen?'סגור':'בחר בלוח'}</span></div>`;
   if(!STATE.calOpen) return range;
   const heb=!!STATE.calHeb;
   const toggle=`<div class="calmode"><span class="c ${heb?'':'on'}" data-cal="greg">לועזי</span><span class="c ${heb?'on':''}" data-cal="heb">עברי ✡︎</span></div>`;
@@ -151,16 +151,16 @@ function destDisplayName(){
 const POPULAR=[['BUH','בוקרשט'],['ATH','אתונה'],['SKG','סלוניקי'],['LCA','לרנקה'],['TBS','טביליסי'],['BCN','ברצלונה'],['BUD','בודפשט'],['JFK','ניו יורק'],['MXP','מילאנו'],['CDG','פריז'],['FCO','רומא'],['PRG','פראג']];
 function tripTypeLabel(){ return ({round:'⇄ הלוך-חזור',oneway:'→ כיוון אחד',openjaw:'↩ חזרה מעיר אחרת'})[STATE.openJaw?'openjaw':STATE.tripType]; }
 function _fmtHeShort(iso){ if(!iso)return '—'; const p=iso.split('-'); return (+p[2])+'.'+(+p[1]); } // בלי שנה
-function _datePair(sep){ // מציג שנה פעם אחת כששני התאריכים באותה שנה
+function _datePair(sep){ // מציג שנה פעם אחת כששני התאריכים באותה שנה; עטוף LTR כדי שהחץ יזרום יציאה→חזרה
   const a=STATE.fromDate, b=STATE.toDate;
-  if(a&&b&&a.slice(0,4)===b.slice(0,4)) return `${_fmtHeShort(a)} ${sep} ${_fmtHe(b)}`;
-  return `${_fmtHe(a)} ${sep} ${_fmtHe(b)}`;
+  const inner=(a&&b&&a.slice(0,4)===b.slice(0,4)) ? `${_fmtHeShort(a)} ${sep} ${_fmtHe(b)}` : `${_fmtHe(a)} ${sep} ${_fmtHe(b)}`;
+  return `<span dir="ltr">${inner}</span>`;
 }
 function _dateFieldVal(){
   if(STATE.tripType==='oneway') return _fmtHe(STATE.fromDate);
   if(STATE.dateMode==='month') return monthsDisplay();
   if(STATE.dateMode==='range') return _datePair('–');
-  return _datePair('←');
+  return _datePair('→');
 }
 function flexChipsHtml(){
   return [['0','מדויק'],['1','±1 יום'],['2','±2 ימים'],['3','±3 ימים']]
@@ -275,13 +275,13 @@ function renderPanel(){
     : '';
   const destName = destDisplayName();
   const _sd=_dowSel();
-  const dowName = (!_sd?'כל יום':_sd.map(d=>DOW_FULL[d]).join('/'))+(STATE.flexEndDows&&STATE.flexEndDows.length?' ← '+STATE.flexEndDows.map(d=>DOW_FULL[d]).join('/'):'');
+  const dowName = (!_sd?'כל יום':_sd.map(d=>DOW_FULL[d]).join('/'))+(STATE.flexEndDows&&STATE.flexEndDows.length?' → '+STATE.flexEndDows.map(d=>DOW_FULL[d]).join('/'):'');
   const shabName = ({any:'שבת: לא משנה',none:'בלי שבת',away:'שבת ביעד'})[STATE.flexShabbat];
   const lenName = STATE.flexNights==='any'?'כל אורך':String(STATE.flexNights).replace('-','–')+' לילות';
   let timeName='';
   if(ski) timeName='עונת סקי';
   else if(STATE.dateMode==='month') timeName=monthsDisplay()+` · ${lenName} · ${dowName}`;
-  else if(STATE.dateMode==='exact') timeName=`<bdi>${_fmtHe(STATE.fromDate)} ← ${_fmtHe(STATE.toDate)}</bdi>${STATE.flexDays>0?` · ±${STATE.flexDays}`:''}`;
+  else if(STATE.dateMode==='exact') timeName=`<span dir="ltr">${_fmtHe(STATE.fromDate)} → ${_fmtHe(STATE.toDate)}</span>${STATE.flexDays>0?` · ±${STATE.flexDays}`:''}`;
   else timeName=`${STATE.fromDate}–${STATE.toDate} · ${lenName} · ${dowName}`;
   const summaryLine=`<b>${destName}</b> · ${STATE.tripType==='oneway'?'<bdi>'+_fmtHe(STATE.fromDate)+'</bdi> · כיוון אחד':timeName} · <bdi>${STATE.adults} נוסעים</bdi>${ski?'':' · '+shabName}${maxStopsVal()===0?' · ישיר':(maxStopsVal()===1?' · עד 1 עצירה':' · עד 2 עצירות')}`;
   document.getElementById('panel').innerHTML=`<div class="panel">
