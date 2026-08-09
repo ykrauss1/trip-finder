@@ -99,7 +99,11 @@ function curFmt(base){
   const rate = (c&&RATES[c])?RATES[c]:1;
   return sym+(Math.round(base*rate)).toLocaleString();
 }
-function curRef(base){ return (STATE.altCurrency&&base!=null)?` ≈ ${BASE_SYM}${base}`:''; }
+function curRef(base){
+  if(base==null) return '';
+  if(!STATE.altCurrency){ const r=RATES.ILS||3.6; return ` ≈ ₪${Math.round(base*r).toLocaleString()}`; } // דולר ראשי → שקל משוער מתחת
+  return ` ≈ ${BASE_SYM}${base.toLocaleString()}`; // מטבע אחר ראשי → דולר המקור מתחת
+}
 function paintResults(){
   if(!LAST) return;
   const out=document.getElementById('out');
