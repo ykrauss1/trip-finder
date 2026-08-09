@@ -677,3 +677,26 @@ async function loadHebDate(){
 /* initial: load ski POIs from Supabase (if configured), then show panel + run */
 (async function(){ _loadEntIds(); fetchRates(); loadHebDate(); try{ await Promise.allSettled([loadSki(), loadJewish()]); }catch(e){} renderPanel();
   document.getElementById('out').innerHTML='<div class="state">כוונן את החיפוש למעלה (יעד, חודש, ימים), ואז לחץ 🔍 חפש</div>'; })();
+
+/* חשיפה לדיבאג מהקונסול בלבד — אין לה שום שימוש בלוגיקת האפליקציה.
+   שימוש: __tf.STATE · __tf.LAST · __tf.EDGE_DIAG · __tf.pure('אל על') */
+try{
+  window.__tf={
+    get STATE(){ return STATE; },
+    get LAST(){ return LAST; },
+    get EDGE_DIAG(){ return (typeof EDGE_DIAG!=='undefined')?EDGE_DIAG:null; },
+    get FLT_DIAG(){ return (typeof FLT_DIAG!=='undefined')?FLT_DIAG:null; },
+    get iso(){ return _isolatedCarrier(); },
+    // סיכום מהיר: לכל חלון — כמה מסלולים טהורים בחברה fam וכמה שילובים, והמחיר הזול בכל קבוצה
+    pure:function(fam){
+      if(!LAST||!LAST.allWindows) return 'אין תוצאות';
+      return LAST.allWindows.map(function(w){
+        var opts=(w.info&&Array.isArray(w.info._options))?w.info._options:(w.info?[w.info]:[]);
+        var p=opts.filter(function(o){return o&&o.price!=null&&isPureCarrier(o.carrier,fam);});
+        var m=opts.filter(function(o){return o&&o.price!=null&&!isPureCarrier(o.carrier,fam);});
+        var min=function(a){return a.length?Math.min.apply(null,a.map(function(o){return o.price;})):null;};
+        return {win:w.start+'→'+(w.ret||''), pure:p.length, purePrice:min(p), mixed:m.length, mixedPrice:min(m)};
+      });
+    }
+  };
+}catch(e){}
