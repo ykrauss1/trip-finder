@@ -218,9 +218,10 @@ function searchBarHtml(){
   // passengers
   const pxField=`<div class="sfield paxfld ${p==='pax'?'active':''}" data-act="sbpop" data-v="pax"><label>נוסעים</label><span class="sval"><bdi>${paxSummary()}</bdi></span>${p==='pax'?`<div class="spop" onclick="event.stopPropagation()">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="sbclose">סיום</div></div>`:''}</div>`;
   const go=`<button class="sgo" data-act="go">🔍 חפש טיסות</button>`;
-  const plan=`<button class="sgo ghost" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות" style="line-height:1.25">📅 תאריכים בלבד<br><span style="font-size:10.5px;opacity:.7;font-weight:400">ללא טיסות</span></button>`;
-  const reset=`<button class="sgo ghost" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺ חדש</button>`;
-  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${plan}${go}</div></div>
+  const plan=`<button class="sgo ghost btn2l" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות">📅 תאריכים<br><span class="sub2l">ללא טיסות</span></button>`;
+  const reset=`<button class="sgo ghost bicon" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺</button>`;
+  const free=`<button class="sgo ghost btn2l" data-act="freetext" title="חיפוש בשפה חופשית">💬 חופשי<br><span class="sub2l">שפה חופשית</span></button>`;
+  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${free}${plan}${go}</div></div>
     <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div>`;
 }
 function renderPanel(){
@@ -421,6 +422,8 @@ function _onAct(act,v){
   else if(act==='carriertoggle'){ const f=STATE.hiddenCarriers||(STATE.hiddenCarriers=[]); const i=f.indexOf(v); if(i>=0)f.splice(i,1); else f.push(v); paintResults(); return; }
   else if(act==='onlyisraeli'){ STATE.onlyIsraeli=!STATE.onlyIsraeli; paintResults(); return; }
   else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; paintResults(); return; }
+  else if(act==='nomotzash'){ STATE.noMotzash=!STATE.noMotzash; paintResults(); return; }
+  else if(act==='freetext'){ if(typeof window.tfToggleFreeText==='function') window.tfToggleFreeText(); return; }
   else if(act==='shabcar'){ const p=String(v).split('|'), i=+p[0]; if(SHAB_CAR[i]){ SHAB_CAR[i].s=(p[1]||''); saveShabCar(); _repaintSide(); } return; }
   else if(act==='shabcardel'){ const i=+v; if(SHAB_CAR[i]){ SHAB_CAR.splice(i,1); saveShabCar(); _repaintSide(); } return; }
   else if(act==='shabcaradd'){
