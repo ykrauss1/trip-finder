@@ -1,7 +1,9 @@
 function flightCard(w,fl,dest,kLink,oneway,isBest){
   const stopTxt = fl.stops===0?'ישיר':(fl.stops!=null?fl.stops+' עצירות':'');
   const carrName = fl.carrier||'';
-  const carr = (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
+  // סימון "אינה טסה בשבת" — רק כשכל הרגליים בחברות שסומנו כך בלוח הצד
+  const _noShab = (typeof noShabbatFlight==='function' && noShabbatFlight(carrName)) ? ` <span class="fc-shab">🕯️ אינה טסה בשבת</span>` : '';
+  const carr = (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + _noShab + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
   // prefer the edge's TRUE duration (timezone-correct); fall back to ISO subtraction (old provider)
   const _dOut=_durFmt(fl.durationToMin ?? _durMin(fl.outDepISO,fl.outArrISO)), _dBack=_durFmt(fl.durationBackMin ?? _durMin(fl.backDepISO,fl.backArrISO));
   // layover detail: airport code + wait time (e.g. "FCO 1ש55ד")
