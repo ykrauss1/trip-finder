@@ -14,7 +14,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '41';
+var APP_VER = '42';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 // בדיקת-גרסה: אם נטענה גרסה מהמטמון בעוד שבשרת יש חדשה יותר — טען מחדש פעם אחת (עם עוקף-מטמון)
 (function(){ try{
@@ -32,25 +32,13 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 <div class="wrap">
   <header class="brand">
     <div class="brandl">
-      <span class="logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="lgbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2547"/><stop offset="1" stop-color="#11183a"/></linearGradient>
-          <linearGradient id="lgpl" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#46b9e8"/><stop offset="1" stop-color="#5fe0bf"/></linearGradient>
-        </defs>
-        <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="url(#lgbg)" stroke="#2f3d73" stroke-width="1.5"/>
-        <path d="M11 33 C18 31 22 24 31 13" fill="none" stroke="#f2b257" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.5 4.5"/>
-        <path d="M36.5 12 L20.5 34.5 L18.7 26.2 Z" fill="url(#lgpl)"/>
-        <path d="M36.5 12 L26.5 22.8 L18.7 26.2 Z" fill="#bfeede"/>
-        <path d="M36.5 12 L20.5 34.5 L25.3 25.4 Z" fill="#2f8fc9"/>
-        <circle cx="36.5" cy="12" r="2.4" fill="#f2b257"/>
-      </svg></span>
-      <div class="brandtxt">
-        <h1 dir="ltr" style="text-align:start">Kosher <span class="em">Fly</span></h1>
-        <div class="brandtag">הטיסה שלך מסונכרנת כהלכה</div>
-        <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
-      </div>
+      <h1 dir="ltr">Kosher <span class="em">Fly</span></h1>
+      <span class="brandtag">הטיסה שלך מסונכרנת כהלכה</span>
     </div>
-    <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." style="margin-inline-start:auto;align-self:center;border:none;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;color:#fff;background:#3a3f55;cursor:pointer;white-space:nowrap">מקור: Skyscanner (ישן)</button>
+    <div class="brandr">
+      <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
+      <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." class="provbtn">מקור: Skyscanner (ישן)</button>
+    </div>
   </header>
 
   <div class="box collapsed" id="qbox">
