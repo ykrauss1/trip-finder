@@ -100,11 +100,25 @@ function _winPrice(w){
   if(fam){ const pp=_winPurePrice(w,fam); if(pp!==null) return pp; }
   const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:(w._calPrice!=null?w._calPrice:null)); return p==null?Infinity:p;
 }
-function winSortChips(){
-  const cur=STATE.winSort||'rank';
-  const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="winsort" data-v="${v}">${l}</span>`;
-  return `<div class="sortbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">סדר החלונות: ${chip('rank','התאמה')}${chip('price','מחיר')}${chip('date','תאריך')}${chip('nights','אורך')}<span style="flex:1"></span><button class="sgo ghost" data-act="save" style="border-radius:8px;padding:6px 16px;font-size:13px">💾 שמור חיפוש</button></div>`;
+/* שורת כלים אחת לתוצאות: שני תפריטים נפתחים במקום שתי שורות צ'יפים, ועוד מתג מוצ״ש.
+   כפתור "שמור חיפוש" הוסר מכאן — הוא כבר קיים בשורת הסיכום שמעל, וזו הייתה כפילות. */
+function resultsToolbar(){
+  const wcur=STATE.winSort||'rank';
+  const wopts=[['rank','התאמה'],['price','מחיר'],['date','תאריך'],['nights','אורך']];
+  const cp=_catPrices();
+  const band=isFinite(cp.cheapest)?cp.cheapest*1.6:Infinity;
+  const hasIsraeli=isFinite(cp.il)&&cp.il<=band&&cp.il>cp.cheapest, hasLowCost=isFinite(cp.lc)&&cp.lc<=band&&cp.lc>cp.cheapest;
+  const fopts=[['price','מחיר'],['time','מוקדם']];
+  if(hasIsraeli) fopts.push(['airline','חברה ישראלית']);
+  if(hasLowCost) fopts.push(['lowcost','לואו-קוסט']);
+  let fcur=STATE.sortBy||'price';
+  if(!fopts.some(o=>o[0]===fcur)){ fcur='price'; STATE.sortBy='price'; }
+  const sel=(act,opts,val)=>`<select class="selmini" data-actsel="${act}">${opts.map(o=>`<option value="${o[0]}"${o[0]===val?' selected':''}>${o[1]}</option>`).join('')}</select>`;
+  const hasMotz=!!(LAST&&Array.isArray(LAST.ranked)&&LAST.ranked.some(w=>w&&w._motzei));
+  const motz=hasMotz?`<span class="c hard ${STATE.noMotzash?'on':''}" data-act="nomotzash" title="הסתרת חלונות שהיציאה בהם במוצאי שבת">🌙 ${STATE.noMotzash?'בלי מוצ״ש ✓':'בלי מוצ״ש'}</span>`:'';
+  return `<div class="rtoolbar"><label>סדר החלונות</label>${sel('winsort',wopts,wcur)}<label>מיון טיסות</label>${sel('sortby',fopts,fcur)}${motz}</div>`;
 }
+function winSortChips(){ return resultsToolbar(); }
 function sortWindows(arr){
   const mode=STATE.winSort||'rank';
   const _iso=(typeof _isolatedCarrier==='function')?_isolatedCarrier():null;
@@ -138,7 +152,8 @@ function paintResults(){
   const out=document.getElementById('out');
   let body='';
   if(LAST.specific){
-    const _list=sortWindows(LAST.ranked);
+    let _list=sortWindows(LAST.ranked);
+    if(STATE.noMotzash) _list=_list.filter(w=>!(w&&w._motzei));   // מתג מהיר: בלי יציאה במוצאי שבת
     let _lastN=null;
     body=_list.map((w,i)=>{
       let head='';
@@ -159,7 +174,7 @@ function paintResults(){
     if(LAST.loadingMore) moreBtn='<div class="morewrap"><div class="state"><div class="spin"></div>מתמחר עוד…</div></div>';
     else if(remaining>0) moreBtn=`<div class="morewrap"><button class="morebtn" data-more="1">הצג עוד תוצאות · ${remaining} נותרו</button></div>`;
   }
-  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol${STATE.sideCollapsed?' collapsed':''}">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?winSortChips():''}${LAST.specific?sortBarHtml():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
+  out.innerHTML=`<div class="resultsgrid"><aside class="sidecol${STATE.sideCollapsed?' collapsed':''}">${sidePanelHtml()}</aside><div class="rescol">${LAST.meta}${LAST.specific?resultsToolbar():''}${LAST.specific?coverageNote():''}${hasBand?bandLegend():''}${body}${moreBtn}</div></div>`;
 }
 // a fixed, always-on transparency note: no single flight source is exhaustive (small / low-cost
 // carriers like HiSky are sometimes missing), so point the user to the full list per result.
