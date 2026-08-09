@@ -13,7 +13,7 @@ function markStale(){
 function newSearch(){
   const d=freshDates();
   Object.assign(STATE,{ destination:'-', destLabel:'', tripType:'round', dateMode:'exact', fromDate:d.from, toDate:d.to, months:[d.from.slice(0,7)], flexDays:0, maxStops:0, includeStops:false, sortBy:'price', hiddenCarriers:[], onlyIsraeli:false, allowShabbat:false, openJaw:false, outAirport:'', sbarPop:null, calOpen:false, paxOpen:false, panelOpen:false });
-  LAST=null; _expandedWins.clear(); EDGE_DIAG=null; LAST_DZT=null; FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()};
+  LAST=null; _expandedWins.clear(); _expandedMixed.clear(); EDGE_DIAG=null; LAST_DZT=null; FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()};
   const out=document.getElementById('out'); if(out) out.innerHTML='';
   renderPanel();
 }
@@ -408,6 +408,7 @@ function _onAct(act,v){
   else if(act==='cur'){ STATE.altCurrency=v; renderPanel(); paintResults(); return; }
   else if(act==='sortby'){ STATE.sortBy=v; paintResults(); return; }
   else if(act==='expandwin'){ if(_expandedWins.has(v))_expandedWins.delete(v); else _expandedWins.add(v); paintResults(); return; }
+  else if(act==='expandmixed'){ if(_expandedMixed.has(v))_expandedMixed.delete(v); else _expandedMixed.add(v); paintResults(); return; }
   else if(act==='carrierfilt'){
     const cs=carriersInResults().map(c=>c.name);
     const hid=STATE.hiddenCarriers||[];
