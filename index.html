@@ -14,7 +14,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '46';
+var APP_VER = '47';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 // בדיקת-גרסה: אם נטענה גרסה מהמטמון בעוד שבשרת יש חדשה יותר — טען מחדש פעם אחת (עם עוקף-מטמון)
 (function(){ try{
@@ -30,24 +30,31 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 </head>
 <body>
 <div class="wrap">
+  <div class="topstick" id="topstick">
   <header class="brand">
     <div class="brandl">
       <h1 dir="ltr">Kosher <span class="em">Fly</span></h1>
       <span class="brandtag">הטיסה שלך מסונכרנת כהלכה</span>
     </div>
     <div class="brandr">
+      <button id="qtoggle" type="button" class="qtoggle" title="חיפוש בשפה חופשית">💬 חיפוש חופשי</button>
       <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
       <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." class="provbtn">מקור: Skyscanner (ישן)</button>
     </div>
   </header>
 
-  <div class="box collapsed" id="qbox">
+  <!-- הכותרת ושורת החיפוש הן בלוק דביק אחד. קודם היו שני אלמנטים דביקים נפרדים
+       עם היסט קשיח (top:44px) שלא תאם את הגובה האמיתי של הכותרת (~41px), ודרך
+       הסדק שנוצר הציץ התוכן שנגלל מתחת. עכשיו אין שום סדק אפשרי. -->
+  <div id="panel"></div>
+  </div>
+
+  <div class="box" id="qbox" hidden>
     <textarea id="q" rows="1" placeholder="חיפוש חופשי: לאן זול לטוס מתל אביב באוגוסט, בלי טיסה בשבת…"></textarea>
     <div class="go"><button id="run">תרגם והרץ ←</button><span class="exhint" style="font-size:12px;color:var(--mut-2)">או לחץ דוגמה:</span></div>
     <div class="exs" id="exs"></div>
   </div>
 
-  <div id="panel"></div>
   <div id="stalebar"></div>
   <div id="out"></div>
 
