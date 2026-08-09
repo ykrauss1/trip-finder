@@ -619,6 +619,7 @@ async function translateAndRun(){
   else{
     // נותנים לבחור: טיסות או תאריכים בלבד — במקום לרוץ אוטומטית
     const out=document.getElementById('out');
+    try{ if(window.tfCloseFreeText) window.tfCloseFreeText(); }catch(e){}   // הובן → השורה כבר לא נחוצה
     out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:14px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div>${I._fallback?`<div style="margin-bottom:12px;color:#f0b429;font-size:13px">⚠️ תרגום מקומי (מוגבל) — השירות החכם לא זמין כרגע<br><span style="opacity:.7;font-size:11px">${String(I._fallback).slice(0,120)}</span></div>`:''}<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="sgo" data-act="go" style="border-radius:8px;font-size:15px;padding:10px 26px">🔍 חפש טיסות</button><button class="sgo ghost" data-act="goplan" style="border-radius:8px;font-size:15px;padding:10px 26px">📅 תאריכים בלבד</button></div></div>`;
   }
   btn.disabled=false;
@@ -629,9 +630,25 @@ document.getElementById('stalebar').addEventListener('click',e=>{ const ab=e.tar
 document.getElementById('q').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')translateAndRun();});
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (STATE.sbarPop||STATE.calOpen||STATE.paxOpen)){ STATE.sbarPop=null; STATE.calOpen=false; STATE.paxOpen=false; renderPanel(); } });
 document.addEventListener('click',e=>{ if(!STATE.sbarPop) return; const t=e.target; if(t&&t.closest&&(t.closest('.sbar')||t.closest('.spop')||t.closest('.ttmenu')||t.closest('.popcities'))) return; STATE.sbarPop=null; renderPanel(); });
-(function(){ const qb=document.getElementById('qbox'), q=document.getElementById('q');
-  q.addEventListener('focus',()=>qb.classList.remove('collapsed'));
-  q.addEventListener('blur',()=>{ if(!q.value.trim()) qb.classList.add('collapsed'); });
+/* גובה הבלוק העליון הדביק, נמדד בפועל. השורה הזו מחליפה את ה-top:44px הקשיח שגרם לסדק,
+   ומשמשת גם את סרגל הצד ואת שורת ההתראה כדי שיתחילו בדיוק מתחתיו. */
+function _syncTopH(){
+  const t=document.getElementById('topstick'); if(!t) return;
+  const h=Math.round(t.getBoundingClientRect().height);
+  if(h>0) document.documentElement.style.setProperty('--toph', h+'px');
+}
+window.addEventListener('resize',_syncTopH);
+setInterval(_syncTopH,800);   // שורת החיפוש משנה גובה כשהצ'יפים נשברים לשורה נוספת
+_syncTopH();
+
+/* החיפוש החופשי אינו תופס שורה קבועה — הוא נפתח מכפתור, ונסגר מעצמו ברגע שהאינטנט הובן. */
+(function(){
+  const btn=document.getElementById('qtoggle'), qb=document.getElementById('qbox'), q=document.getElementById('q');
+  if(!btn||!qb) return;
+  function openQ(){ qb.hidden=false; qb.classList.remove('collapsed'); btn.classList.add('on'); _syncTopH(); if(q) try{ q.focus(); }catch(e){} }
+  function closeQ(){ qb.hidden=true; btn.classList.remove('on'); _syncTopH(); }
+  btn.addEventListener('click',()=>{ qb.hidden?openQ():closeQ(); });
+  window.tfOpenFreeText=openQ; window.tfCloseFreeText=closeQ;
 })();
 /* Hebcal מחזיר שמות אירועים באנגלית — תרגום לעברית, עם fallback לאנגלית אם לא מוכר */
 const HEBCAL_MONTHS={"Nisan":"ניסן","Iyyar":"אייר","Sivan":"סיוון","Tamuz":"תמוז","Av":"אב","Elul":"אלול","Tishrei":"תשרי","Cheshvan":"חשוון","Kislev":"כסלו","Tevet":"טבת","Sh'vat":"שבט","Adar":"אדר","Adar I":"אדר א׳","Adar II":"אדר ב׳"};
