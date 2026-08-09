@@ -520,7 +520,7 @@ function assembleWindowsOLD(fromISO,toISO,rules,priceMap,shabPref){
   res.sort((a,b)=>{ if(a.price==null&&b.price==null) return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
   return res;
 }
-const ISRAELI_CARRIERS=/\b(el[\s-]?al|israir|arkia|sun[\s-]?d.?or|sundor)\b/i;
+const ISRAELI_CARRIERS=/\b(el[\s-]?al|israir|arkia|sun[\s-]?d.?or|sundor|air[\s-]?haifa)\b/i;
 const LOWCOST_CARRIERS=/wizz|ryanair|easy[\s-]?jet|hi[\s-]?sky|transavia|vueling|norwegian|pegasus|fly[\s-]?dubai|bluebird|smart[\s-]?wings|eurowings|volotea|jet2|spirit|wow\s?air|laudamotion|blue\s?air|corendon|enter\s?air|sun\s?express|sky\s?express/i;
 function isLowCost(name){ return LOWCOST_CARRIERS.test(name||''); }
 // the "family" name for grouping/filtering (drop codeshare partners after + or /)
@@ -535,6 +535,17 @@ function carrierFamilies(name){
 }
 // מסלול "טהור" של חברה מסוימת: כל הרגליים (הלוך + חזור) נושאות את קוד החברה הזו.
 // קוד-שייר נחשב טהור בכוונה — הטיסה נמכרת ומופעלת תחת החברה הנבחרת גם אם שותפה מבצעת קטע.
+// מצב החברה לגבי טיסה בשבת, לפי הטבלה הניתנת לעריכה ב-01-config
+function shabCarrierState(name){
+  const s=String(name||'').toLowerCase();
+  for(const c of (typeof SHAB_CAR!=='undefined'?SHAB_CAR:[])){ if(c&&c.k&&s.includes(String(c.k).toLowerCase())) return c.s||''; }
+  return '';
+}
+// מסלול שכל הרגליים בו בחברות שסומנו "אינה טסה בשבת" — רק אז הסימון נכון לכל המסלול
+function noShabbatFlight(carrier){
+  const fs=carrierFamilies(carrier);
+  return fs.length>0 && fs.every(f=>shabCarrierState(f)==='no');
+}
 function isPureCarrier(name,fam){
   if(!fam) return false;
   const fs=carrierFamilies(name);
