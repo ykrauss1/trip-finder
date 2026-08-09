@@ -45,6 +45,15 @@ function carrierFilterHtml(){
   const onlyIl = anyIl ? `<span class="c ${STATE.onlyIsraeli?'on':''}" data-act="onlyisraeli" title="הצג רק טיסות שכל הקטעים בהן בחברה ישראלית — בטוח יותר בתקופות מתוחות">🇮🇱 רק ישראליות</span>` : '';
   return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד — שילובים יופיעו בנפרד</span></div><div class="chips">${onlyIl}${chips}${(hid.length||STATE.onlyIsraeli)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
 }
+// טבלת "טיסה בשבת" בלוח הצד — המשתמש קובע, כי המצב בשטח משתנה
+function shabCarriersHtml(){
+  const st=[['no','אינה טסה 🕯️'],['yes','טסה'],['','לא ידוע']];
+  const rows=(SHAB_CAR||[]).map((c,i)=>{
+    const he=String(c.he||c.k||'').replace(/[<>&]/g,'');
+    return `<div class="sl">${he}</div><div class="chips">${st.map(o=>`<span class="c ${((c.s||'')===o[0])?'on':''}" data-act="shabcar" data-v="${i}|${o[0]}">${o[1]}</span>`).join('')}<span class="c" data-act="shabcardel" data-v="${i}" title="הסר מהרשימה">✕</span></div>`;
+  }).join('');
+  return `<div class="sgrp"><div class="st">🕯️ טיסה בשבת <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לפי החברה — ניתן לעדכן</span></div>${rows}<div class="chips" style="margin-top:7px"><span class="c" data-act="shabcaradd">➕ הוסף חברה</span><span class="c" data-act="shabcarreset">↺ ברירת מחדל</span></div></div>`;
+}
 function sidePanelHtml(){
   const ck=(act,opts,cur,attr)=>opts.map(o=>`<span class="c ${String(cur)===String(o[0])?'on':''}" data-act="${act}"${attr?` data-v="${o[0]}"`:''}>${o[1]}</span>`).join('');
   if(STATE.sideCollapsed) return `<div class="sidecard" style="padding:8px"><div class="sidettl" style="margin:0;cursor:pointer" data-act="sidetoggle" title="הצג כיוונון">⚙ ▸</div></div>`;
@@ -63,6 +72,7 @@ function sidePanelHtml(){
       <div class="sl">גמישות ±ימים</div><div class="chips">${[0,1,2,3].map(f=>`<span class="c ${STATE.flexDays==f?'on':''}" data-act="flexdays" data-v="${f}">${f===0?'מדויק':'±'+f}</span>`).join('')}</div>
     </div>
     ${carrierFilterHtml()}
+    ${shabCarriersHtml()}
     <div class="sgrp"><div class="st">לוח עברי</div>
       <div class="chips"><span class="c ${STATE.jewishMode!=='off'?'on':''}" data-act="jmode" data-v="${STATE.jewishMode!=='off'?'off':'mark'}">${STATE.jewishMode!=='off'?'מופעל ✓':'כבוי'}</span><span class="c hard ${STATE.allowShabbat?'on':''}" data-act="allowshab">${STATE.allowShabbat?'טיסות שבת מוצגות ✓':'בלי טיסות שבת'}</span></div>
     </div>
