@@ -421,6 +421,13 @@ function _onAct(act,v){
   else if(act==='carriertoggle'){ const f=STATE.hiddenCarriers||(STATE.hiddenCarriers=[]); const i=f.indexOf(v); if(i>=0)f.splice(i,1); else f.push(v); paintResults(); return; }
   else if(act==='onlyisraeli'){ STATE.onlyIsraeli=!STATE.onlyIsraeli; paintResults(); return; }
   else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; paintResults(); return; }
+  else if(act==='shabcar'){ const p=String(v).split('|'), i=+p[0]; if(SHAB_CAR[i]){ SHAB_CAR[i].s=(p[1]||''); saveShabCar(); _repaintSide(); } return; }
+  else if(act==='shabcardel'){ const i=+v; if(SHAB_CAR[i]){ SHAB_CAR.splice(i,1); saveShabCar(); _repaintSide(); } return; }
+  else if(act==='shabcaradd'){
+    const n=prompt('שם החברה כפי שהוא מופיע בתוצאות (באנגלית), למשל: Sun d\'Or');
+    if(n && n.trim()){ const he=(prompt('שם לתצוגה בעברית',n.trim())||n.trim()); SHAB_CAR.push({k:n.trim().toLowerCase(),he:he.trim(),s:'no'}); saveShabCar(); _repaintSide(); }
+    return; }
+  else if(act==='shabcarreset'){ SHAB_CAR=SHAB_DEFAULT.map(x=>({...x})); saveShabCar(); _repaintSide(); return; }
   else if(act==='rerun'){ if(typeof run==='function') run(); return; }
   else if(act==='toggle'){ STATE.panelOpen=!STATE.panelOpen; renderPanel(); return; }
   else if(act==='advtoggle'){ STATE.advOpen=!STATE.advOpen; renderPanel(); if(STATE.advOpen && !STATE._panelPeriods) loadPanelPeriods(); return; }
@@ -470,3 +477,6 @@ function _onAct(act,v){
 }
 /* ===== live fetch + render results ===== */
 const EXPLORE_DESTS=['BUH','ATH','SKG','TBS','BUS','EVN','LCA','BUD','BCN','PRG','TIA','SOF','VIE','OPO','LON','ROM'];
+
+// לוח הצד מוצג גם במסך התוצאות וגם במתכנן — מרעננים את מה שקיים כרגע
+function _repaintSide(){ if(typeof LAST!=='undefined' && LAST) paintResults(); else if(typeof renderPanel==='function') renderPanel(); }
