@@ -51,9 +51,12 @@ function rankedWindows(windows){
   // a Motzei-Shabbat option is only worth showing if it actually has a (post-havdalah) priced flight
   const afterMotzei=kept.filter(w=>!(w._motzei && (w.price==null || !w.info)));
   RANK_DIAG={total,withPrice,droppedShab,droppedStops,ms,kept:afterMotzei.length};
-  return sortWindows(afterMotzei);
+  return rankWindowsByPrice(afterMotzei);
 }
-function sortWindows(ws){
+// דירוג פנימי של מנוע החיפוש לפי מחיר. שמו היה sortWindows — זהה לפונקציית התצוגה
+// ב-02-ui-helpers, ומכיוון ש-07 נטען אחריו הוא דרס אותה, ולכן "סדר החלונות" בממשק
+// (תאריך/אורך/מחיר) לא השפיע על כלום. שני שמות נפרדים לשני תפקידים נפרדים.
+function rankWindowsByPrice(ws){
   ws.sort((a,b)=>{
     if(!!a._prefer!==!!b._prefer) return a._prefer?-1:1;
     if(a.price==null&&b.price==null)return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
