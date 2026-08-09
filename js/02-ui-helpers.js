@@ -43,7 +43,7 @@ function carrierFilterHtml(){
   const anyIl=cs.some(c=>c.il);
   const chips=cs.map(c=>{ const esc=c.name.replace(/"/g,'&quot;'); return `<span class="c ${hid.includes(c.name)?'':'on'}" data-act="carrierfilt" data-v="${esc}">${c.il?'🇮🇱 ':''}${c.lc?'💸 ':''}${c.name}</span>`; }).join('');
   const onlyIl = anyIl ? `<span class="c ${STATE.onlyIsraeli?'on':''}" data-act="onlyisraeli" title="הצג רק טיסות שכל הקטעים בהן בחברה ישראלית — בטוח יותר בתקופות מתוחות">🇮🇱 רק ישראליות</span>` : '';
-  return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד</span></div><div class="chips">${onlyIl}${chips}${(hid.length||STATE.onlyIsraeli)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
+  return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד — שילובים יופיעו בנפרד</span></div><div class="chips">${onlyIl}${chips}${(hid.length||STATE.onlyIsraeli)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
 }
 function sidePanelHtml(){
   const ck=(act,opts,cur,attr)=>opts.map(o=>`<span class="c ${String(cur)===String(o[0])?'on':''}" data-act="${act}"${attr?` data-v="${o[0]}"`:''}>${o[1]}</span>`).join('');
@@ -76,7 +76,20 @@ function sidePanelHtml(){
   </div>`;
 }
 // מיון החלונות עצמם (לא הטיסות בתוכם): התאמה / מחיר / תאריך / אורך
-function _winPrice(w){ const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:(w._calPrice!=null?w._calPrice:null)); return p==null?Infinity:p; }
+// המחיר הזול ביותר בחלון מבין המסלולים שכולם בחברה המבודדת (null אם אין כזה)
+function _winPurePrice(w,fam){
+  const opts=(w.info&&Array.isArray(w.info._options))?w.info._options:(w.info?[w.info]:[]);
+  let m=Infinity, anyPriced=false;
+  for(const o of opts){ if(!o||o.price==null)continue; anyPriced=true; if(isPureCarrier(o.carrier,fam)&&o.price<m)m=o.price; }
+  return anyPriced?m:null;   // null = החלון עדיין לא תומחר, אין להסיק ממנו כלום
+}
+// כשהמשתמש מבודד חברה, סדר החלונות חייב לשקף את המחיר של אותה חברה — אחרת החלון הראשון
+// עדיין ידורג לפי שילוב זול שכלל לא מוצג. חלון בלי מסלול טהור יורד לתחתית.
+function _winPrice(w){
+  const fam=(typeof _isolatedCarrier==='function')?_isolatedCarrier():null;
+  if(fam){ const pp=_winPurePrice(w,fam); if(pp!==null) return pp; }
+  const p=(w.info&&w.info.price!=null)?w.info.price:(w.price!=null?w.price:(w._calPrice!=null?w._calPrice:null)); return p==null?Infinity:p;
+}
 function winSortChips(){
   const cur=STATE.winSort||'rank';
   const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="winsort" data-v="${v}">${l}</span>`;
@@ -84,7 +97,13 @@ function winSortChips(){
 }
 function sortWindows(arr){
   const mode=STATE.winSort||'rank';
-  if(mode==='rank') return arr;
+  const _iso=(typeof _isolatedCarrier==='function')?_isolatedCarrier():null;
+  // במצב "התאמה" הסדר הוא זה שנקבע בחיפוש — אבל בבידוד חברה הוא כבר לא רלוונטי, כי הוא
+  // נקבע לפי מחירים שאינם מוצגים. לכן ממיינים מחדש לפי המחיר של החברה המבודדת.
+  if(mode==='rank'){
+    if(!_iso) return arr;
+    const r=arr.slice(); r.sort((x,y)=>_winPrice(x)-_winPrice(y)||(x.start<y.start?-1:1)); return r;
+  }
   const a=arr.slice();
   if(mode==='price') a.sort((x,y)=>_winPrice(x)-_winPrice(y)||(x.start<y.start?-1:1));
   else if(mode==='date') a.sort((x,y)=>(x.start<y.start?-1:(x.start>y.start?1:0))||((x.nights||0)-(y.nights||0)));
