@@ -103,8 +103,13 @@ function windowCard(w,rank,dest){
       // חלון שטרם תומחר במלואו — מוצג עם הערכת מחיר מלוח המחירים, וכפתור לתמחור מדויק
       const hasEst=(w._calPrice!=null);
       const per=hasEst?Math.round(w._calPrice/Math.max(1,STATE.adults||1)):null;
-      const msg=hasEst?'הערכה מלוח המחירים — לחץ לתמחור מדויק (חברות, שעות, שבת)':'טרם תומחר — לחץ לבדיקת מחיר אמיתי';
-      cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">${msg}</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק</span></div></div><div class="fc-price"><div class="v" style="font-size:${hasEst?19:16}px${hasEst?'':';color:var(--mut-2)'}">${hasEst?('≈ '+curFmt(per)):'—'}</div><div class="k">${hasEst?'הערכה':'טרם תומחר'}</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
+      if(hasEst){
+        // יש הערכת-מחיר: מציגים אותה + כפתור תמחור. אין כפתור "הזמן" כי אין עדיין טיסה מוגדרת
+        cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">מחיר משוער מלוח המחירים · מתומחר עכשיו…</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק עכשיו</span></div></div><div class="fc-price"><div class="v" style="font-size:19px">≈ ${curFmt(per)}</div><div class="k">הערכה</div></div></div>`;
+      } else {
+        // אין מחיר ואין טיסה מוגדרת — רק סימון שהחלון מתומחר ברקע (בלי כפתור "הזמן" חסר-משמעות)
+        cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)"><span class="spin" style="display:inline-block;vertical-align:middle;margin-inline-end:6px"></span>מתמחר…</div></div><div class="fc-price"><div class="v" style="font-size:15px;color:var(--mut-2)">—</div></div></div>`;
+      }
     } else {
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
     }
