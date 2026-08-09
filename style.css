@@ -12,7 +12,7 @@
   html,body{margin:0;min-height:100%;color:var(--ink);font-family:'Assistant',system-ui,sans-serif;
     background:radial-gradient(1100px 650px at 85% -10%,#1b2456 0,transparent 60%),radial-gradient(800px 560px at 0 0,#16204a 0,transparent 55%),var(--night)}
   .wrap{max-width:1280px;margin:0 auto;padding:24px 22px 70px}
-  #panel{position:sticky;top:0;z-index:15;background:var(--night);padding-top:6px;margin-inline:-4px;padding-inline:4px;box-shadow:0 8px 14px -8px rgba(0,0,0,.5)}
+  #panel{position:sticky;top:44px;z-index:15;background:var(--night);padding-top:6px;margin-inline:-4px;padding-inline:4px;box-shadow:0 8px 14px -8px rgba(0,0,0,.5)}
   /* ===== horizontal search bar (Skyscanner-style) ===== */
   .sbar{position:relative;margin:14px 0 10px}
   .sbar-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:7px;background:var(--panel-2);border:1px solid var(--clear-line);border-radius:16px;padding:8px}
@@ -67,11 +67,12 @@
   .ttopt.on{background:var(--clear-soft);color:var(--clear);font-weight:700}
   .origin-edit{display:flex;gap:6px;align-items:center;margin-top:8px}
   .kick{font-size:12px;letter-spacing:.2em;color:var(--mut-2);text-transform:uppercase}
-  .brand{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 8px;flex-wrap:wrap}
-  .brandl{display:flex;align-items:center;gap:13px}
-  .logo{flex:none;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
-  .brandtxt h1{margin:0}
-  .hebdate{font-family:'Frank Ruhl Libre',serif;font-size:15px;color:var(--amber);margin-top:2px}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0;padding:7px 0;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--night)}
+  .brandl{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+  .brandl h1{margin:0;font-size:23px}
+  .brandr{display:flex;align-items:center;gap:10px}
+  .hebdate{font-family:'Frank Ruhl Libre',serif;font-size:14px;color:var(--amber);margin:0}
+  .provbtn{border:none;border-radius:8px;padding:5px 10px;font-size:10.5px;font-weight:600;color:#fff;background:#3a3f55;cursor:pointer;white-space:nowrap}
   .box.collapsed textarea{min-height:0;height:46px;resize:none;overflow:hidden}
   .box.collapsed .go,.box.collapsed .exs{display:none}
   .box.collapsed{padding:10px 12px;margin:10px 0}
@@ -358,4 +359,4 @@
   .saveditem .ld:hover{color:var(--clear)}
   .saveditem .del{cursor:pointer;color:var(--mut-2);font-size:16px;padding:0 4px}
   .saveditem .del:hover{color:#e57373}
-  .brandtag{font-size:13px;color:var(--gold);font-weight:600;margin-top:1px;letter-spacing:.2px}
+  .brandtag{font-size:12.5px;color:var(--gold);font-weight:600;letter-spacing:.2px}
