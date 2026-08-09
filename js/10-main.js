@@ -193,9 +193,11 @@ function planSortChips(){
   const chip=(v,l)=>`<span class="c ${cur===v?'on':''}" data-act="plansort" data-v="${v}" style="padding:2px 10px;margin-inline-start:4px">${l}</span>`;
   return ` · מיון: ${chip('nights','לפי אורך')}${chip('date','תאריך')}${chip('dow','יום יציאה')}${chip('shab','שבתות ביעד')}`;
 }
+/* שורת ה"הבנתי" הוסרה: שורת הסיכום מתחת לתיבת החיפוש ("מילאנו · ינואר 2027 · …") אומרת
+   בדיוק את אותו הדבר, וזו הייתה כפילות. נשארת רק ההתראה כשהתרגום נעשה מקומית ולא ע"י המודל. */
 function summaryStrip(){
-  if(!STATE.lastSummary) return '';
-  return `<div class="meta" style="opacity:.95">🗒️ ${STATE.lastSummaryLocal?'⚠️ ':''}הבנתי: ${STATE.lastSummary}</div>`;
+  if(!STATE.lastSummary || !STATE.lastSummaryLocal) return '';
+  return `<div class="meta" style="opacity:.95">⚠️ תרגום מקומי (מוגבל): ${STATE.lastSummary}</div>`;
 }
 function paintPlanner(ws){
   const out=document.getElementById('out');
@@ -647,9 +649,16 @@ _syncTopH();
   if(!btn||!qb) return;
   function openQ(){ qb.hidden=false; qb.classList.remove('collapsed'); btn.classList.add('on'); _syncTopH(); if(q) try{ q.focus(); }catch(e){} }
   function closeQ(){ qb.hidden=true; btn.classList.remove('on'); _syncTopH(); }
-  btn.addEventListener('click',()=>{ qb.hidden?openQ():closeQ(); });
+  if(btn) btn.addEventListener('click',()=>{ qb.hidden?openQ():closeQ(); });
   window.tfOpenFreeText=openQ; window.tfCloseFreeText=closeQ;
+  window.tfToggleFreeText=function(){ qb.hidden?openQ():closeQ(); };
 })();
+
+/* התפריטים הנפתחים בשורת הכלים משדרים change, לא click — ולכן צריכים האזנה משלהם */
+document.getElementById('out').addEventListener('change',e=>{
+  const s=e.target&&e.target.closest?e.target.closest('[data-actsel]'):null;
+  if(s) onAct(s.dataset.actsel, s.value);
+});
 /* Hebcal מחזיר שמות אירועים באנגלית — תרגום לעברית, עם fallback לאנגלית אם לא מוכר */
 const HEBCAL_MONTHS={"Nisan":"ניסן","Iyyar":"אייר","Sivan":"סיוון","Tamuz":"תמוז","Av":"אב","Elul":"אלול","Tishrei":"תשרי","Cheshvan":"חשוון","Kislev":"כסלו","Tevet":"טבת","Sh'vat":"שבט","Adar":"אדר","Adar I":"אדר א׳","Adar II":"אדר ב׳"};
 const HEBCAL_ROMAN={"I":"א׳","II":"ב׳","III":"ג׳","IV":"ד׳","V":"ה׳","VI":"ו׳","VII":"ז׳","VIII":"ח׳"};
