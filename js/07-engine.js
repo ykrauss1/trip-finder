@@ -533,6 +533,13 @@ function carrierFamilies(name){
   for(const leg of String(name||'').split(' / ')){ const f=leg.split(' + ')[0].trim(); if(f && !fams.includes(f)) fams.push(f); }
   return fams;
 }
+// מסלול "טהור" של חברה מסוימת: כל הרגליים (הלוך + חזור) נושאות את קוד החברה הזו.
+// קוד-שייר נחשב טהור בכוונה — הטיסה נמכרת ומופעלת תחת החברה הנבחרת גם אם שותפה מבצעת קטע.
+function isPureCarrier(name,fam){
+  if(!fam) return false;
+  const fs=carrierFamilies(name);
+  return fs.length>0 && fs.every(f=>f===fam);
+}
 // collapse near-duplicate fares of the SAME physical flight (identical times) — keep the cheapest
 function dedupFlights(arr){
   const best={}, order=[];
