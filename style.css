@@ -378,3 +378,13 @@
 
   /* חברה שאינה טסה בשבת */
   .fc-shab{font-size:11px;color:#e8c98a;border:1px solid rgba(232,201,138,.45);background:rgba(232,201,138,.08);border-radius:6px;padding:1px 7px;margin-inline-start:5px;white-space:nowrap}
+
+  /* שורת כלים אחת לתוצאות — במקום שתי שורות צ'יפים */
+  .rtoolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 8px}
+  .rtoolbar label{font-size:11.5px;color:var(--mut-2)}
+  .selmini{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font:inherit;font-size:12.5px;cursor:pointer;outline:none}
+  .selmini:hover{border-color:var(--clear)}
+  /* כפתורי שורת החיפוש: דו-שורתי צר, ואייקון בלבד */
+  .sbar-row .btn2l{line-height:1.2;padding-inline:11px}
+  .sbar-row .sub2l{font-size:10px;opacity:.7;font-weight:400}
+  .sbar-row .bicon{padding-inline:11px;font-size:16px}
