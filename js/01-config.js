@@ -16,3 +16,4 @@ let RATES={ILS:3.6, EUR:0.92}; // המרה מ-USD; ברירת מחדל סביר�
 let RATES_LIVE=false;
 let LAST=null;
 const _expandedWins=new Set(); // windows the user expanded to show all flights
+const _expandedMixed=new Set(); // windows where the user opened the mixed-carrier combos block
