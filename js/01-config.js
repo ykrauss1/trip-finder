@@ -17,3 +17,18 @@ let RATES_LIVE=false;
 let LAST=null;
 const _expandedWins=new Set(); // windows the user expanded to show all flights
 const _expandedMixed=new Set(); // windows where the user opened the mixed-carrier combos block
+
+/* חברות שאינן טסות בשבת — טבלה הניתנת לעריכה, לא קוד קשיח, כי המצב משתנה עם הזמן.
+   k = מזהה לזיהוי בשם החברה כפי שהמקור מחזיר אותו (אנגלית, השוואת substring באותיות קטנות)
+   s = 'no' אינה טסה בשבת · 'yes' טסה בשבת · '' לא ידוע (ואז אין שום סימון על הכרטיס) */
+const SHAB_DEFAULT=[
+  {k:'el al',     he:'אל על',     s:'no'},
+  {k:'israir',    he:'ישראייר',   s:'no'},
+  {k:'arkia',     he:'ארקיע',     s:'yes'},
+  {k:'air haifa', he:'אייר חיפה', s:''},
+];
+let SHAB_CAR=(function(){
+  try{ const j=JSON.parse(localStorage.getItem('tf_shabcar')||'null'); if(Array.isArray(j)&&j.length) return j; }catch(e){}
+  return SHAB_DEFAULT.map(x=>({...x}));
+})();
+function saveShabCar(){ try{ localStorage.setItem('tf_shabcar',JSON.stringify(SHAB_CAR)); }catch(e){} }
