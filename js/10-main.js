@@ -515,7 +515,7 @@ async function _runSearch(){
       paintResults();
       if(specific && !ski && I.destination && I.destination!=='-'){ const _sq=runSeq; setTimeout(()=>enrichCheaperDays(_sq),300); } // 💡 שכבת יום-זול-יותר
       // תמחור-רקע: ממשיך לתמחר את שאר החלונות המוצגים כדי שלא יישארו ב"הערכה"
-      if(specific && !ski && _streaming){ const _sq=runSeq; setTimeout(()=>priceRemainingBg(_sq),400); }
+      if(specific && !ski && allWindows && allWindows.length){ const _sq=runSeq; setTimeout(()=>priceRemainingBg(_sq),400); } // תמחור-רקע
       // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
     }
   }catch(e){
