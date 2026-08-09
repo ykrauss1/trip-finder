@@ -84,9 +84,21 @@ function windowCard(w,rank,dest){
   let vis = allOpts.filter(o=>o && o.price!=null).filter(o=>!(o.stops!=null && o.stops>ms));
   if(!STATE.allowShabbat) vis = vis.filter(o=>!(o._shabV && o._shabV.forbidden));
   if(STATE.onlyIsraeli) vis = vis.filter(o=>isAllIsraeli(o.carrier));
-  if(STATE.hiddenCarriers && STATE.hiddenCarriers.length) vis = vis.filter(o=>carrierFamilies(o.carrier).some(f=>!STATE.hiddenCarriers.includes(f)));
+  // בידוד חברה: לחיצה על שבב חברה פירושה "אני רוצה לטוס דווקא בה". לכן הרשימה הראשית מציגה
+  // רק מסלולים שכל הרגליים בהם באותה חברה; שילובים עם חברות אחרות אינם נמחקים אלא יורדים
+  // לבלוק מקופל נפרד מתחת, עם הפרש המחיר — כדי שהמשתמש יראה על מה בדיוק הוא מוותר.
+  let mixedVis=[], isoFam=null;
+  if(STATE.hiddenCarriers && STATE.hiddenCarriers.length){
+    vis = vis.filter(o=>carrierFamilies(o.carrier).some(f=>!STATE.hiddenCarriers.includes(f)));
+    isoFam=_isolatedCarrier();
+    if(isoFam){
+      mixedVis = vis.filter(o=>!isPureCarrier(o.carrier,isoFam));
+      vis      = vis.filter(o=> isPureCarrier(o.carrier,isoFam));
+    }
+  }
   vis = dedupFlights(vis);          // collapse same-flight fare/codeshare duplicates
   vis = sortFlights(vis);
+  if(mixedVis.length) mixedVis = sortFlights(dedupFlights(mixedVis));
   const hiddenCount = (!STATE.allowShabbat) ? allOpts.filter(o=>o && o.price!=null && o._shabV && o._shabV.forbidden && !(o.stops!=null&&o.stops>ms)).length : 0;
   const wkey=w.start+'|'+(w.ret||'');
   const CAP=5, expanded=_expandedWins.has(wkey), extra=vis.length-CAP;
@@ -95,6 +107,9 @@ function windowCard(w,rank,dest){
   if(vis.length){
     cards = shown.map((fl,idx)=>flightCard(w,fl,dest,kLink,oneway, rank===1&&idx===0)).join('');
     if(extra>0) cards += `<div class="wgmore"><span class="c on" data-act="expandwin" data-v="${wkey}" style="font-size:11.5px;padding:5px 13px">${expanded?'הצג פחות ▲':'הצג עוד '+extra+' '+(extra===1?'טיסה':'טיסות')+' ▼'}</span></div>`;
+  } else if(isoFam && mixedVis.length){
+    const _fam=String(isoFam).replace(/[<>&]/g,'');
+    cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">אין טיסות ${_fam} בלבד בתאריכים אלה</div><div style="margin-top:7px;color:var(--mut-2);font-size:11.5px">${mixedVis.length} ${mixedVis.length===1?'אפשרות':'אפשרויות'} בשילוב עם חברות אחרות — מתחת</div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
   } else if(STATE.onlyIsraeli && allOpts.some(o=>o&&o.price!=null && !(o.stops!=null&&o.stops>ms))){
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">🇮🇱 אין טיסה ישראלית מלאה בחלון זה</div><div style="margin-top:7px"><span class="c on" data-act="onlyisraeli" style="font-size:11px;padding:3px 11px">הצג גם לא-ישראליות</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
   } else {
@@ -114,6 +129,20 @@ function windowCard(w,rank,dest){
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
     }
   }
+  // בלוק השילובים — מקופל כברירת מחדל, נפתח בלחיצה
+  let mixedBlock='';
+  if(isoFam && mixedVis.length){
+    const mkey=wkey+'|mix', openM=_expandedMixed.has(mkey);
+    const per=v=>Math.round(v/Math.max(1,STATE.adults||1));
+    const cheapPure=vis.reduce((m,o)=>(o.price!=null&&o.price<m)?o.price:m,Infinity);
+    const cheapMix =mixedVis.reduce((m,o)=>(o.price!=null&&o.price<m)?o.price:m,Infinity);
+    const saveTxt=(isFinite(cheapPure)&&isFinite(cheapMix)&&cheapMix<cheapPure)?` · זול ב-${curFmt(per(cheapPure-cheapMix))}`:'';
+    const mShown=openM?mixedVis.slice(0,5):[];
+    mixedBlock=`<div class="mixwrap">
+      <div class="wgmore"><span class="c ${openM?'on':''}" data-act="expandmixed" data-v="${mkey}" style="font-size:11.5px;padding:5px 13px">${openM?'הסתר שילובים ▲':`🔀 שילובים עם חברות אחרות · ${mixedVis.length}${saveTxt} ▼`}</span></div>
+      ${mShown.map(fl=>flightCard(w,fl,dest,kLink,oneway,false)).join('')}
+    </div>`;
+  }
   let hiddenLine='';
   if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
   else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
@@ -126,7 +155,7 @@ function windowCard(w,rank,dest){
     </div>
     ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
     <div class="wgtip" data-tipkey="${w.start}|${w.ret||''}"></div>
-    <div class="wgflights">${cards}</div>
+    <div class="wgflights">${cards}${mixedBlock}</div>
     ${hiddenLine}
     <div class="wgfoot">
       ${showCmp?`<span class="cmpbtn" data-cmp="${w.start}|${w.ret}">⇄ השווה שדות חזרה</span>`:''}
