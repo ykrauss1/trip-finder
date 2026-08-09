@@ -14,7 +14,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '47';
+var APP_VER = '48';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 // בדיקת-גרסה: אם נטענה גרסה מהמטמון בעוד שבשרת יש חדשה יותר — טען מחדש פעם אחת (עם עוקף-מטמון)
 (function(){ try{
@@ -37,7 +37,6 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
       <span class="brandtag">הטיסה שלך מסונכרנת כהלכה</span>
     </div>
     <div class="brandr">
-      <button id="qtoggle" type="button" class="qtoggle" title="חיפוש בשפה חופשית">💬 חיפוש חופשי</button>
       <div class="hebdate" id="hebdate">טוען תאריך עברי…</div>
       <button id="provBtn" type="button" onclick="tfToggleProvider()" title="החלפת ספק נתוני הטיסות (להשוואה). הבחירה נשמרת אוטומטית." class="provbtn">מקור: Skyscanner (ישן)</button>
     </div>
