@@ -363,3 +363,6 @@
   /* בלוק השילובים עם חברות אחרות, כשמבודדים חברה אחת */
   .mixwrap{margin-top:7px;padding-top:7px;border-top:1px dashed var(--line)}
   .mixwrap .fcard{opacity:.86}
+
+  /* קוד-שייר: הטיסה נמכרת תחת חברה אחת ומופעלת בידי אחרת */
+  .fc-op{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-inline-start:5px;white-space:nowrap}
