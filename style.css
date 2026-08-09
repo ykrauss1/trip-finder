@@ -366,3 +366,6 @@
 
   /* קוד-שייר: הטיסה נמכרת תחת חברה אחת ומופעלת בידי אחרת */
   .fc-op{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-inline-start:5px;white-space:nowrap}
+
+  /* חברה שאינה טסה בשבת */
+  .fc-shab{font-size:11px;color:#e8c98a;border:1px solid rgba(232,201,138,.45);background:rgba(232,201,138,.08);border-radius:6px;padding:1px 7px;margin-inline-start:5px;white-space:nowrap}
