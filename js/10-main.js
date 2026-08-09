@@ -278,6 +278,26 @@ async function enrichCheaperDays(seq){
   }
 }
 // תמחור מדויק של חלון בודד לפי דרישה (מכרטיס-הערכה)
+// תמחור-רקע מדורג: מתמחר את שאר החלונות המוצגים (מעבר לאצווה הראשונה) עד שכולם אמיתיים.
+// חסום ל-DISPLAY_CAP חלונות כדי לתחום את הזמן; השאר נשארים תחת "הצג עוד".
+const DISPLAY_CAP=14;
+async function priceRemainingBg(seq){
+  if(!LAST||!LAST.allWindows||seq!==runSeq) return;
+  const pool=LAST.allWindows.filter(w=>!w._priced).slice(0,Math.max(0,DISPLAY_CAP-LAST.allWindows.filter(w=>w._priced).length));
+  if(!pool.length) return;
+  const CH=3; // גודל אצווה — עדין על מכסת ה-API
+  for(let i=0;i<pool.length;i+=CH){
+    if(seq!==runSeq) return;
+    const chunk=pool.slice(i,i+CH);
+    const pm=await fetchPricesFor(chunk.map(w=>({departureDate:w.start,returnDate:w.ret})), LAST.priceParams, null);
+    if(seq!==runSeq) return;
+    chunk.forEach(w=>{ w._priced=true; const m=pm[w.start+'|'+w.ret]; if(m){ w.price=m.price; w.info=m; } if(LAST.zt&&w.info) w.shabV=shabbatVerdict(w,LAST.zt); if(LAST.dgeo&&LAST_DZT&&w.info){ w.destV=destVerdict(w,LAST_DZT); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},LAST_DZT); }); } });
+    LAST.ranked=rankedWindows(LAST.allWindows);
+    // מונה קטן: כמה עדיין מוערכים
+    const est=LAST.allWindows.slice(0,DISPLAY_CAP).filter(w=>!w._priced).length;
+    paintResults();
+  }
+}
 async function priceOneWindow(key){
   if(!LAST||!LAST.allWindows) return;
   const [st,rt]=String(key).split('|');
@@ -494,6 +514,8 @@ async function _runSearch(){
       LAST={meta:summaryStrip()+`<div class="meta">${metaBase}${ski?skiSortChips():''}</div>`, metaBase:(ski?metaBase:null), baseRanked:(ski?ranked.slice():null), ranked, specific, dest:I.destination, oj:(specific&&STATE.openJaw&&STATE.outAirport)?STATE.outAirport:null, exitCmp:{}, exitState:{}, allWindows, priceParams:lastPriceParams, loadingMore:false, zt:zt, dgeo:dgeo};
       paintResults();
       if(specific && !ski && I.destination && I.destination!=='-'){ const _sq=runSeq; setTimeout(()=>enrichCheaperDays(_sq),300); } // 💡 שכבת יום-זול-יותר
+      // תמחור-רקע: ממשיך לתמחר את שאר החלונות המוצגים כדי שלא יישארו ב"הערכה"
+      if(specific && !ski && _streaming){ const _sq=runSeq; setTimeout(()=>priceRemainingBg(_sq),400); }
       // (exit-airport comparison runs on demand per window via the "השווה שדות חזרה" button)
     }
   }catch(e){
