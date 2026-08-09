@@ -216,7 +216,9 @@ function _combineLegs(o,i,trip){
     departureDate:trip.departureDate, returnDate:trip.returnDate, currency:BASE_CUR,
     price:(o.price!=null&&i.price!=null)?o.price+i.price:null,
     isDirect:!!(o.isDirect&&i.isDirect), altPrice:null,
-    carrier:[o.carrier,i.carrier].filter(Boolean).join(' / ')||null, operatedBy:null,
+    carrier:[o.carrier,i.carrier].filter(Boolean).join(' / ')||null,
+    // מפעילה בפועל (קוד-שייר) — מגיעה מה-edge לכל רגל; אם זו אותה חברה בשני הכיוונים מציגים פעם אחת
+    operatedBy:((o&&o.operatedBy)&&(i&&i.operatedBy))?((o.operatedBy===i.operatedBy)?o.operatedBy:(o.operatedBy+' / '+i.operatedBy)):((o&&o.operatedBy)||(i&&i.operatedBy)||null),
     stops:Math.max(o.stops||0,i.stops||0),               // per-leg semantics for the maxStops filter
     durationToMin:o.durationMin??null, durationBackMin:i.durationMin??null,
     outLayovers:o.layovers||[], backLayovers:i.layovers||[],
