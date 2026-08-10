@@ -629,7 +629,15 @@ async function translateAndRun(){
 document.getElementById('run').onclick=translateAndRun;
 document.getElementById('out').addEventListener('click',e=>{ const t=e.target; if(!t||!t.closest)return; const ab=t.closest('[data-act]'); if(ab){ onAct(ab.dataset.act, ab.dataset.v!=null?ab.dataset.v:''); return; } const mb=t.closest('[data-more]'); if(mb){ loadMoreWindows(); return; } const cl=t.closest('[data-cmpclose]'); if(cl){ const k=cl.dataset.cmpclose; if(LAST&&LAST.exitCmp){ delete LAST.exitCmp[k]; } paintResults(); return; } const el=t.closest('[data-cmp]'); if(el){ const p=el.dataset.cmp.split('|'); onExitCompare(p[0],p[1]); } });
 document.getElementById('stalebar').addEventListener('click',e=>{ const ab=e.target&&e.target.closest&&e.target.closest('[data-act]'); if(ab) onAct(ab.dataset.act, ab.dataset.v||''); });
-document.getElementById('q').addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')translateAndRun();});
+/* Enter מריץ, Shift+Enter יורד שורה — כמו בכל מנוע חיפוש. Ctrl/Cmd+Enter נשמר לתאימות.
+   מתעלמים מ-Enter בזמן הרכבה בעברית/IME, אחרת המקש נבלע באמצע הקלדה. */
+document.getElementById('q').addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  if(e.isComposing || e.keyCode===229) return;
+  if(e.shiftKey) return;                      // ירידת שורה מכוונת
+  e.preventDefault();
+  translateAndRun();
+});
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (STATE.sbarPop||STATE.calOpen||STATE.paxOpen)){ STATE.sbarPop=null; STATE.calOpen=false; STATE.paxOpen=false; renderPanel(); } });
 document.addEventListener('click',e=>{ if(!STATE.sbarPop) return; const t=e.target; if(t&&t.closest&&(t.closest('.sbar')||t.closest('.spop')||t.closest('.ttmenu')||t.closest('.popcities'))) return; STATE.sbarPop=null; renderPanel(); });
 /* גובה הבלוק העליון הדביק, נמדד בפועל. השורה הזו מחליפה את ה-top:44px הקשיח שגרם לסדק,
