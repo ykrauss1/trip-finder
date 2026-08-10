@@ -273,10 +273,11 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
   // step 2: price each trip — retry on rate-limit, transient errors, AND empty results
   // (RapidAPI sometimes returns a completed-but-empty search; a fresh retry usually recovers)
   async function priceOne(trip, incl){
+    let _forceLegs=false;   // רשת ביטחון להלוך-חזור האמיתי — נדלק פעם אחת לכל חלון
     for(let attempt=0; attempt<3; attempt++){
       try{
         const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({originId:ids.origin_id,destId:ids.dest_id,trips:[trip],adults:adults||2,children:children||0,infants:infants||0,includeStops:!!incl})});
+          body:JSON.stringify({originId:ids.origin_id,destId:ids.dest_id,trips:[trip],adults:adults||2,children:children||0,infants:infants||0,includeStops:!!incl,forceLegs:_forceLegs})});
         if(r.status===429){ RAPID_DIAG='מגבלת קריאות (429)'; await _sleep(1500); continue; }
         if(!r.ok){ RAPID_DIAG='בדיקת מחיר נכשלה (HTTP '+r.status+')'; await _sleep(700); continue; }
         const j=await r.json();
@@ -309,6 +310,11 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
           }
           const res=_pickFlight(flights,trip);
           if(res) return res;
+          // הלוך-חזור אמיתי מחזיר מעט צירופים (4 אפשרויות הלוך × החזורים שלהן). אם המסננים
+          // ההלכתיים פסלו את כולם, החלון היה נעלם — לכן מבקשים שוב את המכפלה הרחבה של שתי הרגליים.
+          if(!_forceLegs && win && (!Array.isArray(win.outbound) || !win.outbound.length)){
+            _forceLegs=true; RAPID_DIAG='הלוך-חזור אמיתי נפסל במסננים — חוזר לשיטה הרחבה'; continue;
+          }
           RAPID_DIAG='חיפוש חזר ריק — מנסה שוב'; await _sleep(800); continue; // transient empty -> retry fresh
         }
         if(j&&j.error){ RAPID_DIAG='שרת: '+j.error; await _sleep(700); continue; }
