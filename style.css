@@ -395,3 +395,6 @@
   .sfield.dtfld{flex:1.9 1 0;min-width:212px}
   .sfield.dtfld .sval{white-space:nowrap}
   @media(max-width:760px){ .subacts{margin-inline-start:0;margin-top:6px;flex-wrap:wrap} .sfield.dtfld{min-width:100%} }
+
+  /* לוגו חברת התעופה בשורת התוצאה */
+  .fc-logo{width:17px;height:17px;object-fit:contain;border-radius:3px;background:#fff;padding:1px;margin-inline-end:6px;vertical-align:-3px}
