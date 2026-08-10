@@ -124,10 +124,12 @@ function windowCard(w,rank,dest){
       const per=hasEst?Math.round(w._calPrice/Math.max(1,STATE.adults||1)):null;
       if(hasEst){
         // יש הערכת-מחיר: מציגים אותה + כפתור תמחור. אין כפתור "הזמן" כי אין עדיין טיסה מוגדרת
-        cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">מחיר משוער מלוח המחירים · מתומחר עכשיו…</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק עכשיו</span></div></div><div class="fc-price"><div class="v" style="font-size:19px">≈ ${curFmt(per)}</div><div class="k">הערכה</div></div></div>`;
+        // שלד: שם החברה עדיין לא קיים (לוח המחירים מחזיר תאריך ומחיר בלבד), ולכן במקומו
+        // פס מרצד — אמירה כנה של "עוד לא יודעים", במקום ניחוש. יוחלף בשם ובלוגו כשהמחיר נוחת.
+        cards = `<div class="fcard"><div class="fc-main"><div class="fc-carrier"><span class="skel skel-logo"></span><span class="skel skel-line"></span></div><div class="fc-times" style="color:var(--mut-2)">מחיר משוער · מתמחר עכשיו…</div><div style="margin-top:7px"><span class="c on" data-act="priceone" data-v="${w.start}|${w.ret||''}" style="font-size:11px;padding:3px 11px">💰 בדוק מחיר מדויק עכשיו</span></div></div><div class="fc-price"><div class="v" style="font-size:19px">≈ ${curFmt(per)}</div><div class="k">הערכה</div></div></div>`;
       } else {
         // אין מחיר ואין טיסה מוגדרת — רק סימון שהחלון מתומחר ברקע (בלי כפתור "הזמן" חסר-משמעות)
-        cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)"><span class="spin" style="display:inline-block;vertical-align:middle;margin-inline-end:6px"></span>מתמחר…</div></div><div class="fc-price"><div class="v" style="font-size:15px;color:var(--mut-2)">—</div></div></div>`;
+        cards = `<div class="fcard"><div class="fc-main"><div class="fc-carrier"><span class="skel skel-logo"></span><span class="skel skel-line"></span></div><div class="fc-times" style="color:var(--mut-2)"><span class="skel skel-line sm"></span></div></div><div class="fc-price"><div class="v"><span class="skel skel-price"></span></div></div></div>`;
       }
     } else {
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">לא נמצא מחיר כרגע — ייתכן תקלת רשת רגעית.</div>${fallbackV}<div style="margin-top:7px"><span class="c on" data-act="rerun" style="font-size:11px;padding:3px 11px">↻ נסה שוב</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">בקישור</div><a class="book" href="${kLink}" target="_blank" rel="noopener">הזמן ←</a></div></div>`;
@@ -151,7 +153,7 @@ function windowCard(w,rank,dest){
   if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
   else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
   const showCmp = !STATE.openJaw && exitsFor(dest) && w.price!=null;
-  return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}">
+  return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}${w._priced?'':' pending'}">
     <div class="wghead">
       <span class="wgrank">${w._motzei?'🌙':rank}</span>
       <div class="wgttl"><b>${(dest===STATE.destination?destDisplayName():cleanCityName(dest))}</b> <span class="sm">· ${c.cc}</span> · ${oneway?`${fmt(w.start)} · כיוון אחד →`:`<span dir="ltr">${fmt(w.start)} → ${fmt(w.ret)}</span> · ${w.nights} לילות`}${seasonLabelHtml(c.cc,dest,w.start,w.ret)}</div>
