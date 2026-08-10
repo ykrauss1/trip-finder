@@ -3,7 +3,9 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
   const carrName = fl.carrier||'';
   // סימון "אינה טסה בשבת" — רק כשכל הרגליים בחברות שסומנו כך בלוח הצד
   const _noShab = (typeof noShabbatFlight==='function' && noShabbatFlight(carrName)) ? ` <span class="fc-shab">🕯️ אינה טסה בשבת</span>` : '';
-  const carr = (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + _noShab + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
+  const _logoUrl = (fl && typeof fl.logo==='string' && /^https?:\/\//.test(fl.logo)) ? fl.logo : '';
+  const _logo = _logoUrl ? `<img class="fc-logo" src="${_logoUrl.replace(/"/g,'&quot;')}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
+  const carr = _logo + (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + _noShab + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
   // prefer the edge's TRUE duration (timezone-correct); fall back to ISO subtraction (old provider)
   const _dOut=_durFmt(fl.durationToMin ?? _durMin(fl.outDepISO,fl.outArrISO)), _dBack=_durFmt(fl.durationBackMin ?? _durMin(fl.backDepISO,fl.backArrISO));
   // layover detail: airport code + wait time (e.g. "FCO 1ש55ד")
