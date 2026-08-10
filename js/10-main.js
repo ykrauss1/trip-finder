@@ -283,6 +283,16 @@ async function enrichCheaperDays(seq){
 // תמחור-רקע מדורג: מתמחר את שאר החלונות המוצגים (מעבר לאצווה הראשונה) עד שכולם אמיתיים.
 // חסום ל-DISPLAY_CAP חלונות כדי לתחום את הזמן; השאר נשארים תחת "הצג עוד".
 const DISPLAY_CAP=14;
+/* פס התקדמות אמיתי: הרוחב הוא done/total. הפס הישן היה אנימציית CSS ברוחב קבוע
+   שנעה לנצח ולא ידעה דבר על ההתקדמות. כשהכל תומחר — הפס נעלם ונשארת שורת סיכום. */
+function progMeta(winCount, done, total){
+  const t=Math.max(1,total||0), d=Math.min(t,Math.max(0,done||0));
+  const pct=Math.round(d/t*100);
+  // total=0 פירושו שאין מה לתמחר — פס תקוע על 0% היה מטעה, אז מדווחים שהסתיים
+  if(!total || d>=t) return `<div class="meta">${winCount} חלונות · ✓ כל המחירים עודכנו</div>`;
+  return `<div class="meta">${winCount} חלונות · טוען מחירים… ${d}/${t}</div>`+
+         `<div class="pbar det"><span class="pbar-fill" style="width:${pct}%"></span></div>`;
+}
 async function priceRemainingBg(seq){
   if(!LAST||!LAST.allWindows||seq!==runSeq) return;
   const pool=LAST.allWindows.filter(w=>!w._priced).slice(0,Math.max(0,DISPLAY_CAP-LAST.allWindows.filter(w=>w._priced).length));
@@ -295,8 +305,9 @@ async function priceRemainingBg(seq){
     if(seq!==runSeq) return;
     chunk.forEach(w=>{ w._priced=true; const m=pm[w.start+'|'+w.ret]; if(m){ w.price=m.price; w.info=m; } if(LAST.zt&&w.info) w.shabV=shabbatVerdict(w,LAST.zt); if(LAST.dgeo&&LAST_DZT&&w.info){ w.destV=destVerdict(w,LAST_DZT); if(Array.isArray(w.info._options)) w.info._options.forEach(o=>{ o._destV=destVerdict({start:w.start,ret:w.ret,info:o},LAST_DZT); }); } });
     LAST.ranked=rankedWindows(LAST.allWindows);
-    // מונה קטן: כמה עדיין מוערכים
-    const est=LAST.allWindows.slice(0,DISPLAY_CAP).filter(w=>!w._priced).length;
+    // הפס ממשיך לזוז גם בתמחור-הרקע, אחרת הוא נעלם וחצי מהכרטיסים נשארים מעומעמים בלי הסבר
+    const shown=LAST.allWindows.slice(0,DISPLAY_CAP);
+    LAST.meta=summaryStrip()+progMeta(LAST.allWindows.length, shown.filter(w=>w._priced).length, shown.length);
     paintResults();
   }
 }
@@ -454,7 +465,7 @@ async function _runSearch(){
       // תמחור מלא; כל מחיר שחוזר נכנס לכרטיס שלו ומצייר מחדש (streaming)
       const _applyPriced=(res)=>{ if(!res)return; const w=windows.find(x=>x.start===res.departureDate&&(x.ret||'')===(res.returnDate||'')); if(!w)return; w._priced=true; if(res.price!=null){ w.price=res.price; w.info=res; } _applyVerdicts(w); };
       const progressCb=(done,total,res)=>{ if(my!==runSeq)return;
-        if(_streaming){ _applyPriced(res); LAST.ranked=rankedWindows(windows); LAST.meta=summaryStrip()+`<div class="meta">${windows.length} חלונות · טוען מחירים… ${done}/${total}</div>`; paintResults(); }
+        if(_streaming){ _applyPriced(res); LAST.ranked=rankedWindows(windows); LAST.meta=summaryStrip()+progMeta(windows.length,done,total); paintResults(); }
         else { const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } }
       };
       const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
