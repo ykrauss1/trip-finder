@@ -334,6 +334,20 @@
   .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--clear);border-radius:50%;animation:rot 1s linear infinite;margin:0 auto 11px} @keyframes rot{to{transform:rotate(360deg)}}
   .pbar{position:relative;width:min(1100px,96%);height:14px;background:var(--line);border-radius:99px;margin:0 auto 12px;overflow:hidden}
   .pbar::before{content:'';position:absolute;top:0;height:100%;width:42%;border-radius:99px;background:linear-gradient(270deg,transparent,var(--clear),var(--gold),transparent);animation:sweep 1.25s ease-in-out infinite}
+  /* פס דטרמיניסטי — הרוחב הוא ההתקדמות האמיתית, ולכן בלי האנימציה הנודדת */
+  .pbar.det{height:6px;margin-bottom:10px}
+  .pbar.det::before{display:none}
+  .pbar-fill{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--clear),var(--gold));transition:width .45s ease}
+  /* כרטיס שטרם תומחר — מעומעם, ומתבהר מאליו כשהמחיר האמיתי נוחת */
+  .wgroup{transition:opacity .4s ease,filter .4s ease}
+  .wgroup.pending{opacity:.62;filter:saturate(.65)}
+  /* שלד מרצד במקום נתון שעדיין לא ידוע */
+  .skel{display:inline-block;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.14),rgba(255,255,255,.05));background-size:200% 100%;animation:skelshim 1.3s linear infinite;vertical-align:middle}
+  .skel-logo{width:17px;height:17px;border-radius:3px;margin-inline-end:6px}
+  .skel-line{width:104px;height:12px}
+  .skel-line.sm{width:150px;height:10px}
+  .skel-price{width:64px;height:17px}
+  @keyframes skelshim{0%{background-position:200% 0}100%{background-position:-200% 0}}
   @keyframes sweep{0%{right:-42%}100%{right:100%}} /* זורם מימין לשמאל, ככיוון הקריאה */
   .pbar-txt{font-size:12.5px;color:var(--mut)}
   .err{background:var(--dim-soft);border:1px solid rgba(224,122,122,.4);border-radius:10px;padding:12px 15px;color:var(--mut);font-size:13px;line-height:1.5} .err code{background:var(--night);padding:1px 5px;border-radius:4px}
