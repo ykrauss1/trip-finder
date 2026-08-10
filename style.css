@@ -385,6 +385,13 @@
   .selmini{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font:inherit;font-size:12.5px;cursor:pointer;outline:none}
   .selmini:hover{border-color:var(--clear)}
   /* כפתורי שורת החיפוש: דו-שורתי צר, ואייקון בלבד */
-  .sbar-row .btn2l{line-height:1.2;padding-inline:11px}
-  .sbar-row .sub2l{font-size:10px;opacity:.7;font-weight:400}
-  .sbar-row .bicon{padding-inline:11px;font-size:16px}
+  /* פעולות משניות — יושבות בשורת היעדים הפופולריים שכבר קיימת, ולכן אינן מוסיפות גובה.
+     .sgo היה flex בשורה, ולכן <br> בתוכו מעולם לא שבר שורה; כאן זה עמודה אמיתית. */
+  .subacts{margin-inline-start:auto;display:inline-flex;gap:7px;align-items:stretch}
+  .subact{background:transparent;border:1px solid var(--clear-line);color:var(--mut);border-radius:10px;padding:4px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;flex-direction:column;justify-content:center;line-height:1.25}
+  .subact:hover{color:var(--ink);border-color:var(--amber)}
+  .subact .sub2l{font-size:9.5px;opacity:.65;font-weight:400}
+  /* שדה התאריכים מחזיק שני תאריכים מלאים וחץ — הוא לא יכול להתחלק שווה בשווה עם השאר */
+  .sfield.dtfld{flex:1.9 1 0;min-width:212px}
+  .sfield.dtfld .sval{white-space:nowrap}
+  @media(max-width:760px){ .subacts{margin-inline-start:0;margin-top:6px;flex-wrap:wrap} .sfield.dtfld{min-width:100%} }
