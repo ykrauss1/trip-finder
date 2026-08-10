@@ -645,10 +645,12 @@ _syncTopH();
 
 /* החיפוש החופשי אינו תופס שורה קבועה — הוא נפתח מכפתור, ונסגר מעצמו ברגע שהאינטנט הובן. */
 (function(){
+  // הכפתור עצמו נבנה מחדש בכל רינדור של שורת החיפוש ומחווט דרך data-act="freetext",
+  // ולכן אסור להתנות את כל הבלוק בקיומו — רק תיבת הטקסט היא תנאי הכרחי.
   const btn=document.getElementById('qtoggle'), qb=document.getElementById('qbox'), q=document.getElementById('q');
-  if(!btn||!qb) return;
-  function openQ(){ qb.hidden=false; qb.classList.remove('collapsed'); btn.classList.add('on'); _syncTopH(); if(q) try{ q.focus(); }catch(e){} }
-  function closeQ(){ qb.hidden=true; btn.classList.remove('on'); _syncTopH(); }
+  if(!qb) return;
+  function openQ(){ qb.hidden=false; qb.classList.remove('collapsed'); if(btn) btn.classList.add('on'); _syncTopH(); if(q) try{ q.focus(); }catch(e){} }
+  function closeQ(){ qb.hidden=true; if(btn) btn.classList.remove('on'); _syncTopH(); }
   if(btn) btn.addEventListener('click',()=>{ qb.hidden?openQ():closeQ(); });
   window.tfOpenFreeText=openQ; window.tfCloseFreeText=closeQ;
   window.tfToggleFreeText=function(){ qb.hidden?openQ():closeQ(); };
