@@ -214,15 +214,15 @@ function searchBarHtml(){
   // destination
   const dField=`<div class="sfield grow ${p==='dest'?'active':''}" data-act="sbpop" data-v="dest"><label>יעד</label>${destVal}${p==='dest'?`<div class="spop wide" onclick="event.stopPropagation()"><input type="text" id="acq" autocomplete="off" placeholder="התחל להקליד (Miami / מיאמי)" class="din" style="width:100%" value="${AC.q||''}"><span class="note" id="acstatus">${AC.loading?'מחפש…':''}</span><div id="acresults">${acResultsHtml()}</div><div class="spop-cities"><div class="popcities"><span class="c ${STATE.destination==='-'?'on':''}" data-act="dest" data-v="-">✨ לא החלטתי — גלה יעדים</span></div><div class="popcities" style="margin-top:6px"><span class="plabel">פופולרי:</span>${POPULAR.slice(0,8).map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div></div></div>`:''}</div>`;
   // dates
-  const dtField=`<div class="sfield grow ${p==='dates'?'active':''}" data-act="sbpop" data-v="dates"><label>${STATE.tripType==='oneway'?'תאריך יציאה':'תאריכים'}</label><span class="sval"><bdi>${_dateFieldVal()}</bdi></span>${p==='dates'?`<div class="spop wide" onclick="event.stopPropagation()">${datePopBody()}</div>`:''}</div>`;
+  const dtField=`<div class="sfield dtfld ${p==='dates'?'active':''}" data-act="sbpop" data-v="dates"><label>${STATE.tripType==='oneway'?'תאריך יציאה':'תאריכים'}</label><span class="sval"><bdi>${_dateFieldVal()}</bdi></span>${p==='dates'?`<div class="spop wide" onclick="event.stopPropagation()">${datePopBody()}</div>`:''}</div>`;
   // passengers
   const pxField=`<div class="sfield paxfld ${p==='pax'?'active':''}" data-act="sbpop" data-v="pax"><label>נוסעים</label><span class="sval"><bdi>${paxSummary()}</bdi></span>${p==='pax'?`<div class="spop" onclick="event.stopPropagation()">${_paxRow('adults','מבוגרים','16+',1,9)}${_paxRow('children','ילדים','2–15',0,8)}${_paxRow('infants','תינוקות','0–2',0,Math.max(1,+STATE.adults))}<div class="paxdone" data-act="sbclose">סיום</div></div>`:''}</div>`;
   const go=`<button class="sgo" data-act="go">🔍 חפש טיסות</button>`;
-  const plan=`<button class="sgo ghost btn2l" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות">📅 תאריכים<br><span class="sub2l">ללא טיסות</span></button>`;
-  const reset=`<button class="sgo ghost bicon" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺</button>`;
-  const free=`<button class="sgo ghost btn2l" data-act="freetext" title="חיפוש בשפה חופשית">💬 חופשי<br><span class="sub2l">שפה חופשית</span></button>`;
-  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${reset}${free}${plan}${go}</div></div>
-    <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}</div>`;
+  const plan=`<button class="subact btn2l" data-act="goplan" title="בדיקת חלונות תאריכים מול הלוח העברי — חגים, צומות, שבתות, בין הזמנים — בלי חיפוש טיסות">📅 תאריכים<span class="sub2l">ללא טיסות</span></button>`;
+  const reset=`<button class="subact" data-act="newsearch" title="חיפוש חדש — מאפס יעד, תאריכים וסינונים">↺ חדש</button>`;
+  const free=`<button class="subact" data-act="freetext" title="תיאור החיפוש במילים שלך">💬 שפה חופשית</button>`;
+  return `<div class="sbar"><div class="sbar-row">${ttField}${oField}${swap}${dField}${ojField}${dtField}${pxField}${go}</div></div>
+    <div class="popcities"><span class="plabel">יעדים פופולריים:</span>${POPULAR.map(c=>`<span class="c" data-act="poppick" data-v="${c[0]}">${c[1]}</span>`).join('')}<span class="subacts">${free}${plan}${reset}</span></div>`;
 }
 function renderPanel(){
   const dest=DEST_CHOICES.map(([v,l])=>`<span class="c anchor ${STATE.destination===v?'on':''}" data-act="dest" data-v="${v}">${l}</span>`).join('');
