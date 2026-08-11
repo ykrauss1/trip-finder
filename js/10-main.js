@@ -350,7 +350,7 @@ async function _runSearch(){
   const ski=I.destination==='SKI';
   const specific=I.destination && I.destination!=='-' && I.destination!=='SKI' && I.destination!=='variable';
   out.innerHTML = specific
-    ? '<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">בודק מחירי אמת…</div></div>'
+    ? '<div class="state"><div class="spin"></div><div class="pbar-txt" id="pbartxt">בודק מחירי אמת…</div></div>'
     : '<div class="state"><div class="spin"></div>'+(ski?'סורק יעדי סקי לאורך העונה…':'מושך מחירים אמיתיים…')+'</div>';
   try{
     let ranked, flexFallback=false, allWindows=null, lastPriceParams=null, zt=null, dgeo=null;
@@ -466,7 +466,14 @@ async function _runSearch(){
       const _applyPriced=(res)=>{ if(!res)return; const w=windows.find(x=>x.start===res.departureDate&&(x.ret||'')===(res.returnDate||'')); if(!w)return; w._priced=true; if(res.price!=null){ w.price=res.price; w.info=res; } _applyVerdicts(w); };
       const progressCb=(done,total,res)=>{ if(my!==runSeq)return;
         if(_streaming){ _applyPriced(res); LAST.ranked=rankedWindows(windows); LAST.meta=summaryStrip()+progMeta(windows.length,done,total); paintResults(); }
-        else { const txt=document.getElementById('pbartxt'); const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…'; if(txt){ txt.textContent=msg; } else { out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; } }
+        else {
+          // גם כאן ידועים done/total — אז פס אמיתי, לא אנימציה דקורטיבית
+          const t=Math.max(1,total||0), pct=Math.round(Math.min(t,Math.max(0,done||0))/t*100);
+          const msg='בודק מחירי אמת — '+done+' מתוך '+total+'…';
+          const txt=document.getElementById('pbartxt'), fill=document.getElementById('pbarfill');
+          if(txt&&fill){ txt.textContent=msg; fill.style.width=pct+'%'; }
+          else { out.innerHTML='<div class="state"><div class="pbar det"><span class="pbar-fill" id="pbarfill" style="width:'+pct+'%"></span></div><div class="pbar-txt" id="pbartxt">'+msg+'</div></div>'; }
+        }
       };
       const priceMap = await fetchPricesFor(first.map(w=>({departureDate:w.start,returnDate:w.ret})), priceParams, progressCb);
       if(my!==runSeq)return;
@@ -488,7 +495,7 @@ async function _runSearch(){
       // בקריאה אחת, ולכן סבב שני רק מכפיל את זמן החיפוש בלי להוסיף דבר.
       if(specific && FLIGHT_PROVIDER!=='gf' && RD && RD.withPrice>0 && RD.droppedStops>0 && RD.kept===0 && _directRetrySig!==searchSig()){
         _directRetrySig=searchSig();
-        out.innerHTML='<div class="state"><div class="pbar"></div><div class="pbar-txt">מאתר טיסות ישירות…</div></div>';
+        out.innerHTML='<div class="state"><div class="spin"></div><div class="pbar-txt">מאתר טיסות ישירות…</div></div>';
         setTimeout(()=>{ if(my===runSeq) run(); }, 150);
         return;
       }
