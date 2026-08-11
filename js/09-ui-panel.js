@@ -151,10 +151,9 @@ function destDisplayName(){
 const POPULAR=[['BUH','בוקרשט'],['ATH','אתונה'],['SKG','סלוניקי'],['LCA','לרנקה'],['TBS','טביליסי'],['BCN','ברצלונה'],['BUD','בודפשט'],['JFK','ניו יורק'],['MXP','מילאנו'],['CDG','פריז'],['FCO','רומא'],['PRG','פראג']];
 function tripTypeLabel(){ return ({round:'⇄ הלוך-חזור',oneway:'→ כיוון אחד',openjaw:'↩ חזרה מעיר אחרת'})[STATE.openJaw?'openjaw':STATE.tripType]; }
 function _fmtHeShort(iso){ if(!iso)return '—'; const p=iso.split('-'); return (+p[2])+'.'+(+p[1]); } // בלי שנה
-function _datePair(sep){ // מציג שנה פעם אחת כששני התאריכים באותה שנה; עטוף LTR כדי שהחץ יזרום יציאה→חזרה
+function _datePair(sep){ // שני התאריכים במלואם, כולל שנה; עטוף LTR כדי שהחץ יזרום יציאה→חזרה
   const a=STATE.fromDate, b=STATE.toDate;
-  const inner=(a&&b&&a.slice(0,4)===b.slice(0,4)) ? `${_fmtHeShort(a)} ${sep} ${_fmtHe(b)}` : `${_fmtHe(a)} ${sep} ${_fmtHe(b)}`;
-  return `<span dir="ltr">${inner}</span>`;
+  return `<span dir="ltr">${_fmtHe(a)} ${sep} ${_fmtHe(b)}</span>`;
 }
 function _dateFieldVal(){
   if(STATE.tripType==='oneway') return _fmtHe(STATE.fromDate);
