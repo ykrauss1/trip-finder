@@ -167,7 +167,8 @@ function paintResults(){
   } else {
     body=LAST.ranked.map((f,i)=>card(f,i+1)).join('');
   }
-  const hasBand=LAST.specific && LAST.ranked.some(w=>w.band);
+  // לא מותנה עוד ב-specific: גם סריקת יעדים/סקי מקבלת בליטות, ולכן צריכה מקרא
+  const hasBand=LAST.ranked.some(w=>w.band);
   let moreBtn='';
   if(LAST.specific && LAST.allWindows){
     const remaining=LAST.allWindows.filter(w=>!w._priced).length;
