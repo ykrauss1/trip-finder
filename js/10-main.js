@@ -117,7 +117,7 @@ function card(f,rank){
   return `<div class="res ${rank===1?'win':''}"><div class="rank">${rank}</div>
     <div class="rbody"><div class="rttl">${f.cityHe} <span class="sm">· ${f.cc} · ${f.alHe}</span></div>
     <div class="rtimes">${times}</div>
-    <div class="rtags">${tags.join('')}</div></div>
+    <div class="rtags">${tags.join('')}</div>${f.band?bandHtml(f.band):''}</div>
     <div class="rprice" data-skip="${f.to}|${f.depUTC}"><div class="v">${curFmt(f.price)}</div><div class="k">מחיר אמת (מטמון)</div><a class="book" href="${gLink}" target="_blank" rel="noopener">הזמן ← סקייסקנר</a></div></div>`;
 }
 let runSeq=0;
@@ -359,6 +359,15 @@ async function _runSearch(){
       if(my!==runSeq)return;
       const noFly=I.constraints.some(c=>c.type==='noShabbat') || !STATE.allowShabbat; // מכבד גם את הכיוונון ההלכתי הגלובלי
       ranked=skiSelect(flights,absISO(STATE.skiFromISO),[0,1,2,3,4],noFly).slice(0,12);
+      // בליטות הלוח העברי: מסלול הסקי דילג על השלב הזה לגמרי, ולכן לא היו לו סימוני תקופות
+      if(STATE.jewishMode!=='off' && ranked.length){
+        try{
+          const _isos=ranked.flatMap(f=>[ilISO(f.depUTC), ilISO(f.retUTC||f.depUTC)]).sort();
+          const jdata=await fetchJewishData(_isos[0], _isos[_isos.length-1], STATE.profile);
+          if(my!==runSeq)return;
+          ranked.forEach(f=>{ f.band=tripBand(ilISO(f.depUTC), ilISO(f.retUTC||f.depUTC), jdata); });
+        }catch(e){ /* בלי בליטות עדיף על בלי תוצאות */ }
+      }
       const _seq=runSeq; setTimeout(()=>skiAutoLive(ranked.slice(0,6),_seq),700); // אחרי הצביעה: אימות חי ל-6 המובילים
     }else if(specific){
       let windows;
