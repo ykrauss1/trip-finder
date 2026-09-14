@@ -34,6 +34,7 @@ function shabbatLens(depUTCms,durToMin){
 }
 /* full-trip classification: flies-on-Shabbat (forbidden) / Shabbat-abroad (needs arrangements) / clean */
 function ilAbs(ms){const g=new Date(ms);const off=israelOffset(gregToAbs(g.getUTCFullYear(),g.getUTCMonth()+1,g.getUTCDate()));const d=new Date(ms+off*60000);return gregToAbs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate());}
+function ilISO(ms){const g=new Date(ms);const off=israelOffset(gregToAbs(g.getUTCFullYear(),g.getUTCMonth()+1,g.getUTCDate()));return new Date(ms+off*60000).toISOString().slice(0,10);}
 function inShabbat(ms){const ab=ilAbs(ms);const w=shabbatWindowUTC(ab);return ms>=w.candleUTC&&ms<=w.havdalahUTC;}
 function legFlies(depMs,durMin){const arr=depMs+(durMin||180)*60000;const ab=ilAbs(depMs);const w=shabbatWindowUTC(ab);return (depMs<w.havdalahUTC&&arr>w.candleUTC);}
 function tripShabbat(depUTC,durTo,retUTC,durBack){
