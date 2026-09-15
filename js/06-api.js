@@ -220,6 +220,7 @@ function _combineLegs(o,i,trip){
     // מפעילה בפועל (קוד-שייר) — מגיעה מה-edge לכל רגל; אם זו אותה חברה בשני הכיוונים מציגים פעם אחת
     operatedBy:((o&&o.operatedBy)&&(i&&i.operatedBy))?((o.operatedBy===i.operatedBy)?o.operatedBy:(o.operatedBy+' / '+i.operatedBy)):((o&&o.operatedBy)||(i&&i.operatedBy)||null),
     logo:(o&&o.logo)||(i&&i.logo)||null,                 // לוגו החברה מהמקור — אם חסר, פשוט לא יוצג
+    logos:(function(){ const out=[]; for(const u of [].concat((o&&o.logos)||[],(i&&i.logos)||[])){ if(u&&out.indexOf(u)<0) out.push(u); } return out.slice(0,4); })(),
     stops:Math.max(o.stops||0,i.stops||0),               // per-leg semantics for the maxStops filter
     durationToMin:o.durationMin??null, durationBackMin:i.durationMin??null,
     outLayovers:o.layovers||[], backLayovers:i.layovers||[],
