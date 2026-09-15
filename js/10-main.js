@@ -64,9 +64,16 @@ async function fetchCalOne(origin,dest,month,nights){
   const d=await r.json(); return (d.flights||[]).map(adapt);
 }
 function _skiMonths(){ return (STATE.dateMode==='month'&&STATE.months&&STATE.months.length)?STATE.months:SKI_MONTHS; } // חודשי הסריקה: מהבקשה אם ניתנו, אחרת עונת ברירת המחדל
+// יעדי הסקי לסריקה — מצומצמים למדינה אם המשתמש ציין אחת
+function _skiDests(){
+  const c=STATE.skiCountry;
+  if(!c) return SKI_DESTS;
+  const sub=SKI_DESTS.filter(d=>(CITY[d]&&CITY[d].cc)===c);
+  return sub.length?sub:SKI_DESTS;   // מדינה בלי יעדים ברשימה — עדיף הכל מאשר מסך ריק
+}
 async function fetchSki(origin,nights){
   const tasks=[];
-  for(const d of SKI_DESTS) for(const m of _skiMonths()) tasks.push(fetchCalOne(origin,d,m,nights));
+  for(const d of _skiDests()) for(const m of _skiMonths()) tasks.push(fetchCalOne(origin,d,m,nights));
   const res=await Promise.allSettled(tasks);
   let all=[],ok=0,firstErr=null;
   res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
@@ -78,7 +85,7 @@ async function fetchLive(I){
   // ski mode: scan ski destinations across the season window (Jan–Feb), merge
   if(I.destination==="SKI"){
     const tasks=[];
-    for(const d of SKI_DESTS) for(const m of _skiMonths()) tasks.push(fetchOne(origin,d,m));
+    for(const d of _skiDests()) for(const m of _skiMonths()) tasks.push(fetchOne(origin,d,m));
     const res=await Promise.allSettled(tasks);
     let all=[],ok=0,firstErr=null;
     res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
@@ -527,7 +534,7 @@ async function _runSearch(){
       out.innerHTML=`<div class="err">${_foundN?`נמצאו ${_foundN} אפשרויות — אך כולן נפסלו לפי המסננים הנוכחיים.`:'אין נתון מתאים לחיפוש הזה כרגע.'}<br><b>נסה:</b> ${ski?'אורך טיול אחר, תאריך התחלה מוקדם יותר, או להסיר "בלי טיסה בשבת"':specific?'מספר לילות אחר, יום יציאה "כל יום", או חודש אחר':'יעד מסוים (בוקרשט/אתונה) או חודש אחר'}.${why}<div style="margin-top:10px"><span class="c on" data-act="rerun" style="padding:5px 14px">↻ נסה שוב</span></div>${_switchTip}${(!ski&&I.destination&&I.destination!=='-'&&allWindows&&allWindows.length)?airlineDirectLinks(I.destination,allWindows[0].start,allWindows[0].ret):''}</div>`;
     }else{
       const lbl=ski?'יעדי סקי':specific?'חלונות תאריך':(I.destination==='-')?'יעדים':'אופציות';
-      const note=ski?` · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
+      const note=ski?`${STATE.skiCountry?` · ${STATE.skiCountry} בלבד`:''} · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
       const rankNote=specific?'מחיר אמת מדורג למעלה · אחרים עם קישור חי · נקי משבת אלא אם סומן':'מדורג: נקי ולא-עמוס למעלה, שבת/עומס למטה';
       const noPrice = specific && !ranked.some(w=>w.price!=null);
       const diagNote = (noPrice && RAPID_DIAG) ? ` · <span style="color:var(--amber)">⚠ ${RAPID_DIAG}</span>` : '';
