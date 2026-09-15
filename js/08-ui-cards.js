@@ -1,11 +1,15 @@
 function flightCard(w,fl,dest,kLink,oneway,isBest){
   const stopTxt = fl.stops===0?'ישיר':(fl.stops!=null?fl.stops+' עצירות':'');
   const carrName = fl.carrier||'';
-  // סימון "אינה טסה בשבת" — רק כשכל הרגליים בחברות שסומנו כך בלוח הצד
-  const _noShab = (typeof noShabbatFlight==='function' && noShabbatFlight(carrName)) ? ` <span class="fc-shab">🕯️ אינה טסה בשבת</span>` : '';
-  const _logoUrl = (fl && typeof fl.logo==='string' && /^https?:\/\//.test(fl.logo)) ? fl.logo : '';
-  const _logo = _logoUrl ? `<img class="fc-logo" src="${_logoUrl.replace(/"/g,'&quot;')}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
-  const carr = _logo + (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + _noShab + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
+  // לוגו לכל חברה במסלול. במסלול "El Al / Austrian" צריכים להופיע שניים — לוגו אחד מטעה.
+  const _logoList = (fl && Array.isArray(fl.logos) && fl.logos.length) ? fl.logos
+                  : ((fl && typeof fl.logo==='string') ? [fl.logo] : []);
+  const _logo = _logoList
+    .filter(u=>typeof u==='string' && /^https?:\/\//.test(u))
+    .slice(0,3)
+    .map(u=>`<img class="fc-logo" src="${u.replace(/"/g,'&quot;')}" alt="" loading="lazy" onerror="this.style.display='none'">`)
+    .join('');
+  const carr = _logo + (carrName||'טיסה') + (isIsraeliCarrier(carrName)?' 🇮🇱':'') + (fl.operatedBy?` <span class="fc-op">✈ מופעלת ע״י ${fl.operatedBy}</span>`:'');
   // prefer the edge's TRUE duration (timezone-correct); fall back to ISO subtraction (old provider)
   const _dOut=_durFmt(fl.durationToMin ?? _durMin(fl.outDepISO,fl.outArrISO)), _dBack=_durFmt(fl.durationBackMin ?? _durMin(fl.backDepISO,fl.backArrISO));
   // layover detail: airport code + wait time (e.g. "FCO 1ש55ד")
@@ -88,6 +92,8 @@ function windowCard(w,rank,dest){
   let vis = allOpts.filter(o=>o && o.price!=null).filter(o=>!(o.stops!=null && o.stops>ms));
   if(!STATE.allowShabbat) vis = vis.filter(o=>!(o._shabV && o._shabV.forbidden));
   if(STATE.onlyIsraeli) vis = vis.filter(o=>isAllIsraeli(o.carrier));
+  // סינון לפי חברות שאינן טסות בשבת — לפי הטבלה שהמשתמש עורך בלוח הצד
+  if(STATE.onlyNoShab) vis = vis.filter(o=>noShabbatFlight(o.carrier));
   // בידוד חברה: לחיצה על שבב חברה פירושה "אני רוצה לטוס דווקא בה". לכן הרשימה הראשית מציגה
   // רק מסלולים שכל הרגליים בהם באותה חברה; שילובים עם חברות אחרות אינם נמחקים אלא יורדים
   // לבלוק מקופל נפרד מתחת, עם הפרש המחיר — כדי שהמשתמש יראה על מה בדיוק הוא מוותר.
@@ -177,6 +183,7 @@ function buildPrompt(text){
 שדות:
 - origin: IATA מוצא (ברירת מחדל "TLV")
 - destination: IATA יעד, או "-" אם רוצה "לאן שהוא"/יעד חדש/לא צוין יעד, או "SKI" אם הבקשה על סקי/גלישה
+- skiCountry: אם הבקשה על סקי וצוינה בה מדינה — שם המדינה בעברית ("איטליה", "אוסטריה", "בולגריה", "צרפת", "שווייץ", "גאורגיה", "סלובניה"). אחרת "" ‏. אל תמציא מדינה שלא נכתבה
 - months: מערך "YYYY-MM" של כל החודשים הרלוונטיים. עונות: חורף=דצמבר+ינואר+פברואר+מרץ (עונת הסקי), אביב=מרץ+אפריל+מאי, קיץ=יוני+יולי+אוגוסט, סתיו=ספטמבר+אוקטובר+נובמבר. חלקי עונה: "תחילת/ראשית X"=החודש הראשון, "אמצע X"=החודש האמצעי, "סוף/שלהי X"=החודשיים האחרונים (למשל "סוף הקיץ"→יולי+אוגוסט, "סוף החורף"→פברואר+מרץ, "תחילת החורף"→דצמבר). אם לא צוין זמן — []
 - startDays: מערך ימי יציאה אפשריים כמספרים (ראשון=0, שני=1, שלישי=2, רביעי=3, חמישי=4, שישי=5, שבת=6). "מראשון"→[0], "יציאה בראשון"→[0]. אם לא צוין — []
 - endDays: מערך ימי חזרה אפשריים באותו קידוד. "עד חמישי או שישי"→[4,5]. אם לא צוין — []
@@ -223,7 +230,13 @@ function translateLocal(text){
   const _avoidCue=has("ללא")||has("הימנע")||has("בלי ")||has("לא ב")||has("להימנע")||has("שלא יהיה");
   for(const [k,words] of AV){ for(const w of words){ if(has(w)){ if(has("דווקא ב"+w)||has("רוצים "+w)||has("כן "+w)){ if(!I.preferPeriods.includes(k))I.preferPeriods.push(k); } else if(_avoidCue){ if(!I.avoidPeriods.includes(k))I.avoidPeriods.push(k); } } } }
   for(const [iata,o] of Object.entries(CITY)){ if(o.ski) continue; if(has(o.he)) I.destination=iata; }
-  if(has("סקי")||has("גלישה")||has("שלג"))I.destination="SKI";
+  if(has("סקי")||has("גלישה")||has("שלג")){
+    I.destination="SKI";
+    // מדינה שצוינה יחד עם סקי אינה נזרקת: SKI_DESTS מחזיק שם מדינה בעברית לכל יעד,
+    // אז די להתאים את השאילתה מול אותם שמות. בלי זה "סקי באיטליה" החזיר גם בולגריה ורומניה.
+    const _ccs=[...new Set(SKI_DESTS.map(d=>(CITY[d]&&CITY[d].cc)||'').filter(Boolean))];
+    for(const cc of _ccs) if(has(cc)) I.skiCountry=cc;
+  }
   // שנה מפורשת ("2027" / "שנת 2027") או "שנה הבאה" גוברות; אחרת — המופע העתידי הקרוב
   const _yrM=t.match(/20\d\d/); let _forcedY=_yrM?+_yrM[0]:null;
   if(!_forcedY){ // שנה דו-ספרתית: "אוגוסט 27" / "אוגוסט, 27" / "שנת 27" / "קיץ 27" — לא "ב-27 ליולי" (יום בחודש)
@@ -293,7 +306,7 @@ function translateLocal(text){
 const STATE={origin:"TLV",destination:"-",departMonth:"2026-07",noShabbat:false,airline:null,
   scorers:{price:3,novelty:0,comfort:0},unsupported:[],summary:"",
   skiNights:7, skiFromISO:"2027-01-01", flexNights:7, flexStartDow:null, flexShabbat:"any",
-  fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false};
+  fromDate:"2026-07-05", toDate:"2026-07-10", dateMode:"exact", months:["2026-07"], includeStops:false, maxStops:0, sortBy:"price", adults:2, children:0, infants:0, panelOpen:false, altCurrency:"", jewishMode:"mark", profile:"teacher", hideFasts:false, openJaw:false, outAirport:"", flexDays:0, allowShabbat:false, shabbatTime:true, marginBefore:3, marginAfter:3, candleMin:20, havdalah:"deg85", friThreshold:"sunrise", advOpen:false, calOpen:false, calView:"", calPick:null, destLabel:"", paxOpen:false, tripType:"round", sbarPop:null, originEdit:false, monthsShown:6, periodPrefs:defaultPeriodPrefs(), hiddenCarriers:[], onlyIsraeli:false, onlyNoShab:false};
 // ברירת מחדל דינמית לתאריכים: שבוע מהיום ליציאה, שבועיים לחזרה (לא תאריכים מקובעים שעברו)
 (function(){
   const iso=d=>d.toISOString().slice(0,10);
