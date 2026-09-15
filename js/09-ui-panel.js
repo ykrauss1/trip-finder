@@ -21,6 +21,7 @@ function newSearch(){
 function applyIntent(I){
   STATE.origin=I.origin||"TLV";
   STATE.destination=(I.destination&&I.destination!=="variable")?I.destination:"-";
+  STATE.skiCountry=(I.destination==="SKI"&&I.skiCountry)?String(I.skiCountry).trim():"";  // סינון יעדי סקי למדינה
   STATE.departMonth=I.departMonth||(I.months&&I.months[0])||STATE.departMonth||new Date().toISOString().slice(0,7);
   if(I.months&&I.months.length){ STATE.dateMode='month'; STATE.months=I.months.slice().sort(); }
   if(I.startDays&&I.startDays.length){ STATE.flexStartDows=I.startDays.slice().sort(); STATE.flexStartDow=null; if(STATE.dateMode==='exact')STATE.dateMode='range'; }
@@ -142,7 +143,7 @@ function paxField(){
 }
 function destDisplayName(){
   if(STATE.destination==='-') return 'לגלות';
-  if(STATE.destination==='SKI') return '⛷️ סקי';
+  if(STATE.destination==='SKI') return STATE.skiCountry?('⛷️ סקי · '+STATE.skiCountry):'⛷️ סקי';
   const preset=DEST_CHOICES.find(x=>x[0]===STATE.destination);
   if(preset) return preset[1];
   if(STATE.destLabel) return STATE.destLabel;
@@ -242,6 +243,7 @@ function renderPanel(){
   const specificDest = STATE.destination!=="-" && STATE.destination!=="SKI";
   const monGroup = ski
     ? `<div class="grp"><div class="t">עונה · אורך · התחלה</div><div class="chips"><span class="c anchor on">⛷️ ינו׳–פבר׳ 2027</span> ${nightsChips} ${fromChips}</div>
+       ${STATE.skiCountry?`<div class="t" style="margin-top:8px">מסונן ל<b>${STATE.skiCountry}</b> בלבד <span class="c" data-act="skicountryall" style="margin-inline-start:6px">↺ כל המדינות</span></div>`:''}
        <div class="t" style="margin-top:8px">התחלה בימי חול · שבוע עם שבת ביעד יורד למטה כאופציה · שבועות עומס מסומנים · מקור יעדים: ${SKI_SOURCE}</div></div>`
     : '';
   const NIGHTS_OPTS=[['any','כל אורך'],['3','3 לילות'],['4','4 לילות'],['5','5 לילות'],['6','6 לילות'],['7','7 לילות'],['8','8 לילות'],['9','9 לילות'],['10','10 לילות'],['4-5','4–5 לילות'],['5-7','5–7 לילות'],['7-10','7–10 לילות'],['10-14','10–14 לילות']];
@@ -423,7 +425,9 @@ function _onAct(act,v){
   else if(act==='carrieronly'){ const cs=carriersInResults().map(c=>c.name); STATE.hiddenCarriers=cs.filter(n=>n!==v); paintResults(); return; }
   else if(act==='carriertoggle'){ const f=STATE.hiddenCarriers||(STATE.hiddenCarriers=[]); const i=f.indexOf(v); if(i>=0)f.splice(i,1); else f.push(v); paintResults(); return; }
   else if(act==='onlyisraeli'){ STATE.onlyIsraeli=!STATE.onlyIsraeli; paintResults(); return; }
-  else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; paintResults(); return; }
+  else if(act==='carrierall'){ STATE.hiddenCarriers=[]; STATE.onlyIsraeli=false; STATE.onlyNoShab=false; paintResults(); return; }
+  else if(act==='onlynoshab'){ STATE.onlyNoShab=!STATE.onlyNoShab; paintResults(); return; }
+  else if(act==='skicountryall'){ STATE.skiCountry=''; renderPanel(); run(); return; }
   else if(act==='nomotzash'){ STATE.noMotzash=!STATE.noMotzash; paintResults(); return; }
   else if(act==='freetext'){ if(typeof window.tfToggleFreeText==='function') window.tfToggleFreeText(); return; }
   else if(act==='shabcar'){ const p=String(v).split('|'), i=+p[0]; if(SHAB_CAR[i]){ SHAB_CAR[i].s=(p[1]||''); saveShabCar(); _repaintSide(); } return; }
