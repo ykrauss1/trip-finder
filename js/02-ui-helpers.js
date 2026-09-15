@@ -43,7 +43,9 @@ function carrierFilterHtml(){
   const anyIl=cs.some(c=>c.il);
   const chips=cs.map(c=>{ const esc=c.name.replace(/"/g,'&quot;'); return `<span class="c ${hid.includes(c.name)?'':'on'}" data-act="carrierfilt" data-v="${esc}">${c.il?'🇮🇱 ':''}${c.lc?'💸 ':''}${c.name}</span>`; }).join('');
   const onlyIl = anyIl ? `<span class="c ${STATE.onlyIsraeli?'on':''}" data-act="onlyisraeli" title="הצג רק טיסות שכל הקטעים בהן בחברה ישראלית — בטוח יותר בתקופות מתוחות">🇮🇱 רק ישראליות</span>` : '';
-  return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד — שילובים יופיעו בנפרד</span></div><div class="chips">${onlyIl}${chips}${(hid.length||STATE.onlyIsraeli)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
+  const anyNoShab = cs.some(c=>typeof noShabbatFlight==='function' && noShabbatFlight(c.name));
+  const onlyNoShab = anyNoShab ? `<span class="c ${STATE.onlyNoShab?'on':''}" data-act="onlynoshab" title="הצג רק טיסות שכל הקטעים בהן בחברה שאינה טסה בשבת (לפי הטבלה למטה)">🕯️ אינן טסות בשבת</span>` : '';
+  return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד — שילובים יופיעו בנפרד</span></div><div class="chips">${onlyIl}${onlyNoShab}${chips}${(hid.length||STATE.onlyIsraeli||STATE.onlyNoShab)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
 }
 // טבלת "טיסה בשבת" בלוח הצד — המשתמש קובע, כי המצב בשטח משתנה
 function shabCarriersHtml(){
