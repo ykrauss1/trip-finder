@@ -420,4 +420,6 @@
   }
 
   /* לוגו חברת התעופה בשורת התוצאה */
-  .fc-logo{width:17px;height:17px;object-fit:contain;border-radius:3px;background:#fff;padding:1px;margin-inline-end:6px;vertical-align:-3px}
+  .fc-logo{width:17px;height:17px;object-fit:contain;border-radius:3px;background:#fff;padding:1px;margin-inline-end:4px;vertical-align:-3px}
+  .fc-logo+.fc-logo{margin-inline-start:-1px}
+  .fc-logo:last-of-type{margin-inline-end:6px}
