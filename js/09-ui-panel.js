@@ -300,7 +300,7 @@ function renderPanel(){
       <div class="baract"><button class="savebtn" data-act="save" title="שמור את החיפוש הזה לגישה מהירה">💾 שמור חיפוש</button><button class="adjust" data-act="toggle">${STATE.panelOpen?'סגור כוונון ▲':'⚙ כוונון הלכתי ▾'}</button></div>
     </div>
     ${STATE.panelOpen?`<div class="detail">
-      ${STATE.summary?`<div class="summary">${STATE.summary}</div>`:''}
+      ${STATE.summary?`<div class="summary">${escHtml(STATE.summary)}</div>`:''}
       <div class="grp"><div class="t">לוח עברי — שבת וחג ${STATE.allowShabbat?'מסומנים (מותר לטוס)':'חסומים כברירת מחדל'} · השאר מסומן לשיקולך</div><div class="chips">${[['off','כבוי'],['mark','מופעל']].map(([v,l])=>`<span class="c ${STATE.jewishMode===v?'on':''}" data-act="jmode" data-v="${v}">${l}</span>`).join('')}<span class="c ${STATE.hideFasts?'on':''}" data-act="hfast">${STATE.hideFasts?'צומות מוסתרים ✓':'הסתר צומות'}</span><span class="c hard ${STATE.allowShabbat?'on':''}" data-act="allowshab">${STATE.allowShabbat?'טיסות שבת/חג: מוצגות ✓':'טיסות שבת/חג: ללא'}</span><span class="note">ירוק=חופשה טובה · ענבר=זהירות</span></div></div>
 
       <div class="advtoggle" data-act="advtoggle">${STATE.advOpen?'פחות אפשרויות ▲':'אפשרויות נוספות ▼'}</div>
