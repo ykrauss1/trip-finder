@@ -120,6 +120,9 @@ function windowCard(w,rank,dest){
   } else if(isoFam && mixedVis.length){
     const _fam=String(isoFam).replace(/[<>&]/g,'');
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">אין טיסות ${_fam} בלבד בתאריכים אלה</div><div style="margin-top:7px;color:var(--mut-2);font-size:11.5px">${mixedVis.length} ${mixedVis.length===1?'אפשרות':'אפשרויות'} בשילוב עם חברות אחרות — מתחת</div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
+  } else if(allOpts.some(o=>o&&o.price!=null) && _rejectReason(allOpts,ms)){
+    // היו טיסות בתאריך הזה — וכולן נפסלו. קודם לכן התאריך פשוט נעלם.
+    cards = _rejectCard(_rejectReason(allOpts,ms));
   } else if(STATE.onlyIsraeli && allOpts.some(o=>o&&o.price!=null && !(o.stops!=null&&o.stops>ms))){
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">🇮🇱 אין טיסה ישראלית מלאה בחלון זה</div><div style="margin-top:7px"><span class="c on" data-act="onlyisraeli" style="font-size:11px;padding:3px 11px">הצג גם לא-ישראליות</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
   } else {
@@ -156,7 +159,10 @@ function windowCard(w,rank,dest){
     </div>`;
   }
   let hiddenLine='';
-  if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
+  // כשכרטיס הפסילה כבר אומר את זה — אין טעם לחזור עליו שורה מתחת
+  const _rejShown = !vis.length && allOpts.some(o=>o&&o.price!=null) && !!_rejectReason(allOpts,ms);
+  if(_rejShown) hiddenLine='';
+  else if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
   else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
   const showCmp = !STATE.openJaw && exitsFor(dest) && w.price!=null;
   return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}${w._priced?'':' pending'}">
@@ -303,6 +309,30 @@ function translateLocal(text){
 }
 
 /* ===== STATE (the single intent, edited by both entries) ===== */
+/* למה לא נותרה אף טיסה להצגה בחלון זה. מחושב מהרשימה עצמה
+   כדי שלא יוכל לצאת מסנכרון עם הסינון האמיתי. */
+function _rejectReason(allOpts,ms){
+  const priced=(allOpts||[]).filter(o=>o&&o.price!=null);
+  if(!priced.length) return null;
+  const stopsOk=priced.filter(o=>!(o.stops!=null&&o.stops>ms));
+  if(!stopsOk.length) return {kind:'stops',n:priced.length};
+  if(!STATE.allowShabbat){
+    const ok=stopsOk.filter(o=>!(o._shabV&&o._shabV.forbidden));
+    if(!ok.length) return {kind:'shabbat',n:stopsOk.length};
+  }
+  return null;
+}
+function _rejectCard(r){
+  if(!r) return '';
+  const shab=r.kind==='shabbat';
+  const ttl=shab
+    ? `\u05db\u05dc ${r.n} \u05d4\u05d8\u05d9\u05e1\u05d5\u05ea \u05d1\u05ea\u05d0\u05e8\u05d9\u05da \u05d6\u05d4 \u05e0\u05e4\u05e1\u05dc\u05d5 \u2014 \u05d8\u05d9\u05e1\u05d4 \u05d1\u05e9\u05d1\u05ea \u05d0\u05d5 \u05e6\u05de\u05d5\u05d3\u05d4 \u05dc\u05d4`
+    : `\u05db\u05dc ${r.n} \u05d4\u05d8\u05d9\u05e1\u05d5\u05ea \u05d1\u05ea\u05d0\u05e8\u05d9\u05da \u05d6\u05d4 \u05e2\u05dd \u05d9\u05d5\u05ea\u05e8 \u05e2\u05e6\u05d9\u05e8\u05d5\u05ea \u05de\u05e9\u05d1\u05d9\u05e7\u05e9\u05ea`;
+  const act=shab
+    ? `<span class="c on" data-act="allowshab" style="font-size:11px;padding:3px 11px">\u05d4\u05e6\u05d2 \u05d0\u05d5\u05ea\u05df \u05d1\u05db\u05dc \u05d6\u05d0\u05ea</span>`
+    : `<span class="c on" data-act="maxstops" data-v="1" style="font-size:11px;padding:3px 11px">\u05d0\u05e4\u05e9\u05e8 \u05e2\u05e6\u05d9\u05e8\u05d4 \u05d0\u05d7\u05ea</span>`;
+  return `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">${shab?'\ud83d\udd6f\ufe0f':'\u2708'} ${ttl}</div><div style="margin-top:7px">${act}</div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">\u2014</div><div class="k">\u2014</div></div></div>`;
+}
 const STATE={origin:"TLV",destination:"-",departMonth:"2026-07",noShabbat:false,airline:null,
   scorers:{price:3,novelty:0,comfort:0},unsupported:[],summary:"",
   skiNights:7, skiFromISO:"2027-01-01", flexNights:7, flexStartDow:null, flexShabbat:"any",
