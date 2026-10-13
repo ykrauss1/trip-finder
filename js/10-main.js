@@ -280,7 +280,7 @@ async function enrichCheaperDays(seq){
       const _O=(STATE.origin||'TLV').toUpperCase();
       const _book=((CITY[dest]&&CITY[dest]._book)||'').toUpperCase();
       const _iata=/^[A-Z]{3}$/.test(_book)?_book:((/^[A-Z]{3}$/.test(dest.toUpperCase()))?dest.toUpperCase():null);
-      const bookUrl=_iata?`https://www.kayak.co.il/flights/${_O}-${_iata}/${best.date}/${bestRet}`
+      const bookUrl=_iata?`https://www.kayak.com/flights/${_O}-${_iata}/${best.date}/${bestRet}`
         :`https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+((STATE.destLabel||dest).split(' · ')[0])+' on '+best.date+' returning '+bestRet)}`;
       slot.innerHTML=`<div class="tipbox">💡 יציאה ב<b>${lbl}</b> (חזרה ${rlbl})${nightsNote} זולה ב-<b>${curFmt(save)}</b> — ${curFmt(best.price)} במקום ${curFmt(cur)}<a class="tipbook" href="${bookUrl}" target="_blank" rel="noopener">הזמן ←</a></div>`;
     }
