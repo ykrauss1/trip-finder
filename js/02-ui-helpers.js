@@ -1,3 +1,11 @@
+/* בריחת HTML. עד כה לא הייתה כזו בפרויקט, וטקסט שהמשתמש הקליד
+   (ותשובת המודל עליו) נכנס ל-innerHTML כמו שהוא. הוא גם נשמר ל-localStorage,
+   כלומר רץ מחדש בכל טעינה. */
+function escHtml(v){
+  return String(v==null?'':v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 function bandLegend(){
   const items=[['normal','רגיל'],['three','שלושת השבועות'],['nine','תשעת הימים'],['tisha','תשעה באב'],['fast','צום'],['good','חופשה/חג'],['bein','בין הזמנים'],['chm','חוה״מ'],['elul','אלול']];
   return '<div class="bandkey">'+items.map(it=>`<span class="ki"><span class="ks bc-${it[0]}"></span>${it[1]}</span>`).join('')+'<span class="ki"><span class="ks bc-normal bc-shab"></span>שבת</span></div>';
@@ -182,7 +190,10 @@ function paintResults(){
 // a fixed, always-on transparency note: no single flight source is exhaustive (small / low-cost
 // carriers like HiSky are sometimes missing), so point the user to the full list per result.
 function coverageNote(){
-  return `<div class="covnote">ℹ️ ייתכן שקיימות טיסות נוספות שאינן מוחזרות ע"י המקור — במיוחד חברות קטנות או לואו-קוסט (כמו HiSky). בכל תוצאה, «🔎 כל הטיסות במסלול» מוביל לרשימה המלאה.</div>`;
+  // כשזמני השבת חושבו בדפדפן במקום בשרת — אומרים את זה, ולא מעמידים פנים
+  const _lz=(typeof window!=='undefined'&&window.__zmanim&&window.__zmanim._local)
+    ? `<div class="covnote" style="color:var(--amber)">⚠ זמני השבת חושבו מקומית (שרת הזמנים לא השיב) · דיוק כדקה, להלכה למעשה בדקו בלוח</div>` : '';
+  return _lz+`<div class="covnote">ℹ️ ייתכן שקיימות טיסות נוספות שאינן מוחזרות ע"י המקור — במיוחד חברות קטנות או לואו-קוסט (כמו HiSky). בכל תוצאה, «🔎 כל הטיסות במסלול» מוביל לרשימה המלאה.</div>`;
 }
 // cheapest overall price, and cheapest israeli / low-cost price, across all results
 function _catPrices(){
