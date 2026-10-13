@@ -751,8 +751,42 @@ async function loadHebDate(){
   }catch(e){ el.textContent=''; }
 }
 
+/* ===== כניסה ישירה מאתר חיצוני (deep link) =====
+   ?to=MXP&dep=2026-12-20&ret=2026-12-27&adults=2&run=1
+   כל ערך עובר אימות צורה לפני שהוא נוגע ב-STATE — כתובת URL היא קלט
+   מהעולם ולא מקור סמך. מחזיר true אם התבקשה הרצה אוטומטית. */
+function applyUrlParams(){
+  var q; try{ q=new URLSearchParams(location.search); }catch(e){ return false; }
+  if(!q || !q.toString()) return false;
+  var IATA=/^[A-Za-z]{3}$/, ISO=/^\d{4}-\d{2}-\d{2}$/;
+  var to=(q.get('to')||'').trim().toUpperCase();
+  var from=(q.get('from')||'').trim().toUpperCase();
+  var dep=(q.get('dep')||'').trim(), ret=(q.get('ret')||'').trim();
+  var ad=parseInt(q.get('adults'),10);
+  var label=(q.get('label')||'').slice(0,40);
+  var touched=false;
+
+  if(IATA.test(from)){ STATE.origin=from; touched=true; }
+  if(IATA.test(to)){
+    if(!CITY[to]) CITY[to]={he:(label||to),cc:''};
+    STATE.destination=to;
+    STATE.destLabel=label||((CITY[to]&&CITY[to].he)||to);
+    touched=true;
+  }
+  if(ISO.test(dep) && ISO.test(ret) && dep<ret){
+    STATE.dateMode='exact'; STATE.fromDate=dep; STATE.toDate=ret;
+    STATE.months=[dep.slice(0,7)]; STATE.departMonth=dep.slice(0,7);
+    touched=true;
+  }
+  if(ad>=1 && ad<=9){ STATE.adults=ad; touched=true; }
+  return touched && q.get('run')==='1';
+}
+
 /* initial: load ski POIs from Supabase (if configured), then show panel + run */
-(async function(){ _loadEntIds(); fetchRates(); loadHebDate(); try{ await Promise.allSettled([loadSki(), loadJewish()]); }catch(e){} renderPanel();
+(async function(){ _loadEntIds(); fetchRates(); loadHebDate(); try{ await Promise.allSettled([loadSki(), loadJewish()]); }catch(e){}
+  var _auto=false; try{ _auto=applyUrlParams(); }catch(e){}
+  renderPanel();
+  if(_auto){ try{ run(); return; }catch(e){} }
   document.getElementById('out').innerHTML='<div class="state">כוונן את החיפוש למעלה (יעד, חודש, ימים), ואז לחץ 🔍 חפש</div>'; })();
 
 /* חשיפה לדיבאג מהקונסול בלבד — אין לה שום שימוש בלוגיקת האפליקציה.
