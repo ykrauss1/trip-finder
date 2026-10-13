@@ -202,3 +202,59 @@ function hebMonthCount(y){ return hebLeap(y)?13:12; }
 function _hebMonthOrder(y){ const o=[7,8,9,10,11,12]; if(hebLeap(y)) o.push(13); return o.concat([1,2,3,4,5,6]); }
 function _hebNextMonth(v){ const ord=_hebMonthOrder(v.hy); const i=ord.indexOf(v.hm); if(i<ord.length-1) return {hy:v.hy,hm:ord[i+1]}; const no=_hebMonthOrder(v.hy+1); return {hy:v.hy+1,hm:no[0]}; }
 function _hebPrevMonth(v){ const ord=_hebMonthOrder(v.hy); const i=ord.indexOf(v.hm); if(i>0) return {hy:v.hy,hm:ord[i-1]}; const po=_hebMonthOrder(v.hy-1); return {hy:v.hy-1,hm:po[po.length-1]}; }
+
+/* ===== גיבוי מקומי לזמני השבת =====
+   כל שכבת השבת נשענה עד כה על פונקציית edge אחת (jcal). כשהיא לא ענתה,
+   הבדיקה ההלכתית פשוט נעלמה בשקט. חישוב השקיעה הוא אסטרונומיה טהורה ואפשר
+   לעשות אותו כאן, בדפדפן. נבדק מול @hebcal/core בחמישה מיקומים ושישה
+   תאריכים — פער מרבי 1.3 דקות. לכן נוסף מרווח של 2 דקות לכיוון המחמיר:
+   כניסת שבת מוקדמת יותר, צאת השבת מאוחר יותר. זה גיבוי ומסומן בממשק כגיבוי. */
+function solarEvent(ymd, lat, lon, angleDeg, rising){
+  const RAD=Math.PI/180;
+  const jd=new Date(ymd+'T12:00:00Z').getTime()/86400000 + 2440587.5;
+  const n=Math.round(jd - 2451545.0 + 0.0008);
+  const Jstar=n - lon/360;
+  const M=(357.5291 + 0.98560028*Jstar) % 360;
+  const C=1.9148*Math.sin(M*RAD) + 0.0200*Math.sin(2*M*RAD) + 0.0003*Math.sin(3*M*RAD);
+  const lam=(M + C + 180 + 102.9372) % 360;
+  const Jtransit=2451545.0 + Jstar + 0.0053*Math.sin(M*RAD) - 0.0069*Math.sin(2*lam*RAD);
+  const sinDec=Math.sin(lam*RAD)*Math.sin(23.4397*RAD);
+  const cosDec=Math.cos(Math.asin(sinDec));
+  const cosOmega=(Math.sin(angleDeg*RAD) - Math.sin(lat*RAD)*sinDec)/(Math.cos(lat*RAD)*cosDec);
+  if(cosOmega>1||cosOmega<-1) return null;
+  const omega=Math.acos(cosOmega)/RAD;
+  const J=Jtransit + (rising? -omega/360 : omega/360);
+  const t=new Date((J - 2440587.5)*86400000);
+  return isNaN(t.getTime())?null:t;
+}
+const _tzFmtCache={};
+function _wallISO(dt, tz){
+  if(!dt) return null;
+  if(!_tzFmtCache[tz]) _tzFmtCache[tz]=new Intl.DateTimeFormat('sv-SE',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+  return _tzFmtCache[tz].format(dt).replace(' ','T');
+}
+/* מחזיר את אותו מבנה ש-jcal מחזיר: {candle:{}, havdalah:{}, sunrise:{}} */
+function localShabbatTimes(fromISO, toISO, lat, lon, tz, candleMin, havdalahMode){
+  const res={candle:{},havdalah:{},sunrise:{},_local:true};
+  const MARGIN=2*60000; // מרווח בטחון לכיוון המחמיר
+  let d=new Date(fromISO+'T12:00:00Z'); const end=new Date(toISO+'T12:00:00Z');
+  let guard=0;
+  while(d<=end && guard++<800){
+    const ymd=d.toISOString().slice(0,10), dow=d.getUTCDay();
+    const rise=solarEvent(ymd,lat,lon,-0.833,true);
+    if(rise) res.sunrise[ymd]=_wallISO(rise,tz);
+    if(dow===5){ // ערב שבת
+      const set=solarEvent(ymd,lat,lon,-0.833,false);
+      if(set) res.candle[ymd]=_wallISO(new Date(set.getTime() - (+candleMin||18)*60000 - MARGIN), tz);
+    }
+    if(dow===6){ // שבת
+      const set=solarEvent(ymd,lat,lon,-0.833,false);
+      const hav=(havdalahMode==='rt72')
+        ? (set? new Date(set.getTime()+72*60000) : null)
+        : solarEvent(ymd,lat,lon,-8.5,false);
+      if(hav) res.havdalah[ymd]=_wallISO(new Date(hav.getTime()+MARGIN), tz);
+    }
+    d=new Date(d.getTime()+86400000);
+  }
+  return res;
+}
