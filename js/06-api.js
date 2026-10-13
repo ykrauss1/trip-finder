@@ -254,11 +254,16 @@ async function ensureEntityId(code){
   }
   return null; // failure NOT cached — the next search retries
 }
+/* מזהי השדות אינם משתנים. קודם לכן כל אצוות תמחור פתחה בנסיעה הלוך-חזור
+   מיותרת לשרת רק כדי לשאול אותה שאלה שוב. */
+const _idsCache={};
 async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults,children,infants){
   const map={}; RAPID_DIAG=""; FLT_DIAG={max:0,maxPriced:0,hasOptions:false,carriers:new Set(),noprice:new Set()};
   if(!trips.length) return map;
   // step 1: resolve airport ids once (use a known entityId from autocomplete if we have one)
-  let ids=null;
+  const _ck=origin+'|'+dest;
+  let ids=_idsCache[_ck]||null;
+  if(!ids){
   await ensureEntityId(origin); await ensureEntityId(dest);
   const destEntity=(CITY[dest]&&CITY[dest]._entityId)||_codeEntity(dest)||null;
   const originEntity=(CITY[origin]&&CITY[origin]._entityId)||_codeEntity(origin)||null;
@@ -271,16 +276,27 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
     ids=await r.json();
   }catch(e){ RAPID_DIAG='שלב זיהוי: '+e.message; return map; }
   if(!ids||!ids.ok){ RAPID_DIAG='זיהוי שדה תעופה נכשל'+(ids&&ids.detail?(' · '+Object.entries(ids.detail).map(e=>e[0]+':'+e[1]).join(', ')):''); return map; }
+  _idsCache[_ck]=ids;
+  }
   // step 2: price each trip — retry on rate-limit, transient errors, AND empty results
   // (RapidAPI sometimes returns a completed-but-empty search; a fresh retry usually recovers)
+  // כשהשרת ענה תשובה מפורשת ("quota", 4xx) זו אינה תקלה רגעית, ושלושה
+  // ניסיונות רק מבזבזים זמן ומכסה. hardFail עוצר גם את סבב ה-includeStops שאחריו.
+  const _fail={hard:false};
   async function priceOne(trip, incl){
     let _forceLegs=false;   // רשת ביטחון להלוך-חזור האמיתי — נדלק פעם אחת לכל חלון
+    let _srvRetry=0;
     for(let attempt=0; attempt<3; attempt++){
       try{
         const r=await fetch(RAPID_URL,{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({originId:ids.origin_id,destId:ids.dest_id,trips:[trip],adults:adults||2,children:children||0,infants:infants||0,includeStops:!!incl,forceLegs:_forceLegs})});
         if(r.status===429){ RAPID_DIAG='מגבלת קריאות (429)'; await _sleep(1500); continue; }
-        if(!r.ok){ RAPID_DIAG='בדיקת מחיר נכשלה (HTTP '+r.status+')'; await _sleep(700); continue; }
+        if(!r.ok){
+          RAPID_DIAG='בדיקת מחיר נכשלה (HTTP '+r.status+')';
+          if(r.status<500){ _fail.hard=true; return null; }        // בקשה פגומה — חזרה לא תעזור
+          if(++_srvRetry>1){ _fail.hard=true; return null; }        // תקלת שרת — ניסיון שני אחד ודי
+          await _sleep(700); continue;
+        }
         const j=await r.json();
         if(j&&j.ok&&Array.isArray(j.results)){
           const win=j.results[0];
@@ -310,15 +326,26 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
             flights=(hasOpts && win.options.length)?win.options:j.results;
           }
           const res=_pickFlight(flights,trip);
-          if(res) return res;
-          // הלוך-חזור אמיתי מחזיר מעט צירופים (4 אפשרויות הלוך × החזורים שלהן). אם המסננים
-          // ההלכתיים פסלו את כולם, החלון היה נעלם — לכן מבקשים שוב את המכפלה הרחבה של שתי הרגליים.
-          if(!_forceLegs && win && (!Array.isArray(win.outbound) || !win.outbound.length)){
-            _forceLegs=true; RAPID_DIAG='הלוך-חזור אמיתי נפסל במסננים — חוזר לשיטה הרחבה'; continue;
+          // רשת הביטחון להלוך-חזור האמיתי. קודם התנאי בדק אם ה-edge החזיר רשימה ריקה,
+          // אבל _rankFlights אינו מסנן טיסות אסורות אלא רק מדרג אותן אחרונות — אז _pickFlight
+          // תמיד החזיר משהו, והרשת מעולם לא נדלקה. עכשיו היא נבדקת על מה שחשוב באמת:
+          // האם נותרה טיסה אחת שעוברת את המסנן ההלכתי.
+          const _kosher = !res || STATE.allowShabbat
+            || (res._options||[res]).some(o=>!(o&&o._shabV&&o._shabV.forbidden));
+          if(res && _kosher) return res;
+          if(!_forceLegs){
+            _forceLegs=true;
+            RAPID_DIAG = res
+              ? 'כל הצירופים נפסלו הלכתית — מבקש מכפלה רחבה של שתי הרגליים'
+              : 'חיפוש הלוך-חזור חזר ריק — חוזר לשיטה הרחבה';
+            continue;
           }
+          // גם המכפלה הרחבה לא הניבה טיסה כשרה. מחזירים בכל זאת את מה שיש,
+          // כדי שהכרטיס יוכל להגיד "כל הטיסות נפסלו" במקום שהתאריך ייעלם לגמרי.
+          if(res) return res;
           RAPID_DIAG='חיפוש חזר ריק — מנסה שוב'; await _sleep(800); continue; // transient empty -> retry fresh
         }
-        if(j&&j.error){ RAPID_DIAG='שרת: '+j.error; await _sleep(700); continue; }
+        if(j&&j.error){ RAPID_DIAG='שרת: '+j.error; _fail.hard=true; return null; }  // תשובה מפורשת — אין טעם לנסות שוב
         await _sleep(700);
       }catch(e){ RAPID_DIAG='בדיקת מחיר: '+e.message; await _sleep(700); }
     }
@@ -331,8 +358,8 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
   async function worker(queue){
     while(queue.length){
       const trip=queue.shift();
-      let res=await priceOne(trip, includeStops);
-      if(!res && !includeStops){ res=await priceOne(trip, true); } // fill empties with a connecting flight
+      let res=_fail.hard?null:await priceOne(trip, includeStops);
+      if(!res && !includeStops && !_fail.hard){ res=await priceOne(trip, true); } // fill empties with a connecting flight
       if(res) map[res.departureDate+'|'+res.returnDate]=res;
       done++; if(onProgress) onProgress(done,trips.length,res);
     }
