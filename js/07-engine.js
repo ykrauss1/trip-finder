@@ -42,10 +42,14 @@ function rankedWindows(windows){
     let opts=(w.info&&Array.isArray(w.info._options)&&w.info._options.length)?w.info._options:(w.info?[w.info]:[]);
     if(!opts.length) return true;                                    // priced but no per-flight detail — keep
     const priceable=opts.filter(o=>o && (o.price!=null || w.price!=null));
+    // חלון שכל טיסותיו נפסלו אינו נמחק יותר. העלמת תאריך מהרשימה משאירה את המשתמש
+    // בלי לדעת אם אין טיסות או שהמסנן פסל אותן — וזו הייתה התנהגות הקודמת.
+    // עכשיו הוא נשמר, מסומן, והכרטיס אומר בפירוש למה.
     const stopsOk=priceable.filter(o=>!(o.stops!=null && o.stops>ms));
-    if(!stopsOk.length){ droppedStops++; return false; }
+    if(!stopsOk.length){ droppedStops++; w._allRejected='stops'; return true; }
     const shabOk=STATE.allowShabbat ? stopsOk : stopsOk.filter(o=>!(o._shabV&&o._shabV.forbidden));
-    if(!shabOk.length){ droppedShab++; return false; }
+    if(!shabOk.length){ droppedShab++; w._allRejected='shabbat'; return true; }
+    delete w._allRejected;
     return true;
   });
   // a Motzei-Shabbat option is only worth showing if it actually has a (post-havdalah) priced flight
@@ -58,6 +62,8 @@ function rankedWindows(windows){
 // (תאריך/אורך/מחיר) לא השפיע על כלום. שני שמות נפרדים לשני תפקידים נפרדים.
 function rankWindowsByPrice(ws){
   ws.sort((a,b)=>{
+    // חלון שאין בו טיסה כשרה יורד לתחתית — מוצג אך לא מתחרה על המקום הראשון
+    if(!!a._allRejected!==!!b._allRejected) return a._allRejected?1:-1;
     if(!!a._prefer!==!!b._prefer) return a._prefer?-1:1;
     if(a.price==null&&b.price==null)return a.start<b.start?-1:1; if(a.price==null)return 1; if(b.price==null)return -1; return a.price-b.price; });
   return ws;
@@ -176,6 +182,16 @@ async function fetchShabbatTimes(fromISO,toISO,geo){
     } if(j.sunrise) res.sunrise=j.sunrise; if(!geo) window.__zmanim=res; }
     else window.__zErr='HTTP '+r.status;
   }catch(e){ window.__zErr=String(e); }
+  // גיבוי: אם ה-edge לא החזיר ולו זמן אחד — מחשבים מקומית במקום לוותר על הבדיקה
+  if(!Object.keys(res.candle).length && !Object.keys(res.havdalah).length && typeof localShabbatTimes==='function'){
+    try{
+      const loc=localShabbatTimes(from,to,lat,lon,tz,STATE.candleMin,STATE.havdalah);
+      res.candle=loc.candle; res.havdalah=loc.havdalah;
+      if(!Object.keys(res.sunrise||{}).length) res.sunrise=loc.sunrise;
+      res._local=true;
+      if(!geo) window.__zmanim=res;
+    }catch(e){ window.__zErr=(window.__zErr||'')+' | local:'+String(e); }
+  }
   ZCACHE[key]=res; return res;
 }
 const _isoDate=s=>s?s.slice(0,10):'';
@@ -276,6 +292,8 @@ function shabbatVerdict(w,zt){
       const ct=_isoMin(zt.candle[dd]);
       if(ct!=null && t>ct){ parts.push(`✗ המראה ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
       else if(ct!=null){ parts.push(`🕯️ יציאה בשישי · המראה ${_hm(t)} · כניסת שבת ${_hm(ct)} · לבדוק נחיתה ביעד`); bump('note'); }
+      // בלי זמן כניסת שבת הענף הזה שתק לגמרי, וטיסת ערב שבת נראתה תקינה לחלוטין
+      else { parts.push(`⚠ יציאה בשישי · המראה ${_hm(t)} · חסר זמן כניסת שבת — בדקו בעצמכם`); bump('tight'); }
     }
   }
   // --- return lands TLV ---
