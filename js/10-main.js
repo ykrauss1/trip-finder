@@ -204,7 +204,7 @@ function planSortChips(){
    בדיוק את אותו הדבר, וזו הייתה כפילות. נשארת רק ההתראה כשהתרגום נעשה מקומית ולא ע"י המודל. */
 function summaryStrip(){
   if(!STATE.lastSummary || !STATE.lastSummaryLocal) return '';
-  return `<div class="meta" style="opacity:.95">⚠️ תרגום מקומי (מוגבל): ${STATE.lastSummary}</div>`;
+  return `<div class="meta" style="opacity:.95">⚠️ תרגום מקומי (מוגבל): ${escHtml(STATE.lastSummary)}</div>`;
 }
 function paintPlanner(ws){
   const out=document.getElementById('out');
@@ -295,8 +295,15 @@ const DISPLAY_CAP=14;
 function progMeta(winCount, done, total){
   const t=Math.max(1,total||0), d=Math.min(t,Math.max(0,done||0));
   const pct=Math.round(d/t*100);
-  // total=0 פירושו שאין מה לתמחר — פס תקוע על 0% היה מטעה, אז מדווחים שהסתיים
-  if(!total || d>=t) return `<div class="meta">${winCount} חלונות · ✓ כל המחירים עודכנו</div>`;
+  // total=0 פירושו שאין מה לתמחר — פס תקוע על 0% היה מטעה, אז מדווחים שהסתיים.
+  // אבל "הסתיים" אינו "הצליח": כשכל הניסיונות נכשלו השורה הירוקה שיקרה למשתמש.
+  if(!total || d>=t){
+    const ws=(LAST&&LAST.allWindows)?LAST.allWindows:[];
+    const got=ws.filter(w=>w.price!=null).length;
+    if(ws.length && !got) return `<div class="meta" style="color:var(--amber)">${winCount} חלונות · ⚠ לא התקבלו מחירים מהשרת</div>`;
+    if(ws.length && got<ws.length) return `<div class="meta">${winCount} חלונות · ✓ ${got} מתוך ${ws.length} תומחרו</div>`;
+    return `<div class="meta">${winCount} חלונות · ✓ כל המחירים עודכנו</div>`;
+  }
   return `<div class="meta">${winCount} חלונות · טוען מחירים… ${d}/${t}</div>`+
          `<div class="pbar det"><span class="pbar-fill" style="width:${pct}%"></span></div>`;
 }
