@@ -91,8 +91,8 @@ function exitCmpHtml(inAirport,opts,trip){
     const drv=(o.km!=null&&o.km>0)?(o.km+' ק״מ · '+Math.floor(o.mins/60)+'ש׳'+(o.mins%60?(' '+(o.mins%60)+'ד׳'):'')+' נהיגה'):(o.km===0?'אותו שדה':'');
     const best=idx===0&&o.price!=null?' <span class="exbest">הכי זול</span>':'';
     const link=o.baseline
-      ? `https://www.kayak.co.il/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${trip.returnDate}`
-      : `https://www.kayak.co.il/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${o.exit.toUpperCase()}-${O}/${trip.returnDate}`;
+      ? `https://www.kayak.com/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${trip.returnDate}`
+      : `https://www.kayak.com/flights/${O}-${inAirport.toUpperCase()}/${trip.departureDate}/${o.exit.toUpperCase()}-${O}/${trip.returnDate}`;
     const book=o.price!=null?`<a class="exbook" href="${link}" target="_blank" rel="noopener">הזמן ←</a>`:'';
     return `<div class="exrow"><span class="exinfo"><b>${he} (${o.exit})</b>${best} · ${price}${dir?(' · '+dir):''}${drv?(' · '+drv):''}</span>${book}</div>`;
   }).join('');
