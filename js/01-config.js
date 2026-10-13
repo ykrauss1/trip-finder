@@ -25,10 +25,25 @@ const SHAB_DEFAULT=[
   {k:'el al',     he:'אל על',     s:'no'},
   {k:'israir',    he:'ישראייר',   s:'no'},
   {k:'arkia',     he:'ארקיע',     s:'yes'},
-  {k:'air haifa', he:'אייר חיפה', s:''},
+  {k:'air haifa', he:'אייר חיפה', s:'yes'},
 ];
 let SHAB_CAR=(function(){
-  try{ const j=JSON.parse(localStorage.getItem('tf_shabcar')||'null'); if(Array.isArray(j)&&j.length) return j; }catch(e){}
+  try{
+    const j=JSON.parse(localStorage.getItem('tf_shabcar')||'null');
+    if(Array.isArray(j)&&j.length){
+      // הטבלה השמורה גוברת — אבל שתי השלמות בלבד, ואף אחת לא דורסת בחירה מפורשת שלך:
+      // (1) חברה שנוספה לברירת המחדל וחסרה אצלך מתווספת
+      // (2) רשומה שסומנה "לא ידוע" מקבלת את המעמד שהתברר מאז
+      let changed=false;
+      for(const d of SHAB_DEFAULT){
+        const cur=j.find(x=>x&&x.k===d.k);
+        if(!cur){ j.push({...d}); changed=true; }
+        else if((cur.s===''||cur.s==null) && d.s){ cur.s=d.s; changed=true; }
+      }
+      if(changed){ try{ localStorage.setItem('tf_shabcar',JSON.stringify(j)); }catch(e){} }
+      return j;
+    }
+  }catch(e){}
   return SHAB_DEFAULT.map(x=>({...x}));
 })();
 function saveShabCar(){ try{ localStorage.setItem('tf_shabcar',JSON.stringify(SHAB_CAR)); }catch(e){} }
