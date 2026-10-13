@@ -7,6 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Kosher Fly · הטיסה שלך מסונכרנת כהלכה</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1836'/%3E%3Cpath d='M12 35l40-15-7 17 7 17-40-15z' fill='%235fd6b4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -14,7 +15,7 @@
 /* ================= גרסת מטמון =================
    בכל פעם שמעדכנים קובץ JS או CSS — מעלים כאן את המספר ב-1 ושומרים.
    זה כל מה שצריך: כל הדפדפנים יביאו מיד את הקבצים החדשים. */
-var APP_VER = '56';
+var APP_VER = '57';
 document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
 // בדיקת-גרסה: אם נטענה גרסה מהמטמון בעוד שבשרת יש חדשה יותר — טען מחדש פעם אחת (עם עוקף-מטמון)
 (function(){ try{
@@ -58,7 +59,7 @@ document.write('<link rel="stylesheet" href="style.css?v=' + APP_VER + '">');
   <div id="out"></div>
 
   <footer>
-    <p><b>איך זה עובד —</b> טקסט חופשי → מודל שפה מתרגם לאינטנט → צ׳יפים לחיצים לכוונון → המנוע מדרג (אילוצים, ניקוד, עדשת שבת על כל מעטפת הטיסה) → מחירים אמיתיים מ-<code>flights-search</code> שלך → deep link להזמנה.</p>
+    <p><b>איך זה עובד —</b> טקסט חופשי → מודל שפה מתרגם לאינטנט → צ׳יפים לחיצים לכוונון → המנוע מדרג (אילוצים, ניקוד, עדשת שבת על כל מעטפת הטיסה) → מחירים אמיתיים מ-Google Flights (<code>Flights-gflights</code>) → deep link להזמנה.</p>
     <p style="margin-top:6px;color:var(--mut-2);font-size:11px">גרסת אפליקציה: <b id="appver"></b></p>
     <p style="margin-top:6px"><b>שמירה —</b> כפתור "שמור חיפוש" מראה את אובייקט האינטנט שיישמר. החיבור לטבלאות Supabase (כדי שחיפוש יחזור ואפשר יהיה לנטר אותו) — להמשך, יחד.</p>
   </footer>
