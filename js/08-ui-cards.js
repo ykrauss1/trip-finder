@@ -71,10 +71,10 @@ function windowCard(w,rank,dest){
   let kLink;
   if(_iata){
     kLink = oneway
-      ? `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}`
+      ? `https://www.kayak.co.il/flights/${_O}-${_iata}/${w.start}`
       : (STATE.openJaw&&STATE.outAirport&&LAST&&LAST.oj)
-      ? `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}/${STATE.outAirport.toUpperCase()}-${_O}/${w.ret}`
-      : `https://www.kayak.com/flights/${_O}-${_iata}/${w.start}/${w.ret}`;
+      ? `https://www.kayak.co.il/flights/${_O}-${_iata}/${w.start}/${STATE.outAirport.toUpperCase()}-${_O}/${w.ret}`
+      : `https://www.kayak.co.il/flights/${_O}-${_iata}/${w.start}/${w.ret}`;
   } else {
     const _lbl=(STATE.destLabel||(CITY[dest]&&CITY[dest].he)||dest).split(' · ')[0];
     kLink = `https://www.google.com/travel/flights?q=${encodeURIComponent('flights from '+_O+' to '+_lbl+' on '+w.start+(oneway?'':(' returning '+w.ret)))}`;
