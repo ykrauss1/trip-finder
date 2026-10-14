@@ -630,8 +630,10 @@ async function translateAndRun(){
   // זיהוי תאריך עברי מפורש ("מר\"ח אב עד ט\"ו בו") — עוקף את נתיב החודשים ומגדיר טווח מדויק
   let hebRange=null;
   try{ hebRange=parseHebrewDateRange(text); }catch(e){}
+  let gregRange=null;
+  if(!hebRange){ try{ gregRange=parseGregRange(text); }catch(e){} }
   let periodRange=null;
-  if(!hebRange){ try{ periodRange=await resolvePrimaryPeriod(text); }catch(e){} }
+  if(!hebRange&&!gregRange){ try{ periodRange=await resolvePrimaryPeriod(text); }catch(e){} }
   try{ I=await translateLive(text); }
   catch(e){ I=translateLocal(text); I._fallback=(typeof LAST_TRANSLATE_ERR!=='undefined'&&LAST_TRANSLATE_ERR)||String(e&&e.message||e); }
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
@@ -645,6 +647,22 @@ async function translateAndRun(){
     const hs=hebDateStr(hebRange.start), he=hebDateStr(hebRange.end);
     const gs=hebRange.start.slice(8)+'.'+(+hebRange.start.slice(5,7)), ge=hebRange.end.slice(8)+'.'+(+hebRange.end.slice(5,7));
     I.summary=`תאריך עברי: ${hs} – ${he} (${gs}–${ge})`;
+  } else if(gregRange || (I.fromDate && I.toDate && /^\d{4}-\d{2}-\d{2}$/.test(I.fromDate) && /^\d{4}-\d{2}-\d{2}$/.test(I.toDate) && I.toDate>=I.fromDate)){
+    // טווח ימים מפורש גובר על נתיב החודשים. חובה לאפס גם I.months וגם I.departMonth,
+    // אחרת applyIntent מחזיר את המצב לחודשים — בדיוק הבאג שהחזיר את כל ינואר.
+    // המודל קודם: הוא מבין ניסוחים שרגקס לעולם לא יכסה ("בין העשירי לחמישה עשר",
+    // "from Jan 10 to 15"). הפרסר המקומי הוא הגיבוי — והוא הכרחי, כי כש-tf-translate
+    // נופל האפליקציה מתרגמת מקומית ואין מודל בלולאה כלל.
+    const _mdl = (I.fromDate && I.toDate && /^\d{4}-\d{2}-\d{2}$/.test(I.fromDate)
+                  && /^\d{4}-\d{2}-\d{2}$/.test(I.toDate) && I.toDate>=I.fromDate && !I._fallback)
+                 ? {start:I.fromDate, end:I.toDate} : null;
+    const _r = _mdl || gregRange || {start:I.fromDate, end:I.toDate};
+    if(_mdl && gregRange && (_mdl.start!==gregRange.start || _mdl.end!==gregRange.end))
+      console.warn('טווח: המודל אמר',_mdl.start,'–',_mdl.end,'| הפרסר המקומי אמר',gregRange.start,'–',gregRange.end,'— נבחר המודל');
+    STATE.dateMode='range'; STATE.fromDate=_r.start; STATE.toDate=_r.end;
+    STATE.months=[]; I.months=[]; I.departMonth=null;
+    const _d=iso=>(+iso.slice(8))+'.'+(+iso.slice(5,7))+'.'+iso.slice(0,4);
+    I.summary=`${I.summary||''}${I.summary?' · ':''}טווח: ${_d(_r.start)} – ${_d(_r.end)}`;
   } else if(periodRange){
     // תקופה מזוהה → צמצום לטווח האמיתי שלה. מרחיבים את הסוף באורך הנסיעה
     // כדי לכלול חופשות שמתחילות בתוך התקופה ומסתיימות יום-יומיים אחריה.
