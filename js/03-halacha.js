@@ -258,3 +258,59 @@ function localShabbatTimes(fromISO, toISO, lat, lon, tz, candleMin, havdalahMode
   }
   return res;
 }
+
+/* ===== טווח תאריכים לועזי מפורש בשאילתה חופשית =====
+   "10 בינואר עד 15 בחודש" / "מ-10 עד 15 בינואר" / "10-15 בפברואר" / "3.1 עד 9.1".
+   עד כה לא היה לזה ייצוג כלל באינטנט: המודל החזיר months:["2027-01"] בלבד, הימים
+   נבלעו בשדה הסיכום, והחיפוש פרש על כל החודש. מחזיר {start,end} ב-ISO או null. */
+const GREG_MON_HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function _gregISO(y,m,d){ return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+// שנה: מפורשת אם נכתבה, אחרת המופע העתידי הקרוב של אותו חודש (כמו שאר המנוע)
+function _gregYearFor(mon,day,forced){
+  if(forced) return forced;
+  const now=new Date(), y=now.getFullYear();
+  const cand=new Date(Date.UTC(y,mon-1,day));
+  const today=new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()));
+  return cand<today ? y+1 : y;
+}
+function parseGregRange(text){
+  const t=String(text||'').replace(/[׳״'"]/g,'').replace(/\s+/g,' ');
+  const yM=t.match(/\b(20\d\d)\b/); const forcedY=yM?+yM[1]:null;
+  const monIdx=name=>{ const i=GREG_MON_HE.indexOf(name); return i<0?null:i+1; };
+  const MON='(?:'+GREG_MON_HE.join('|')+')';
+  let m;
+
+  // "10 בינואר עד 15 בפברואר" — חודש לכל קצה
+  m=t.match(new RegExp('\\b(\\d{1,2})\\s*ב?('+MON+')\\s*(?:עד|–|-|ועד)\\s*(?:ל|ב)?\\s*(\\d{1,2})\\s*ב?('+MON+')'));
+  if(m){
+    const m1=monIdx(m[2]), m2=monIdx(m[4]);
+    if(m1&&m2){
+      const y1=_gregYearFor(m1,+m[1],forcedY);
+      const y2=(m2<m1)?y1+1:y1;   // "25 בדצמבר עד 3 בינואר" חוצה שנה
+      return {start:_gregISO(y1,m1,+m[1]), end:_gregISO(y2,m2,+m[3])};
+    }
+  }
+  // "10 בינואר עד 15 בחודש" / "מ-10 עד 15 בינואר" / "10-15 בינואר" — חודש אחד לשניהם
+  m=t.match(new RegExp('\\b(\\d{1,2})\\s*(?:ב?('+MON+'))?\\s*(?:עד|–|-|ועד)\\s*(?:ל|ב)?\\s*(\\d{1,2})\\s*(?:ב(?:חודש|אותו חודש|ו)|ב?('+MON+'))'));
+  if(m){
+    const mon=monIdx(m[2]||'')||monIdx(m[4]||'');
+    if(mon){
+      const d1=+m[1], d2=+m[3];
+      if(d1>=1&&d1<=31&&d2>=1&&d2<=31&&d2>=d1){
+        const y=_gregYearFor(mon,d1,forcedY);
+        return {start:_gregISO(y,mon,d1), end:_gregISO(y,mon,d2)};
+      }
+    }
+  }
+  // מספרי: "3.1 עד 9.1" / "3.1.2027 עד 9.1.2027"
+  m=t.match(/\b(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?\s*(?:עד|–|-|ועד)\s*(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?/);
+  if(m){
+    const d1=+m[1],o1=+m[2],d2=+m[4],o2=+m[5];
+    if(o1>=1&&o1<=12&&o2>=1&&o2<=12&&d1<=31&&d2<=31){
+      let y1=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):_gregYearFor(o1,d1,forcedY);
+      let y2=m[6]?(+m[6]<100?2000+ +m[6]:+m[6]):((o2<o1)?y1+1:y1);
+      return {start:_gregISO(y1,o1,d1), end:_gregISO(y2,o2,d2)};
+    }
+  }
+  return null;
+}
