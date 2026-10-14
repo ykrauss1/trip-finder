@@ -359,7 +359,16 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
     while(queue.length){
       const trip=queue.shift();
       let res=_fail.hard?null:await priceOne(trip, includeStops);
-      if(!res && !includeStops && !_fail.hard){ res=await priceOne(trip, true); } // fill empties with a connecting flight
+      // הניסיון הישיר חזר ריק. קודם הסלמנו מיד לחיפוש עם עצירות — וזה הרס חלונות שלמים:
+      // כשמותרות עצירות, המנוע מרחיב את האפשרויות הזולות, שהן טיסות קונקשן, ומחליף בהן את
+      // הישירות; ואז מסנן התצוגה "ישיר" פוסל את כולן והחלון נראה ריק אף שיש בו טיסות ישירות.
+      // לכן: קודם ניסיון ישיר נוסף (הכישלון הראשון הוא לרוב חולף), ורק אם המשתמש באמת
+      // מוכן לעצירות — הסלמה.
+      if(!res && !includeStops && !_fail.hard){
+        await _sleep(600);
+        res=await priceOne(trip, false);                       // ניסיון ישיר שני
+        if(!res && maxStopsVal()>0) res=await priceOne(trip, true);
+      }
       if(res) map[res.departureDate+'|'+res.returnDate]=res;
       done++; if(onProgress) onProgress(done,trips.length,res);
     }
