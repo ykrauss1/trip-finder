@@ -658,10 +658,19 @@ async function translateAndRun(){
     const _r = _mdl || gregRange || {start:I.fromDate, end:I.toDate};
     if(_mdl && gregRange && (_mdl.start!==gregRange.start || _mdl.end!==gregRange.end))
       console.warn('טווח: המודל אמר',_mdl.start,'–',_mdl.end,'| הפרסר המקומי אמר',gregRange.start,'–',gregRange.end,'— נבחר המודל');
-    STATE.dateMode='range'; STATE.fromDate=_r.start; STATE.toDate=_r.end;
+    // טווח ימים מפורש הוא התאריכים עצמם, לא חלון לחפש בתוכו: "10-15 בינואר"
+    // פירושו יציאה ב-10 וחזרה ב-15, כמו בכל מנוע חיפוש. רק אם נאמר גם אורך
+    // ("5 לילות בין 10 ל-20") או ימי יציאה/חזרה — זה חלון, ואז applyIntent
+    // מעלה בעצמו את המצב ל-range. קודם היה כאן range תמיד, ולכן טווח של
+    // חמישה ימים ייצר חלונות של 3-9 לילות שחורגים הרבה אחרי סוף הטווח.
+    const _win = (I.nights!=null && String(I.nights).trim()!=='')
+                 || (I.startDays && I.startDays.length)
+                 || (I.endDays && I.endDays.length);
+    STATE.dateMode = _win ? 'range' : 'exact';
+    STATE.fromDate=_r.start; STATE.toDate=_r.end;
     STATE.months=[]; I.months=[]; I.departMonth=null;
     const _d=iso=>(+iso.slice(8))+'.'+(+iso.slice(5,7))+'.'+iso.slice(0,4);
-    I.summary=`${I.summary||''}${I.summary?' · ':''}טווח: ${_d(_r.start)} – ${_d(_r.end)}`;
+    I.summary=`${I.summary||''}${I.summary?' · ':''}${_win?'טווח':'תאריכים'}: ${_d(_r.start)} – ${_d(_r.end)}`;
   } else if(periodRange){
     // תקופה מזוהה → צמצום לטווח האמיתי שלה. מרחיבים את הסוף באורך הנסיעה
     // כדי לכלול חופשות שמתחילות בתוך התקופה ומסתיימות יום-יומיים אחריה.
