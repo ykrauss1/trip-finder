@@ -640,12 +640,14 @@ async function translateAndRun(){
   STATE.flexStartDows=null; STATE.flexEndDows=null; STATE.flexStartDow=null; STATE.flexNights='any'; STATE.months=[];
   STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
+  let _datesSet=false;   // נדלק בכל ענף שקבע תאריכים — ההגנה היחידה על ברירת המחדל שלמטה
   if(hebRange){
     // טווח תאריך עברי מדויק גובר על נתיב החודשים
     STATE.dateMode='range'; STATE.fromDate=hebRange.start; STATE.toDate=hebRange.end; STATE.months=[]; I.months=[]; I.departMonth=null;
     const hs=hebDateStr(hebRange.start), he=hebDateStr(hebRange.end);
     const gs=hebRange.start.slice(8)+'.'+(+hebRange.start.slice(5,7)), ge=hebRange.end.slice(8)+'.'+(+hebRange.end.slice(5,7));
     I.summary=`תאריך עברי: ${hs} – ${he} (${gs}–${ge})`;
+    _datesSet=true;
   } else if(gregRange || (I.fromDate && I.toDate && /^\d{4}-\d{2}-\d{2}$/.test(I.fromDate) && /^\d{4}-\d{2}-\d{2}$/.test(I.toDate) && I.toDate>=I.fromDate)){
     // טווח ימים מפורש גובר על נתיב החודשים. חובה לאפס גם I.months וגם I.departMonth,
     // אחרת applyIntent מחזיר את המצב לחודשים — בדיוק הבאג שהחזיר את כל ינואר.
@@ -671,6 +673,7 @@ async function translateAndRun(){
     STATE.months=[]; I.months=[]; I.departMonth=null;
     const _d=iso=>(+iso.slice(8))+'.'+(+iso.slice(5,7))+'.'+iso.slice(0,4);
     I.summary=`${I.summary||''}${I.summary?' · ':''}${_win?'טווח':'תאריכים'}: ${_d(_r.start)} – ${_d(_r.end)}`;
+    _datesSet=true;
   } else if(periodRange){
     // תקופה מזוהה → צמצום לטווח האמיתי שלה. מרחיבים את הסוף באורך הנסיעה
     // כדי לכלול חופשות שמתחילות בתוך התקופה ומסתיימות יום-יומיים אחריה.
@@ -681,11 +684,13 @@ async function translateAndRun(){
     const hs=hebDateStr(periodRange.start), he=hebDateStr(periodRange.end);
     const gs=periodRange.start.slice(8)+'.'+(+periodRange.start.slice(5,7)), ge=periodRange.end.slice(8)+'.'+(+periodRange.end.slice(5,7));
     I.summary=`${periodRange.label}: ${hs} – ${he} (${gs}–${ge}) · יציאה בתקופה, חזרה עד ${tail} ימים אחריה`;
+    _datesSet=true;
   }
-  // ברירת המחדל "החודשיים הקרובים" היא המוצא האחרון — רק אחרי שכל נתיבי הטווח
-  // נכשלו. כשהיא רצה לפני הם, שאילתה עם תאריכים מפורשים קיבלה גם חודשים וגם
-  // הודעת "לא צוין זמן" סותרת, בזמן שהחיפוש עצמו רץ נכון על הטווח.
-  if(STATE.dateMode!=='range' && !(I.months&&I.months.length)){
+  // ברירת המחדל "החודשיים הקרובים" היא המוצא האחרון — רק אחרי שכל נתיבי
+  // התאריכים נכשלו. התנאי הוא הדגל, לא שם המצב: הענפים בוחרים בין 'exact'
+  // ל-'range' לפי הנסיבות, ותנאי שבדק dateMode!=='range' פספס בדיוק את
+  // ה-'exact' — ואז החודשים חזרו ו-applyIntent מחק את התאריכים.
+  if(!_datesSet && !(I.months&&I.months.length)){
     const now=new Date(); const m1=now.toISOString().slice(0,7);
     now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7);
     I.months=[m1,m2];
