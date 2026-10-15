@@ -317,7 +317,7 @@ function renderPanel(){
       <div class="grp"><div class="t">מטבע תצוגה</div><div class="chips">${[['','$ דולר'],['ILS','₪ שקל'],['EUR','€ יורו']].map(([v,l])=>`<span class="c ${STATE.altCurrency===v?'on':''}" data-act="cur" data-v="${v}">${l}</span>`).join('')}</div></div>
       `:''}
       ${uns}
-      <div class="detailfoot"><button class="adjust" data-act="jdiag">בדיקת לוח</button><button class="save" data-act="save">שמור חיפוש · v92</button></div>
+      <div class="detailfoot"><button class="adjust" data-act="jdiag">בדיקת לוח</button><button class="save" data-act="save">שמור חיפוש${typeof APP_VER!=='undefined'?' · v'+APP_VER:''}</button></div>
       <div id="savebox"></div>
     </div>`:''}
   </div>`;
