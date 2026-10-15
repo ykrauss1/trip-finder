@@ -639,7 +639,6 @@ async function translateAndRun(){
   // שאילתה חופשית = אמת שלמה: שדות-שאילתה מתאפסים, והעדפות-תקופה מהשאילתה הקודמת משוחזרות לבסיס הידני
   STATE.flexStartDows=null; STATE.flexEndDows=null; STATE.flexStartDow=null; STATE.flexNights='any'; STATE.months=[];
   STATE.dateMode='month'; // שאילתה חופשית חושבת בחודשים — לעולם לא יורשת תאריך-מדויק ישן
-  if(!(I.months&&I.months.length)){ const now=new Date(); const m1=now.toISOString().slice(0,7); now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7); I.months=[m1,m2]; if(I.summary)I.summary+=' · (לא צוין זמן — נבדקים החודשיים הקרובים)'; }
   if(STATE._periodPrefsBase){ STATE.periodPrefs=STATE._periodPrefsBase; STATE._periodPrefsBase=null; }
   if(hebRange){
     // טווח תאריך עברי מדויק גובר על נתיב החודשים
@@ -673,6 +672,15 @@ async function translateAndRun(){
     const hs=hebDateStr(periodRange.start), he=hebDateStr(periodRange.end);
     const gs=periodRange.start.slice(8)+'.'+(+periodRange.start.slice(5,7)), ge=periodRange.end.slice(8)+'.'+(+periodRange.end.slice(5,7));
     I.summary=`${periodRange.label}: ${hs} – ${he} (${gs}–${ge}) · יציאה בתקופה, חזרה עד ${tail} ימים אחריה`;
+  }
+  // ברירת המחדל "החודשיים הקרובים" היא המוצא האחרון — רק אחרי שכל נתיבי הטווח
+  // נכשלו. כשהיא רצה לפני הם, שאילתה עם תאריכים מפורשים קיבלה גם חודשים וגם
+  // הודעת "לא צוין זמן" סותרת, בזמן שהחיפוש עצמו רץ נכון על הטווח.
+  if(STATE.dateMode!=='range' && !(I.months&&I.months.length)){
+    const now=new Date(); const m1=now.toISOString().slice(0,7);
+    now.setMonth(now.getMonth()+1); const m2=now.toISOString().slice(0,7);
+    I.months=[m1,m2];
+    if(I.summary) I.summary+=' · (לא צוין זמן — נבדקים החודשיים הקרובים)';
   }
   STATE.lastSummary=I.summary||''; STATE.lastSummaryLocal=!!I._fallback;
   applyIntent(I); renderPanel();
