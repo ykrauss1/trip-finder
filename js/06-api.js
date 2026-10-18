@@ -284,7 +284,12 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
   // ניסיונות רק מבזבזים זמן ומכסה. hardFail עוצר גם את סבב ה-includeStops שאחריו.
   const _fail={hard:false};
   async function priceOne(trip, incl){
-    let _forceLegs=false;   // רשת ביטחון להלוך-חזור האמיתי — נדלק פעם אחת לכל חלון
+    // מבקשים רגליים מהקריאה הראשונה, לא רק כרשת ביטחון.
+    // נמדד מול השרת על TLV→MXP, 10–15.1.27: במצב הרגיל חזרו 3
+    // אפשרויות מוכנות ואפס רגליים; עם forceLegs חזרו ארבע רגליים — בדיוק
+    // ארבע הטיסות שגוגל מציג. הספק מחזיר רשימת אפשרויות קצוצה ומוטית
+    // לחברה אחת, והמתנה לכשלון כדי לבקש רגליים היא המתנה לאיבוד טיסות.
+    let _forceLegs=true;
     let _srvRetry=0;
     for(let attempt=0; attempt<3; attempt++){
       try{
@@ -310,13 +315,17 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
           // filters Shabbat per-leg, dedups, and shows top-5 with "show more".
           let flights;
           if(win && Array.isArray(win.outbound) && win.outbound.length && Array.isArray(win.returns) && win.returns.length){
+            // הגרסה הקודמת סימנה כל חברה שנכנסה בעשר הזולות כאילו כבר
+            // מוצגה, ולכן "נציג אחד לכל חברה" לא הוסיף להן דבר. שני מעברים
+            // נפרדים: קודם הזולות והישירות, ואז השלמה לחברות שטרם יוצגו.
             const _cover=list=>{
-              const out=[], seenCar=new Set(); let n=0;
-              for(const f of list){                                   // list already sorted cheapest-first
+              const out=[], seenCar=new Set();
+              list.forEach((f,i)=>{                                   // list already sorted cheapest-first
+                if(i<10 || f.isDirect){ out.push(f); const fam=carrierFamily(f.carrier); if(fam) seenCar.add(fam); }
+              });
+              for(const f of list){
                 const fam=carrierFamily(f.carrier);
-                const keep = n<10 || f.isDirect || (fam && !seenCar.has(fam)); // cheap 10 + every direct + 1 per carrier
-                if(keep){ out.push(f); if(fam) seenCar.add(fam); }
-                n++;
+                if(fam && !seenCar.has(fam)){ out.push(f); seenCar.add(fam); }
               }
               return out.slice(0,24); // safety cap per leg
             };
