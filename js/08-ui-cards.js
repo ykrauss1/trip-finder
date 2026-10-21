@@ -168,7 +168,7 @@ function windowCard(w,rank,dest){
   return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}${w._priced?'':' pending'}">
     <div class="wghead">
       <span class="wgrank">${w._motzei?'🌙':rank}</span>
-      <div class="wgttl"><b>${(dest===STATE.destination?destDisplayName():cleanCityName(dest))}</b> <span class="sm">· ${c.cc}</span> · ${oneway?`${fmt(w.start)} · כיוון אחד →`:`<span dir="ltr">${fmt(w.start)} → ${fmt(w.ret)}</span> · ${w.nights} לילות`}${seasonLabelHtml(c.cc,dest,w.start,w.ret)}</div>
+      <div class="wgttl"><bdi><b>${(dest===STATE.destination?destDisplayName():cleanCityName(dest))}</b></bdi> <span class="sm">· <bdi>${c.cc}</bdi></span> · ${oneway?`<bdi>${fmt(w.start)}</bdi> · כיוון אחד →`:`<bdi>${fmt(w.start)}</bdi> → <bdi>${fmt(w.ret)}</bdi> · <bdi>${w.nights} לילות</bdi>`}${seasonLabelHtml(c.cc,dest,w.start,w.ret)}</div>
       ${headTags.length?`<div class="rcrit wghtags">${headTags.join('')}</div>`:''}
     </div>
     ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
