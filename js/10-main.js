@@ -187,7 +187,7 @@ function plannerCard(w,i){
   return `<div class="wgroup${w._motzei?' motzei':''}">
     <div class="wghead">
       <span class="wgrank">${w._motzei?'🌙':i+1}</span>
-      <div class="wgttl"><b><span dir="ltr">${fmt(w.start)} → ${fmt(w.ret||w.start)}</span></b> · ${w.nights} לילות</div>
+      <div class="wgttl"><b><bdi>${fmt(w.start)}</bdi> → <bdi>${fmt(w.ret||w.start)}</bdi></b> · <bdi>${w.nights} לילות</bdi></div>
       ${headTags.length?`<div class="rcrit wghtags">${headTags.join('')}</div>`:''}
     </div>
     ${calTags.length?`<div class="rtags">${calTags.join('')}</div>`:''}${w.band?bandHtml(w.band):''}
