@@ -182,6 +182,10 @@ function windowCard(w,rank,dest){
   </div>`;
 }
 
+// This prompt is no longer sent. tf-translate stopped accepting a free prompt
+// on 9 Nov 2026 (it was an open LLM proxy on Yossi's key); it holds this same
+// text as kosherFlyPrompt() and the page now sends only {kind,text,today}.
+// Kept as the readable reference - CHANGE IT IN THE EDGE, not here.
 function buildPrompt(text){
   const today=new Date().toISOString().slice(0,10);
   return `תרגם בקשת חיפוש טיסות/תכנון חופשה חופשית ל-JSON. החזר אך ורק JSON תקין — בלי טקסט, בלי markdown.
@@ -216,7 +220,7 @@ async function translateLive(text){
   const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),22000);
   let r;
   try{ r=await fetch(TRANSLATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({prompt:buildPrompt(text)}),signal:ctrl.signal}); }
+    body:JSON.stringify({kind:"kosherfly",text:String(text).slice(0,600),today:new Date().toISOString().slice(0,10)}),signal:ctrl.signal}); }
   finally{ clearTimeout(to); }
   const d=await r.json().catch(()=>null);
   if(!r.ok||!d||!d.ok){ LAST_TRANSLATE_ERR=(d&&(d.error||d.detail))||("http "+r.status); throw new Error(LAST_TRANSLATE_ERR); }
