@@ -723,10 +723,18 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (STATE.sbarPop||
 document.addEventListener('click',e=>{ if(!STATE.sbarPop) return; const t=e.target; if(t&&t.closest&&(t.closest('.sbar')||t.closest('.spop')||t.closest('.ttmenu')||t.closest('.popcities'))) return; STATE.sbarPop=null; renderPanel(); });
 /* גובה הבלוק העליון הדביק, נמדד בפועל. השורה הזו מחליפה את ה-top:44px הקשיח שגרם לסדק,
    ומשמשת גם את סרגל הצד ואת שורת ההתראה כדי שיתחילו בדיוק מתחתיו. */
+/* בטלפון שורת החיפוש נערמת לשדות ברוחב מלא, והבלוק הדביק הגיע ל-695 מתוך 844
+   פיקסלים — ובטלפון קטן גבוה מהמסך עצמו. התוצאות נגללו מתחתיו ברצועה של 150px
+   ונראה שאי אפשר לגלול ואי אפשר לסגור. לכן הוא דביק רק כשהוא באמת קטן ביחס
+   לגובה המסך; אחרת הוא נגלל עם הדף כמו כל דבר אחר, ו---toph מתאפס. */
+const TOP_STICK_MAX = 0.5;   // טלפון: 82%-123% מהמסך; מחשב נייד 1366x768: כ-35%-41%
 function _syncTopH(){
   const t=document.getElementById('topstick'); if(!t) return;
   const h=Math.round(t.getBoundingClientRect().height);
-  if(h>0) document.documentElement.style.setProperty('--toph', h+'px');
+  if(!(h>0)) return;
+  const tall = h > window.innerHeight * TOP_STICK_MAX;
+  t.classList.toggle('unstick', tall);
+  document.documentElement.style.setProperty('--toph', (tall ? 0 : h)+'px');
 }
 window.addEventListener('resize',_syncTopH);
 setInterval(_syncTopH,800);   // שורת החיפוש משנה גובה כשהצ'יפים נשברים לשורה נוספת
