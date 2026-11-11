@@ -285,13 +285,13 @@ function shabbatVerdict(w,zt){
     if(dow===6){ // Saturday departure -> must be Motzei Shabbat
       const ht=_isoMin(zt.havdalah[dd]);
       if(ht==null){ parts.push('מוצ״ש? (חסר זמן צאת שבת)'); bump('note'); }
-      else if(t>=ht+ma){ parts.push(`🕯️ מוצ״ש · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · ${_gap(t-ht)} אחרי צאת שבת ✓`); bump('good'); }
-      else if(t>=ht){ parts.push(`🕯️ מוצ״ש צמוד · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · רק ${_gap(t-ht)} אחרי ⚠`); bump('tight'); }
+      else if(t>=ht+ma){ parts.push(`🕯️🕯️ מוצ״ש · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · ${_gap(t-ht)} אחרי צאת שבת ✓`); bump('good'); }
+      else if(t>=ht){ parts.push(`🕯️🕯️ מוצ״ש צמוד · המראה ${_hm(t)} · צאת שבת ${_hm(ht)} · רק ${_gap(t-ht)} אחרי ⚠`); bump('tight'); }
       else { parts.push(`✗ המראה ${_hm(t)} לפני צאת שבת ${_hm(ht)} (בשבת)`); forbidden=true; }
     } else if(dow===5){ // Friday departure from TLV
       const ct=_isoMin(zt.candle[dd]);
       if(ct!=null && t>ct){ parts.push(`✗ המראה ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
-      else if(ct!=null){ parts.push(`🕯️ יציאה בשישי · המראה ${_hm(t)} · כניסת שבת ${_hm(ct)} · לבדוק נחיתה ביעד`); bump('note'); }
+      else if(ct!=null){ parts.push(`🕯️🕯️ יציאה בשישי · המראה ${_hm(t)} · כניסת שבת ${_hm(ct)} · לבדוק נחיתה ביעד`); bump('note'); }
       // בלי זמן כניסת שבת הענף הזה שתק לגמרי, וטיסת ערב שבת נראתה תקינה לחלוטין
       else { parts.push(`⚠ יציאה בשישי · המראה ${_hm(t)} · חסר זמן כניסת שבת — בדקו בעצמכם`); bump('tight'); }
     }
@@ -312,14 +312,14 @@ function shabbatVerdict(w,zt){
       const early = thr!=null && t < thr;                // landed before the threshold = plenty of time
       const sedra = parshaFor(_jAddDays(dd,1));           // parsha of this Shabbat (Saturday = dd+1)
       const erev = `ערב שבת${sedra?` פרשת ${sedra}`:''}`;
-      if(ct==null){ parts.push(`🕯️ ${erev}? (חסר זמן כניסת שבת)`); bump('note'); }
+      if(ct==null){ parts.push(`🕯️🕯️ ${erev}? (חסר זמן כניסת שבת)`); bump('note'); }
       else if(early){
         // very early / night landing — a SOFT, welcoming note, not an alert
         const icon = (zt.sunrise && _isoMin(zt.sunrise[dd])!=null && t<_isoMin(zt.sunrise[dd])) ? '🌙' : '🌅';
         parts.push(`${icon} ${erev} · נחיתה ${_hm(t)} · נשארו ${_gap(ct-t)} שעות ✓`); bump('soft');
       }
-      else if(t<=ct-mb){ parts.push(`🕯️ ${erev} · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · נשארו ${_gap(ct-t)} שעות ✓`); bump('good'); }
-      else if(t<=ct){ parts.push(`🕯️ ${erev} צמוד · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · רק ${_gap(ct-t)} שעות ⚠`); bump('tight'); }
+      else if(t<=ct-mb){ parts.push(`🕯️🕯️ ${erev} · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · נשארו ${_gap(ct-t)} שעות ✓`); bump('good'); }
+      else if(t<=ct){ parts.push(`🕯️🕯️ ${erev} צמוד · נחיתה ${_hm(t)} · כניסת שבת ${_hm(ct)} · רק ${_gap(ct-t)} שעות ⚠`); bump('tight'); }
       else { parts.push(`✗ נחיתה ${_hm(t)} אחרי כניסת שבת ${_hm(ct)}`); forbidden=true; }
     }
   }
@@ -402,7 +402,7 @@ function bandHtml(band){
   const parts=order.filter(k=>band.counts[k]).map(k=>band.counts[k]+' '+DAY_HE[k]);
   if(band.fasts) parts.push(band.fasts+' צום');
   if(band.hols&&band.hols.length) parts.push(...band.hols);
-  if(band.shab) parts.push('🕯️ '+(band.shab>1?(band.shab+' שבתות'):'שבת'));
+  if(band.shab) parts.push('🕯️🕯️ '+(band.shab>1?(band.shab+' שבתות'):'שבת'));
   return `<div class="band" style="direction:rtl;width:100%">${cells}</div><div class="bandleg">${parts.join(' · ')}</div>`;
 }
 const TUNE_PERIODS=[

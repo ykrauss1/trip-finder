@@ -221,7 +221,7 @@ function paintPlanner(ws){
   else if(mode==='dow'){ const DN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
     for(let d=0;d<7;d++){ groupOut('יציאה ביום '+DN[d], ws.filter(w=>new Date(w.start+'T00:00:00Z').getUTCDay()===d).sort(byDate)); } }
   else if(mode==='shab'){ const withN=ws.map(w=>({w,n:_satsIn(w)})); const ns=[...new Set(withN.map(x=>x.n))].sort((a,b)=>a-b);
-    for(const n of ns){ groupOut(n===0?'ללא שבת ביעד':(n===1?'🕯️ שבת אחת ביעד':'🕯️ '+n+' שבתות ביעד'), withN.filter(x=>x.n===n).map(x=>x.w).sort(byDate)); } }
+    for(const n of ns){ groupOut(n===0?'ללא שבת ביעד':(n===1?'🕯️🕯️ שבת אחת ביעד':'🕯️🕯️ '+n+' שבתות ביעד'), withN.filter(x=>x.n===n).map(x=>x.w).sort(byDate)); } }
   else { const ns=[...new Set(ws.map(w=>w.nights))].sort((a,b)=>a-b);
     for(const n of ns){ groupOut('🛏 '+n+' לילות', ws.filter(w=>w.nights===n).sort(byDate)); } }
   const inner=summaryStrip()

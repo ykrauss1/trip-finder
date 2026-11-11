@@ -52,17 +52,17 @@ function carrierFilterHtml(){
   const chips=cs.map(c=>{ const esc=c.name.replace(/"/g,'&quot;'); return `<span class="c ${hid.includes(c.name)?'':'on'}" data-act="carrierfilt" data-v="${esc}">${c.il?'🇮🇱 ':''}${c.lc?'💸 ':''}${c.name}</span>`; }).join('');
   const onlyIl = anyIl ? `<span class="c ${STATE.onlyIsraeli?'on':''}" data-act="onlyisraeli" title="הצג רק טיסות שכל הקטעים בהן בחברה ישראלית — בטוח יותר בתקופות מתוחות">🇮🇱 רק ישראליות</span>` : '';
   const anyNoShab = cs.some(c=>typeof noShabbatFlight==='function' && noShabbatFlight(c.name));
-  const onlyNoShab = anyNoShab ? `<span class="c ${STATE.onlyNoShab?'on':''}" data-act="onlynoshab" title="הצג רק טיסות שכל הקטעים בהן בחברה שאינה טסה בשבת (לפי הטבלה למטה)">🕯️ אינן טסות בשבת</span>` : '';
+  const onlyNoShab = anyNoShab ? `<span class="c ${STATE.onlyNoShab?'on':''}" data-act="onlynoshab" title="הצג רק טיסות שכל הקטעים בהן בחברה שאינה טסה בשבת (לפי הטבלה למטה)">🕯️🕯️ אינן טסות בשבת</span>` : '';
   return `<div class="sgrp"><div class="st">חברות תעופה <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לחץ להצגת חברה אחת בלבד — שילובים יופיעו בנפרד</span></div><div class="chips">${onlyIl}${onlyNoShab}${chips}${(hid.length||STATE.onlyIsraeli||STATE.onlyNoShab)?`<span class="c" data-act="carrierall">↺ הצג הכל</span>`:''}</div></div>`;
 }
 // טבלת "טיסה בשבת" בלוח הצד — המשתמש קובע, כי המצב בשטח משתנה
 function shabCarriersHtml(){
-  const st=[['no','אינה טסה 🕯️'],['yes','טסה'],['','לא ידוע']];
+  const st=[['no','אינה טסה 🕯️🕯️'],['yes','טסה'],['','לא ידוע']];
   const rows=(SHAB_CAR||[]).map((c,i)=>{
     const he=String(c.he||c.k||'').replace(/[<>&]/g,'');
     return `<div class="sl">${he}</div><div class="chips">${st.map(o=>`<span class="c ${((c.s||'')===o[0])?'on':''}" data-act="shabcar" data-v="${i}|${o[0]}">${o[1]}</span>`).join('')}<span class="c" data-act="shabcardel" data-v="${i}" title="הסר מהרשימה">✕</span></div>`;
   }).join('');
-  return `<div class="sgrp"><div class="st">🕯️ טיסה בשבת <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לפי החברה — ניתן לעדכן</span></div>${rows}<div class="chips" style="margin-top:7px"><span class="c" data-act="shabcaradd">➕ הוסף חברה</span><span class="c" data-act="shabcarreset">↺ ברירת מחדל</span></div></div>`;
+  return `<div class="sgrp"><div class="st">🕯️🕯️ טיסה בשבת <span style="font-weight:400;color:var(--mut-2);font-size:10px">· לפי החברה — ניתן לעדכן</span></div>${rows}<div class="chips" style="margin-top:7px"><span class="c" data-act="shabcaradd">➕ הוסף חברה</span><span class="c" data-act="shabcarreset">↺ ברירת מחדל</span></div></div>`;
 }
 function sidePanelHtml(){
   const ck=(act,opts,cur,attr)=>opts.map(o=>`<span class="c ${String(cur)===String(o[0])?'on':''}" data-act="${act}"${attr?` data-v="${o[0]}"`:''}>${o[1]}</span>`).join('');

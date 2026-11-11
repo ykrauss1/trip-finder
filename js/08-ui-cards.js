@@ -19,7 +19,7 @@ function flightCard(w,fl,dest,kLink,oneway,isBest){
   // readable, spaced detail line (duration + layover) — kept off the cramped times line
   const _leg=(label,dur,lo)=> (dur||lo) ? `<span class="fc-leg">${label?`<b>${label}</b> `:''}${dur?`⏱ ${dur}`:''}${dur&&lo?' · ':''}${lo?`עצירה ${lo}`:''}</span>` : '';
   const detail = oneway ? _leg('',_dOut,_outLo) : `${_leg('הלוך',_dOut,_outLo)}${_leg('חזור',_dBack,_backLo)}`;
-  const _tlvTag = fl._shabV ? `<span class="rtg crit shabv-${fl._shabV.cls}">🕯️ ${fl._shabV.t}</span>` : '';
+  const _tlvTag = fl._shabV ? `<span class="rtg crit shabv-${fl._shabV.cls}">🕯️🕯️ ${fl._shabV.t}</span>` : '';
   const _destTag = fl._destV ? `<span class="rtg crit destv destv-${fl._destV.cls}">📍 ${fl._destV.t}</span>` : '';
   const verdict = (_tlvTag||_destTag) ? `<div class="rcrit">${_tlvTag}${_destTag}</div>` : '';
   const perEuro = fl.price!=null ? Math.round(fl.price/STATE.adults) : null;
@@ -126,7 +126,7 @@ function windowCard(w,rank,dest){
   } else if(STATE.onlyIsraeli && allOpts.some(o=>o&&o.price!=null && !(o.stops!=null&&o.stops>ms))){
     cards = `<div class="fcard"><div class="fc-main"><div class="fc-times" style="color:var(--mut-2)">🇮🇱 אין טיסה ישראלית מלאה בחלון זה</div><div style="margin-top:7px"><span class="c on" data-act="onlyisraeli" style="font-size:11px;padding:3px 11px">הצג גם לא-ישראליות</span></div></div><div class="fc-price"><div class="v" style="font-size:16px;color:var(--mut-2)">—</div><div class="k">—</div></div></div>`;
   } else {
-    const fallbackV = w.shabV ? `<div class="rcrit"><span class="rtg crit shabv-${w.shabV.cls}">🕯️ ${w.shabV.t}</span></div>` : (w.TS?`<div class="fc-times" style="color:var(--mut-2)">${w.TS.t}</div>`:'');
+    const fallbackV = w.shabV ? `<div class="rcrit"><span class="rtg crit shabv-${w.shabV.cls}">🕯️🕯️ ${w.shabV.t}</span></div>` : (w.TS?`<div class="fc-times" style="color:var(--mut-2)">${w.TS.t}</div>`:'');
     if(!w._priced){
       // חלון שטרם תומחר במלואו — מוצג עם הערכת מחיר מלוח המחירים, וכפתור לתמחור מדויק
       const hasEst=(w._calPrice!=null);
@@ -162,8 +162,8 @@ function windowCard(w,rank,dest){
   // כשכרטיס הפסילה כבר אומר את זה — אין טעם לחזור עליו שורה מתחת
   const _rejShown = !vis.length && allOpts.some(o=>o&&o.price!=null) && !!_rejectReason(allOpts,ms);
   if(_rejShown) hiddenLine='';
-  else if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
-  else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
+  else if(hiddenCount>0) hiddenLine=`<div class="rhidden">🕯️🕯️ עוד ${hiddenCount} ${hiddenCount===1?'טיסה':'טיסות'} בחלון זה סמוכות מדי לשבת <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הצג טיסות שבת</span></div>`;
+  else if(STATE.allowShabbat){ const shabShown=vis.filter(o=>o._shabV&&o._shabV.forbidden).length; if(shabShown>0) hiddenLine=`<div class="rhidden">🕯️🕯️ ${shabShown} ${shabShown===1?'טיסה':'טיסות'} בשבת מוצגות <span class="c on" data-act="allowshab" style="font-size:10px;padding:2px 8px;margin-inline-start:4px">הסתר טיסות שבת</span></div>`; }
   const showCmp = !STATE.openJaw && exitsFor(dest) && w.price!=null;
   return `<div class="wgroup ${rank===1?'win':''}${w._motzei?' motzei':''}${w._priced?'':' pending'}">
     <div class="wghead">
