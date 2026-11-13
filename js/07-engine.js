@@ -5,7 +5,7 @@ async function retune(){
     const ws=LAST.allWindows;
     const zs=ws.reduce((a,w)=>w.start<a?w.start:a,ws[0].start);
     const ze=ws.reduce((a,w)=>{const e=w.ret||w.start;return e>a?e:a;},ws[0].ret||ws[0].start);
-    try{ zt=await fetchShabbatTimes(zs,ze); LAST.zt=zt; }catch(e){}
+    try{ zt=await originShabbatTimes(zs,ze,STATE.origin); LAST.zt=zt; }catch(e){}
   }
   _selZT=zt;
   let dzt=LAST_DZT;
@@ -163,7 +163,7 @@ async function fetchJewishData(fromISO,toISO,profile){
   return {periods:[],holidays:[],cholHamoed:[],favorable:[],profile};
 }
 const _jOverlap=(s1,e1,s2,e2)=>s1<=e2&&e1>=s2;
-// ---- Shabbat-time layer (TLV side): candle-lighting & havdalah, compared to actual flight times ----
+// ---- Shabbat-time layer (origin side - Tel Aviv unless the search starts elsewhere) ----
 const ZCACHE={};
 async function fetchShabbatTimes(fromISO,toISO,geo){
   const lat=geo?geo.lat:LAT, lon=geo?geo.lon:LON, tz=geo?geo.tz:'Asia/Jerusalem';
@@ -216,8 +216,46 @@ const DEST_GEO={
   CDG:{lat:49.01,lon:2.55,tz:'Europe/Paris'}, ORY:{lat:48.73,lon:2.36,tz:'Europe/Paris'}, JFK:{lat:40.64,lon:-73.78,tz:'America/New_York'}, EWR:{lat:40.69,lon:-74.17,tz:'America/New_York'},
   GVA:{lat:46.24,lon:6.11,tz:'Europe/Zurich'}, ZRH:{lat:47.46,lon:8.55,tz:'Europe/Zurich'}, INN:{lat:47.26,lon:11.34,tz:'Europe/Vienna'}, SZG:{lat:47.79,lon:13.00,tz:'Europe/Vienna'},
   MUC:{lat:48.35,lon:11.79,tz:'Europe/Berlin'}, LYS:{lat:45.73,lon:5.08,tz:'Europe/Paris'}, SOF:{lat:42.69,lon:23.41,tz:'Europe/Sofia'},
-  LON:{lat:51.47,lon:-0.45,tz:'Europe/London'}, LHR:{lat:51.47,lon:-0.45,tz:'Europe/London'}
+  LON:{lat:51.47,lon:-0.45,tz:'Europe/London'}, LHR:{lat:51.47,lon:-0.45,tz:'Europe/London'},
+  // origins other than Tel Aviv - CerviniaLive's English site sends travellers from these
+  LGW:{lat:51.15,lon:-0.18,tz:'Europe/London'}, STN:{lat:51.89,lon:0.24,tz:'Europe/London'}, LTN:{lat:51.87,lon:-0.37,tz:'Europe/London'},
+  MAN:{lat:53.35,lon:-2.27,tz:'Europe/London'}, EDI:{lat:55.95,lon:-3.37,tz:'Europe/London'}, DUB:{lat:53.42,lon:-6.27,tz:'Europe/Dublin'},
+  AMS:{lat:52.31,lon:4.76,tz:'Europe/Amsterdam'}, BRU:{lat:50.90,lon:4.48,tz:'Europe/Brussels'}, FRA:{lat:50.04,lon:8.56,tz:'Europe/Berlin'},
+  BER:{lat:52.37,lon:13.50,tz:'Europe/Berlin'}, HAM:{lat:53.63,lon:9.99,tz:'Europe/Berlin'}, DUS:{lat:51.29,lon:6.77,tz:'Europe/Berlin'},
+  CPH:{lat:55.62,lon:12.65,tz:'Europe/Copenhagen'}, ARN:{lat:59.65,lon:17.92,tz:'Europe/Stockholm'}, OSL:{lat:60.19,lon:11.10,tz:'Europe/Oslo'},
+  HEL:{lat:60.32,lon:24.95,tz:'Europe/Helsinki'}, LIS:{lat:38.77,lon:-9.13,tz:'Europe/Lisbon'}, WAW:{lat:52.17,lon:20.97,tz:'Europe/Warsaw'},
+  IST:{lat:41.26,lon:28.74,tz:'Europe/Istanbul'}, DXB:{lat:25.25,lon:55.36,tz:'Asia/Dubai'}, ETM:{lat:29.72,lon:35.01,tz:'Asia/Jerusalem'},
+  BOS:{lat:42.36,lon:-71.01,tz:'America/New_York'}, ORD:{lat:41.97,lon:-87.91,tz:'America/Chicago'}, IAD:{lat:38.95,lon:-77.46,tz:'America/New_York'},
+  MIA:{lat:25.79,lon:-80.29,tz:'America/New_York'}, LAX:{lat:33.94,lon:-118.41,tz:'America/Los_Angeles'}, SFO:{lat:37.62,lon:-122.38,tz:'America/Los_Angeles'},
+  YYZ:{lat:43.68,lon:-79.63,tz:'America/Toronto'}, YUL:{lat:45.47,lon:-73.74,tz:'America/Toronto'}, GRU:{lat:-23.43,lon:-46.47,tz:'America/Sao_Paulo'},
+  JNB:{lat:-26.14,lon:28.24,tz:'Africa/Johannesburg'}, SYD:{lat:-33.94,lon:151.18,tz:'Australia/Sydney'}, MEL:{lat:-37.67,lon:144.84,tz:'Australia/Melbourne'},
+  SIN:{lat:1.36,lon:103.99,tz:'Asia/Singapore'}, HKG:{lat:22.31,lon:113.92,tz:'Asia/Hong_Kong'}
 };
+// Hebrew names for origins that have no CITY entry, for the origin field
+const ORIGIN_HE={LHR:'לונדון הית׳רו',LGW:'לונדון גטוויק',STN:'לונדון סטנסטד',LTN:'לונדון לוטון',MAN:'מנצ׳סטר',EDI:'אדינבורו',DUB:'דבלין',
+  AMS:'אמסטרדם',BRU:'בריסל',FRA:'פרנקפורט',BER:'ברלין',HAM:'המבורג',DUS:'דיסלדורף',CPH:'קופנהגן',ARN:'שטוקהולם',OSL:'אוסלו',HEL:'הלסינקי',
+  LIS:'ליסבון',WAW:'ורשה',IST:'איסטנבול',DXB:'דובאי',ETM:'אילת רמון',BOS:'בוסטון',ORD:'שיקגו',IAD:'וושינגטון',MIA:'מיאמי',LAX:'לוס אנג׳לס',
+  SFO:'סן פרנסיסקו',YYZ:'טורונטו',YUL:'מונטריאול',GRU:'סאו פאולו',JNB:'יוהנסבורג',SYD:'סידני',MEL:'מלבורן',SIN:'סינגפור',HKG:'הונג קונג',
+  JFK:'ניו יורק',EWR:'ניוארק',CDG:'פריז',ORY:'פריז אורלי',MAD:'מדריד',BCN:'ברצלונה',FCO:'רומא',ATH:'אתונה',VIE:'וינה',ZRH:'ציריך',GVA:'ז׳נבה',MUC:'מינכן'};
+function originName(code){
+  const o=String(code||'TLV').toUpperCase();
+  if(o==='TLV') return 'תל אביב';
+  if(CITY[o]&&CITY[o].he) return CITY[o].he.split(' — ')[0];
+  return ORIGIN_HE[o]||'';
+}
+// Shabbat times on the ORIGIN side. Tel Aviv keeps the old path (LAT/LON in
+// 03-halacha). Any other origin gets its own coordinates - and when there are
+// none, no times at all, so the verdict says "missing" rather than quietly
+// judging a London departure by Tel Aviv's havdalah (it did, until v69).
+async function originShabbatTimes(fromISO,toISO,origin){
+  const o=String(origin||'TLV').toUpperCase();
+  if(o==='TLV') return fetchShabbatTimes(fromISO,toISO);
+  let g=DEST_GEO[o]||null;
+  // geocoding by a bare IATA code finds random places; only by a real name
+  if(!g && CITY[o] && CITY[o].he){ try{ g=await geocodeDest(o, CITY[o].he); }catch(e){ g=null; } }
+  if(!g) return {candle:{},havdalah:{},sunrise:{},_noGeo:true};
+  return fetchShabbatTimes(fromISO,toISO,g);
+}
 const _geoCache={};
 async function geocodeDest(code,name){
   const byBook = code && CITY[code] && CITY[code]._book && DEST_GEO[String(CITY[code]._book).toUpperCase()];

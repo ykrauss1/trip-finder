@@ -436,7 +436,7 @@ async function _runSearch(){
         const ze=windows.reduce((a,w)=>{const e=w.ret||w.start; return e>a?e:a;},windows[0].ret||windows[0].start);
         // מקבילים: זמני שבת במוצא + גיאוקוד היעד — בלתי-תלויים זה בזה
         const _geoP=geocodeDest(I.destination, STATE.destLabel).catch(()=>null);
-        zt=await fetchShabbatTimes(zs,ze); if(my!==runSeq)return;
+        zt=await originShabbatTimes(zs,ze,I.origin||STATE.origin); if(my!==runSeq)return;
         _selZT=zt;
         try{ dgeo=await _geoP; if(my!==runSeq)return; if(dgeo){ dzt=await fetchShabbatTimes(zs,ze,dgeo); if(my!==runSeq)return; } }catch(e){}
       }
