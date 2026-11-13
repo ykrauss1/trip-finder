@@ -240,8 +240,11 @@ const ORIGIN_HE={LHR:'לונדון הית׳רו',LGW:'לונדון גטוויק'
 function originName(code){
   const o=String(code||'TLV').toUpperCase();
   if(o==='TLV') return 'תל אביב';
-  if(CITY[o]&&CITY[o].he) return CITY[o].he.split(' — ')[0];
-  return ORIGIN_HE[o]||'';
+  if(ORIGIN_HE[o]) return ORIGIN_HE[o];
+  // CITY holds placeholders whose "he" is just the code (entity-id cache,
+  // deep links) - only a real Hebrew name is a name
+  const h=CITY[o]&&CITY[o].he;
+  return (h && /[\u0590-\u05ff]/.test(h)) ? h.split(' — ')[0].split(' · ')[0] : '';
 }
 // Shabbat times on the ORIGIN side. Tel Aviv keeps the old path (LAT/LON in
 // 03-halacha). Any other origin gets its own coordinates - and when there are
@@ -252,7 +255,7 @@ async function originShabbatTimes(fromISO,toISO,origin){
   if(o==='TLV') return fetchShabbatTimes(fromISO,toISO);
   let g=DEST_GEO[o]||null;
   // geocoding by a bare IATA code finds random places; only by a real name
-  if(!g && CITY[o] && CITY[o].he){ try{ g=await geocodeDest(o, CITY[o].he); }catch(e){ g=null; } }
+  if(!g && CITY[o] && /[\u0590-\u05ff]/.test(CITY[o].he||'')){ try{ g=await geocodeDest(o, CITY[o].he); }catch(e){ g=null; } }
   if(!g) return {candle:{},havdalah:{},sunrise:{},_noGeo:true};
   return fetchShabbatTimes(fromISO,toISO,g);
 }
