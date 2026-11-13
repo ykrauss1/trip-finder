@@ -98,13 +98,24 @@ async function fetchLive(I){
   if(I.destination && I.destination!=="-" && I.destination!=="variable"){
     return fetchOne(origin,I.destination,month);
   }
-  // "explore" -> scan popular destinations in parallel and merge
-  const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>fetchOne(origin,d,month)));
+  // "explore" -> scan popular destinations in parallel and merge.
+  // With a trip length ("לשבוע") the calendar mode asks for exactly that many
+  // nights; the plain query returned the cheapest trip of ANY length, so "a
+  // week" came back as 3, 12 or 19 nights (v71).
+  const nights=+I.nights||0;
+  const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>nights?fetchCalOne(origin,d,month,nights):fetchOne(origin,d,month)));
   let all=[],ok=0,firstErr=null;
   res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
   if(ok===0 && firstErr) throw firstErr;
+  // Flying on Shabbat is out unless allowed - as everywhere else in the app.
+  // Filtered BEFORE the cheapest per destination is chosen, so a destination
+  // whose cheapest trip flies on Shabbat still shows its cheapest clean one.
+  const allowShab=!!STATE.allowShabbat;
   const best={};
-  for(const f of all){ if(!best[f.to]||f.price<best[f.to].price) best[f.to]=f; }
+  for(const f of all){
+    if(!allowShab){ const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack); if(TS&&TS.k==='fly') continue; }
+    if(!best[f.to]||f.price<best[f.to].price) best[f.to]=f;
+  }
   return Object.values(best);
 }
 function card(f,rank){
@@ -703,6 +714,10 @@ async function translateAndRun(){
     // נותנים לבחור: טיסות או תאריכים בלבד — במקום לרוץ אוטומטית
     const out=document.getElementById('out');
     try{ if(window.tfCloseFreeText) window.tfCloseFreeText(); }catch(e){}   // הובן → השורה כבר לא נחוצה
+    // הכרטיס הזה מחליף את התוצאות הקודמות, ולכן הן כבר לא "ישנות": בלי זה #out נשאר
+    // מעומעם עם pointer-events:none, ושני הכפתורים בכרטיס לא הגיבו ללחיצה (v71).
+    LAST=null; out.classList.remove('stale-dim');
+    { const sb=document.getElementById('stalebar'); if(sb) sb.innerHTML=''; }
     out.innerHTML=`<div class="state" style="text-align:center"><div style="margin-bottom:14px">הבנתי: ${I.summary||'החיפוש הוגדר'}</div>${I._fallback?`<div style="margin-bottom:12px;color:#f0b429;font-size:13px">⚠️ תרגום מקומי (מוגבל) — השירות החכם לא זמין כרגע<br><span style="opacity:.7;font-size:11px">${String(I._fallback).slice(0,120)}</span></div>`:''}<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="sgo" data-act="go" style="border-radius:8px;font-size:15px;padding:10px 26px">🔍 חפש טיסות</button><button class="sgo ghost" data-act="goplan" style="border-radius:8px;font-size:15px;padding:10px 26px">📅 תאריכים בלבד</button></div></div>`;
   }
   btn.disabled=false;

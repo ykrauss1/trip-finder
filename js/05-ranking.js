@@ -19,7 +19,13 @@ function rankLive(flights,I){
   const norm={};
   for(const s of scs){const v=c.map(f=>RAW[s.name](f));const mn=Math.min(...v),mx=Math.max(...v),rng=(mx-mn)||1;norm[s.name]=x=>s.name==='price'?1-(x-mn)/rng:(mx===mn?0.5:(x-mn)/rng);}
   for(const f of c){f._s=0;for(const s of scs)f._s+=norm[s.name](RAW[s.name](f))*(s.w||1);}
-  c.sort((a,b)=>b._s-a._s); return c;
+  // The heading promises "clean and quiet first, Shabbat/crowds below" - so the
+  // tier comes first and the score only orders within it (it used to be score
+  // alone, and a trip with Shabbat at the destination topped a clean one).
+  for(const f of c){ const TS=tripShabbat(f.depUTC,f.durTo,f.retUTC,f.durBack);
+    const busy=busyLevel(ilAbs(f.depUTC), ilAbs(f.retUTC?f.retUTC+(f.durBack||180)*60000:f.depUTC));
+    f._tier=(TS&&TS.k==='fly'?4:0)+tierScore(TS?TS.k:'',busy); }
+  c.sort((a,b)=>(a._tier-b._tier)||(b._s-a._s)); return c;
 }
 
 /* ===== busy-weeks brick (researched, 2027 ski season) + ski selection ===== */
