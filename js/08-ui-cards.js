@@ -245,8 +245,11 @@ function translateLocal(text){
     I.destination="SKI";
     // מדינה שצוינה יחד עם סקי אינה נזרקת: SKI_DESTS מחזיק שם מדינה בעברית לכל יעד,
     // אז די להתאים את השאילתה מול אותם שמות. בלי זה "סקי באיטליה" החזיר גם בולגריה ורומניה.
+    // שמות המדינות ברשימת האתרים הם כעת באנגלית, אז מתאימים מול השמות העבריים
+    // (SKI_CC_EN ב-10-main) — וגם מול כל שם שמופיע ברשימה עצמה
     const _ccs=[...new Set(SKI_DESTS.map(d=>(CITY[d]&&CITY[d].cc)||'').filter(Boolean))];
     for(const cc of _ccs) if(has(cc)) I.skiCountry=cc;
+    if(typeof SKI_CC_EN!=='undefined') for(const he of Object.keys(SKI_CC_EN)) if(has(he)) I.skiCountry=he;
   }
   // שנה מפורשת ("2027" / "שנת 2027") או "שנה הבאה" גוברות; אחרת — המופע העתידי הקרוב
   const _yrM=t.match(/20\d\d/); let _forcedY=_yrM?+_yrM[0]:null;

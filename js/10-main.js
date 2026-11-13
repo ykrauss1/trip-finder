@@ -65,10 +65,21 @@ async function fetchCalOne(origin,dest,month,nights){
 }
 function _skiMonths(){ return (STATE.dateMode==='month'&&STATE.months&&STATE.months.length)?STATE.months:SKI_MONTHS; } // חודשי הסריקה: מהבקשה אם ניתנו, אחרת עונת ברירת המחדל
 // יעדי הסקי לסריקה — מצומצמים למדינה אם המשתמש ציין אחת
+// The resort list's country names come from the ski table and are now in English
+// ("Italy", "France/Switzerland"), while the requested country is Hebrew - so an
+// exact comparison matched almost nothing and the scan fell back to every country
+// ("סקי באיטליה" returned Slovakia, France and Austria; found in testing, v71).
+const SKI_CC_EN={'איטליה':'italy','צרפת':'france','אוסטריה':'austria','שוויץ':'switzerland','גרמניה':'germany',
+  'רומניה':'romania','סלובקיה':'slovakia','בולגריה':'bulgaria','גאורגיה':'georgia','אנדורה':'andorra','ספרד':'spain','פולין':'poland'};
+function _ccMatch(cc,c){
+  const a=String(cc||'').toLowerCase(), h=String(c||'').trim();
+  if(!a||!h) return false;
+  return a.split('/').some(p=>{ p=p.trim(); return p===h.toLowerCase() || p===SKI_CC_EN[h]; });
+}
 function _skiDests(){
   const c=STATE.skiCountry;
   if(!c) return SKI_DESTS;
-  const sub=SKI_DESTS.filter(d=>(CITY[d]&&CITY[d].cc)===c);
+  const sub=SKI_DESTS.filter(d=>_ccMatch(CITY[d]&&CITY[d].cc, c));
   return sub.length?sub:SKI_DESTS;   // מדינה בלי יעדים ברשימה — עדיף הכל מאשר מסך ריק
 }
 async function fetchSki(origin,nights){
