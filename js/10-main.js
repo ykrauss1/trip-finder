@@ -181,7 +181,9 @@ async function runPlanner(){
         const toISO=new Date(Date.UTC(ly,lm,0)).toISOString().slice(0,10);
         windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat).filter(w=>ms.includes(w.start.slice(0,7)));
       }else{
-        windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat);
+        // טווח = כל הטיול בתוכו: גם החזרה לא אחרי סוף הטווח (בתקופה הלכתית הסוף כבר כולל
+        // את ימי הזנב). קודם רק היציאה נבדקה, ו"בין הזמנים" החזיר יציאה ב-2.9 וחזרה ב-7.9 (v71).
+        windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat).filter(w=>!STATE.toDate||w.ret<=STATE.toDate);
       }
     }
     if(STATE.jewishMode!=='off' && windows.length){
@@ -434,7 +436,7 @@ async function _runSearch(){
           windows=genValidWindows(fromISO,toISO,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat)
             .filter(w=>ms.includes(w.start.slice(0,7)));
         }else{
-          windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat);
+          windows=genValidWindows(STATE.fromDate,STATE.toDate,{nightsMin:nMin,nightsMax:nMax,startDows,endDows},STATE.flexShabbat).filter(w=>!STATE.toDate||w.ret<=STATE.toDate);
         }
       }
       // Jewish availability layer: tag windows; Shabbat/Yom Tov travel is forbidden (always dropped)
