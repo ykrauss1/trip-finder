@@ -99,12 +99,11 @@ async function fetchLive(I){
     return fetchOne(origin,I.destination,month);
   }
   // "explore" -> scan popular destinations in parallel and merge.
-  // With a trip length ("לשבוע") the calendar mode asks for exactly that many
-  // nights; the plain query returned the cheapest trip of ANY length, so "a
-  // week" came back as 3, 12 or 19 nights (v71).
-  // the trip length lives in STATE.flexNights (the intent object does not carry it); a range or 'any' means no fixed length
-  const nights=(typeof STATE.flexNights==='number' && STATE.flexNights>0) ? STATE.flexNights : 0;
-  const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>nights?fetchCalOne(origin,d,month,nights):fetchOne(origin,d,month)));
+  // NOTE: this source (cached prices) holds ONE trip per destination and month -
+  // the cheapest, of whatever length. Asking it for a duration changes nothing
+  // (checked live, v71), so a requested trip length cannot be honoured here;
+  // the results screen says so instead of implying otherwise.
+  const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>fetchOne(origin,d,month)));
   let all=[],ok=0,firstErr=null;
   res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
   if(ok===0 && firstErr) throw firstErr;
@@ -554,7 +553,9 @@ async function _runSearch(){
     }else{
       const lbl=ski?'יעדי סקי':specific?'חלונות תאריך':(I.destination==='-')?'יעדים':'אופציות';
       const note=ski?`${STATE.skiCountry?` · ${STATE.skiCountry} בלבד`:''} · ${STATE.skiNights} לילות · החל מ-${(+STATE.skiFromISO.slice(8))}.${(+STATE.skiFromISO.slice(5,7))}`:'';
-      const rankNote=specific?'מחיר אמת מדורג למעלה · אחרים עם קישור חי · נקי משבת אלא אם סומן':'מדורג: נקי ולא-עמוס למעלה, שבת/עומס למטה';
+      const rankNote=specific?'מחיר אמת מדורג למעלה · אחרים עם קישור חי · נקי משבת אלא אם סומן':'מדורג: נקי ולא-עמוס למעלה, שבת/עומס למטה'
+        // בחיפוש פתוח המקור מחזיק טיול אחד ליעד בחודש, הזול, בכל אורך — אז אומרים את זה
+        +((!ski&&I.destination==='-'&&typeof STATE.flexNights==='number')?' · אורך הטיול כאן הוא של הטיסה הזולה בחודש, לא בהכרח '+STATE.flexNights+' לילות — לבחירת אורך בחרו יעד':'');
       const noPrice = specific && !ranked.some(w=>w.price!=null);
       const diagNote = (noPrice && RAPID_DIAG) ? ` · <span style="color:var(--amber)">⚠ ${RAPID_DIAG}</span>` : '';
       const fltNote = (specific && FLT_DIAG && FLT_DIAG.max) ? ` · <span class="note" style="opacity:.6;font-size:10px">edge: עד ${FLT_DIAG.max} טיסות/חלון${FLT_DIAG.hasOptions?' · edge חדש ✓':' · ⚠ edge ישן (טרם עודכן)'}${_carrierDiag()}</span>` : '';
