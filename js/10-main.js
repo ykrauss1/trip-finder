@@ -102,7 +102,8 @@ async function fetchLive(I){
   // With a trip length ("לשבוע") the calendar mode asks for exactly that many
   // nights; the plain query returned the cheapest trip of ANY length, so "a
   // week" came back as 3, 12 or 19 nights (v71).
-  const nights=+I.nights||0;
+  // the trip length lives in STATE.flexNights (the intent object does not carry it); a range or 'any' means no fixed length
+  const nights=(typeof STATE.flexNights==='number' && STATE.flexNights>0) ? STATE.flexNights : 0;
   const res=await Promise.allSettled(EXPLORE_DESTS.map(d=>nights?fetchCalOne(origin,d,month,nights):fetchOne(origin,d,month)));
   let all=[],ok=0,firstErr=null;
   res.forEach(r=>{ if(r.status==="fulfilled"){ok++;all=all.concat(r.value);} else if(!firstErr)firstErr=r.reason; });
