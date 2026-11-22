@@ -378,6 +378,17 @@ async function fetchRapidPrices(origin,dest,trips,onProgress,includeStops,adults
         res=await priceOne(trip, false);                       // ניסיון ישיר שני
         if(!res && maxStopsVal()>0) res=await priceOne(trip, true);
       }
+      // Nov 2026 (Yossi: TLV→MXP 10–15.1, Kayak shows the direct Wizz and we
+      // showed "504 flights, all with stops"): the provider sometimes answers a
+      // direct-only search with connections alone, and the same search run again
+      // brought the direct flights. So when only direct flights are wanted and
+      // none came back, ask once more before giving the window up.
+      const _hasDirect=r=>!!(r && (r._options||[r]).some(o=>o && o.price!=null && (o.stops|0)===0));
+      if(res && !_hasDirect(res) && maxStopsVal()===0 && !_fail.hard){
+        await _sleep(700);
+        const again=await priceOne(trip, false);
+        if(_hasDirect(again)) res=again;
+      }
       if(res) map[res.departureDate+'|'+res.returnDate]=res;
       done++; if(onProgress) onProgress(done,trips.length,res);
     }
